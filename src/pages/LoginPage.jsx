@@ -1,6 +1,6 @@
 import React from "react";
-import BackgroundContainer from "../BackgroundContainer";
-import LoginForm from "./LoginForm";
+import BackgroundContainer from "../components/BackgroundContainer";
+import LoginForm from "../components/LoginForm";
 import "flowbite"; // Import Flowbite JS
 
 export default function LoginPage() {
