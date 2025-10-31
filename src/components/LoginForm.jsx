@@ -7,7 +7,12 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="bg-[#F4F4F4] p-8 rounded-lg shadow-2x1 w-80 sm:w-96 border-3 border-gray-200">
+    <div
+      className="bg-[#F4F4F4] rounded-lg shadow-2x1 
+                      w-80 sm:w-96 md:w-[28rem] lg:w-[32rem] xl:w-[36rem]
+                      p-8 sm:p-8 md:p-10 text-sm md:text-base
+                      border-3 border-gray-200"
+    >
       <Logo />
 
       <form className="max-w-sm mx-auto">
