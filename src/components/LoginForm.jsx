@@ -1,11 +1,27 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button, TextInput, Label, Checkbox } from "flowbite-react";
 import { HiEye, HiEyeOff } from "react-icons/hi";
 import Logo from "./Logo";
 
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
+  // Handle form submission
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Basic validation (optional)
+    if (!email || !password) {
+      alert("Please enter both email and password");
+      return;
+    }
+    // Further logic here (API call, etc.)
+    console.log("Logging in with:", email, password);
+  };
+
+  // Login form JSX
   return (
     <div
       className="bg-[#F4F4F4] rounded-lg shadow-2x1 
@@ -14,8 +30,19 @@ export default function LoginForm() {
                       border-3 border-gray-200"
     >
       <Logo />
+      <h2 className="text-xl text-center font-bold text-gray-800">
+        Welcome, User!
+      </h2>
 
-      <form className="max-w-sm mx-auto">
+      <form
+        className="w-full 
+                  max-w-md 
+                  sm:max-w-lg 
+                  md:max-w-xl 
+                  lg:max-w-2xl 
+                  mx-auto
+                "
+      >
         {/* Email */}
         <div className="mb-5">
           <label
@@ -27,10 +54,13 @@ export default function LoginForm() {
           <input
             type="email"
             id="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             placeholder="name@example.com"
             required
             className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-                       focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                       focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 
+                       placeholder-gray-400"
           />
         </div>
 
@@ -47,8 +77,11 @@ export default function LoginForm() {
             id="password"
             placeholder="••••••••"
             required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-                       focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 pr-10"
+                       focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 pr-10]
+                       placeholder-gray-400"
           />
           {/* Eye icon toggle */}
           <button
@@ -66,7 +99,8 @@ export default function LoginForm() {
             <input
               id="remember"
               type="checkbox"
-              className="w-4 h-4 border border-gray-300 rounded-sm bg-gray-50 focus:ring-3 focus:ring-blue-300"
+              className="w-4 h-4 border border-gray-300 rounded-sm 
+                      bg-gray-50 focus:ring-3 focus:ring-blue-300"
             />
             <label
               htmlFor="remember"
@@ -84,8 +118,9 @@ export default function LoginForm() {
         <button
           type="submit"
           className="text-white bg-blue-700 hover:bg-blue-800 
-                     focus:ring-4 focus:outline-black focus:ring-blue-300 
-                     font-medium rounded-lg text-sm w-full px-5 py-2.5 text-center"
+             focus:ring-4 focus:outline-black focus:ring-blue-300 
+             font-medium rounded-lg text-sm px-5 py-2.5 text-center
+             mx-auto block w-32 sm:w-40 md:w-48"
         >
           Login
         </button>
@@ -93,9 +128,9 @@ export default function LoginForm() {
         {/* Register / Guest */}
         <p className="text-sm text-center mt-4">
           No account?{" "}
-          <a href="#" className="text-blue-600 hover:underline">
+          <Link to="/register" className="text-blue-600 hover:underline">
             Register here
-          </a>
+          </Link>
         </p>
         <p className="text-sm text-center mt-2">
           <a href="#" className="text-blue-700 hover:underline">
