@@ -1,16 +1,18 @@
-# React + Vite
+#  ARTA-based Customer Satisfaction Survey App
+- Development Team: TaskBusters from BSIT 3-1 of Pamantasan ng Lungsod ng Valenzuela
+- Course: CC106 - Applications Development and Emerging Technologies
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# Timeline and Facts
+- Written below are some of the important dates and facts regarding this university project.
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Initial Prototype Development Date
+- October - November
+## Final Term of Implementation and Testing
+- Around the Month of December
+## Team Members
+- Project Lead: Joanna Taniongon
+- UI / UX Designer: Raizen Buenaventura
+- Frontend Developer: Angel Patawaran
+- Backend Developer: Jasmine Basarte
+- QA Tester: Rodelyn Julia
+- Documentation: Janicka Macam
