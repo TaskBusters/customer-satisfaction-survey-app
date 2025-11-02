@@ -85,6 +85,9 @@ export default function RegisterForm() {
     "
     >
       <Logo />
+      <h2 className="text-xl text-center font-bold text-gray-800">
+        Register a New Account
+      </h2>
 
       <form
         className="w-full 
@@ -251,7 +254,7 @@ export default function RegisterForm() {
           </select>
         </div>
         <Link to="/" className="text-blue-500 hover:underline">
-          Go Back
+          Back to Login
         </Link>
 
         {/* Register button */}
