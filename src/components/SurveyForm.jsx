@@ -1,109 +1,320 @@
 import React, { useState } from "react";
-import "flowbite";
-import Navbar from "./Navbar";
-import ClientTypeCard from "./ClientTypeCard";
-import SexCard from "./SexCard";
-import AgeAndRegionRow from "./AgeAndRegionRow";
-import ServiceAvailedField from "./ServiceAvailedField";
 
-const regions = [
-  { value: "NCR", label: "National Capital Region (NCR)" },
-  { value: "CAR", label: "Cordillera Administrative Region (CAR)" },
-  { value: "I", label: "Region I (Ilocos Region)" },
-  { value: "II", label: "Region II (Cagayan Valley)" },
-  { value: "III", label: "Region III (Central Luzon)" },
-  { value: "IV-A", label: "Region IV-A (CALABARZON)" },
-  { value: "IV-B", label: "Region IV-B (MIMAROPA)" },
-  { value: "V", label: "Region V (Bicol Region)" },
-  { value: "VI", label: "Region VI (Western Visayas)" },
-  { value: "VII", label: "Region VII (Central Visayas)" },
-  { value: "VIII", label: "Region VIII (Eastern Visayas)" },
-  { value: "IX", label: "Region IX (Zamboanga Peninsula)" },
-  { value: "X", label: "Region X (Northern Mindanao)" },
-  { value: "XI", label: "Region XI (Davao Region)" },
-  { value: "XII", label: "Region XII (SOCCSKSARGEN)" },
-  { value: "XIII", label: "Region XIII (Caraga)" },
+// --- Standalone Field Components ---
+function RadioField({ label, options, value, onChange }) {
+  return (
+    <div className="mb-6">
+      {label && <div className="font-bold mb-2">{label}</div>}
+      <div className="flex flex-col gap-2">
+        {options.map((opt, i) => (
+          <label className="flex items-center" key={i}>
+            <input
+              type="radio"
+              className="mr-2"
+              value={opt.value}
+              checked={String(value) === String(opt.value)}
+              onChange={() => onChange(opt.value)}
+            />
+            {opt.label}
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TextField({ label, value, onChange, placeholder }) {
+  return (
+    <div className="mb-6">
+      {label && <div className="font-bold mb-2">{label}</div>}
+      <input
+        type="text"
+        className="border px-3 py-2 rounded w-full"
+        value={value || ""}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+      />
+    </div>
+  );
+}
+
+function TextareaField({ label, value, onChange, placeholder }) {
+  return (
+    <div className="mb-6">
+      {label && <div className="font-bold mb-2">{label}</div>}
+      <textarea
+        className="border px-3 py-2 rounded w-full"
+        value={value || ""}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+      />
+    </div>
+  );
+}
+
+function SelectField({ label, options, value, onChange }) {
+  return (
+    <div className="mb-6">
+      {label && <div className="font-bold mb-2">{label}</div>}
+      <select
+        className="border px-3 py-2 rounded w-full"
+        value={value || ""}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        <option value="">Select...</option>
+        {options.map((opt, idx) => (
+          <option key={idx} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function MatrixField({ label, rows, columns, value = {}, onChange }) {
+  return (
+    <div className="mb-8 overflow-x-auto">
+      {label && <div className="font-bold mb-2">{label}</div>}
+      <table className="min-w-full text-sm border border-gray-300 rounded">
+        <thead>
+          <tr>
+            <th className="border px-2 py-1 w-2/5"></th>
+            {columns.map((col, ci) => (
+              <th className="border px-2 py-1 text-center" key={ci}>
+                {col.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, ri) => (
+            <tr key={ri}>
+              <td className="border px-2 py-1">{row.label}</td>
+              {columns.map((col, ci) => (
+                <td key={ci} className="border text-center">
+                  <input
+                    type="radio"
+                    name={row.name}
+                    value={col.value}
+                    checked={String(value[row.name]) === String(col.value)}
+                    onChange={() =>
+                      onChange({ ...value, [row.name]: col.value })
+                    }
+                  />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// --- Generic Survey Renderer ---
+
+// --- Field definitions ---
+const fields = [
+  // --- Personal Info ---
   {
-    value: "BARMM",
-    label: "BARMM (Bangsamoro Autonomous Region in Muslim Mindanao)",
+    type: "radio",
+    name: "clientType",
+    label: "Client type",
+    options: [
+      { value: "citizen", label: "Citizen" },
+      { value: "business", label: "Business" },
+      { value: "government", label: "Government (Employee or another agency)" },
+    ],
+  },
+  {
+    type: "radio",
+    name: "gender",
+    label: "Gender",
+    options: [
+      { value: "Male", label: "Male" },
+      { value: "Female", label: "Female" },
+    ],
+  },
+  {
+    type: "text",
+    name: "age",
+    label: "Age",
+    placeholder: "Enter age",
+  },
+  {
+    type: "select",
+    name: "region",
+    label: "Region of Residence",
+    options: [
+      { value: "NCR", label: "National Capital Region (NCR)" },
+      { value: "CAR", label: "Cordillera Administrative Region (CAR)" },
+      // ... add other regions as needed
+    ],
+  },
+  {
+    type: "text",
+    name: "service",
+    label: "Service Availed",
+    placeholder: "Enter service",
+  },
+
+  // --- CC Awareness ---
+  {
+    type: "radio",
+    name: "ccAwareness",
+    label:
+      "Which of the following best describes your awareness of a Citizen's Charter (CC)?",
+    options: [
+      { value: 1, label: "I know what a CC is and I saw this office’s CC." },
+      {
+        value: 2,
+        label: "I know what a CC is but I did NOT see this office’s CC.",
+      },
+      {
+        value: 3,
+        label: "I learned of the CC only when I saw this office’s CC.",
+      },
+      {
+        value: 4,
+        label:
+          "I do not know what a CC is and I did not see one in this office.",
+      },
+    ],
+  },
+  {
+    type: "radio",
+    name: "ccVisibility",
+    label: "If aware of CC, would you say the CC of this office was...?",
+    options: [
+      { value: 1, label: "Easy to see" },
+      { value: 2, label: "Somewhat easy to see" },
+      { value: 3, label: "Difficult to see" },
+      { value: 4, label: "Not visible at all" },
+      { value: 5, label: "Not Applicable" },
+    ],
+    conditional: { showIf: { ccAwareness: [1, 2, 3] } },
+  },
+  {
+    type: "radio",
+    name: "ccHelpfulness",
+    label: "If aware of CC, how much did the CC help you in your transaction?",
+    options: [
+      { value: 1, label: "Helped very much" },
+      { value: 2, label: "Somewhat helped" },
+      { value: 3, label: "Did not help" },
+      { value: 4, label: "Not Applicable" },
+    ],
+    conditional: { showIf: { ccAwareness: [1, 2, 3] } },
+  },
+
+  // --- SQD Matrix (Satisfaction and Transaction Ratings with scale) ---
+  {
+    type: "matrix",
+    name: "sqdRatings",
+    label:
+      "For SQD 0-8, please put a check mark (✓) on the column that best corresponds to your answer.",
+    rows: [
+      {
+        name: "SQD0",
+        label: "I am satisfied with the service that I availed.",
+      },
+      {
+        name: "SQD1",
+        label: "I spent a reasonable amount of time for my transaction.",
+      },
+      {
+        name: "SQD2",
+        label:
+          "The office followed the transaction's requirements and steps based on the information provided.",
+      },
+      {
+        name: "SQD3",
+        label:
+          "The steps (including payment) I needed to do for my transaction were easy and simple.",
+      },
+      {
+        name: "SQD4",
+        label:
+          "I easily found information about my transaction from the office or its website.",
+      },
+      {
+        name: "SQD5",
+        label:
+          "I paid a reasonable amount of fees for my transaction. (If service was free, mark the 'N/A' column)",
+      },
+      {
+        name: "SQD6",
+        label:
+          "I feel the office was fair to everyone or 'walang palakasan' during my transaction.",
+      },
+      {
+        name: "SQD7",
+        label:
+          "I was treated courteously by the staff, and (if asked for help) the staff was helpful.",
+      },
+      {
+        name: "SQD8",
+        label:
+          "I got what I needed from the government office, or (if denied) denial of request was sufficiently explained to me.",
+      },
+    ],
+    columns: [
+      { value: 1, label: "Strongly Disagree" },
+      { value: 2, label: "Disagree" },
+      { value: 3, label: "Neither Agree nor Disagree" },
+      { value: 4, label: "Agree" },
+      { value: 5, label: "Strongly Agree" },
+      { value: "NA", label: "Not Applicable" },
+    ],
+  },
+
+  // --- Suggestions ---
+  {
+    type: "textarea",
+    name: "suggestions",
+    label: "Suggestions on how we can further improve our services (optional):",
+    placeholder: "Enter suggestions",
+  },
+  {
+    type: "text",
+    name: "email",
+    label: "Email address (optional):",
+    placeholder: "Enter email",
   },
 ];
 
-export default function SurveyForm({
-  username = "Guest",
-  onNext,
-  onExit,
-  onSettings,
-  onLogin,
-  onSignUp,
-}) {
-  const [clientType, setClientType] = useState("");
-  const [clientOther, setClientOther] = useState("");
-  const [sex, setSex] = useState("");
-  const [age, setAge] = useState("");
-  const [region, setRegion] = useState("");
-  const [service, setService] = useState("");
+// --- Page Component ---
+export default function SurveyFormPage({ onNext }) {
+  const [answers, setAnswers] = useState({});
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (onNext) {
-      onNext({
-        clientType: clientType === "others" ? clientOther : clientType,
-        sex,
-        age,
-        region,
-        service,
-      });
-    }
+    alert(JSON.stringify(answers, null, 2));
+    // if (onNext) onNext(answers);
   };
 
   return (
-    <div className="min-h-screen bg-[#eaeaea] flex flex-col">
-      <div className="flex-grow flex items-center justify-center">
-        <form
-          onSubmit={handleSubmit}
-          className="
-            bg-white text-black 
-            w-full max-w-4xl min-h-[75vh]
-            rounded-2xl shadow-2xl
-            flex flex-col gap-8
-            px-12 py-14
-            mx-2
-            items-center
-            justify-center
-          "
+    <div className="min-h-screen bg-gray-100 py-12">
+      <form
+        onSubmit={handleSubmit}
+        className="max-w-3xl mx-auto p-8 shadow rounded-xl bg-white"
+      >
+        <h2 className="text-3xl text-blue-700 font-bold text-center mb-8">
+          Client Satisfaction Survey
+        </h2>
+        <SurveyRenderer
+          fields={fields}
+          answers={answers}
+          setAnswers={setAnswers}
+        />
+        <button
+          type="submit"
+          className="bg-blue-700 text-white rounded px-6 py-3 mt-6 mx-auto block"
         >
-          <h2 className="text-3xl text-blue-600 font-bold text-center mb-3">
-            Survey Form - Personal Information
-          </h2>
-
-          <ClientTypeCard
-            clientType={clientType}
-            setClientType={setClientType}
-            clientOther={clientOther}
-            setClientOther={setClientOther}
-          />
-          <SexCard sex={sex} setSex={setSex} />
-          <AgeAndRegionRow
-            age={age}
-            setAge={setAge}
-            region={region}
-            setRegion={setRegion}
-            regions={regions}
-          />
-          <ServiceAvailedField service={service} setService={setService} />
-
-          <button
-            type="submit"
-            className="text-white bg-blue-700 hover:bg-blue-800 
-              focus:ring-4 focus:outline-black focus:ring-blue-300 
-              font-medium rounded-lg text-sm px-5 py-2.5 text-center
-              mx-auto block sm:w-40 md:w-48 w-full"
-          >
-            Submit
-          </button>
-        </form>
-      </div>
+          Submit
+        </button>
+      </form>
     </div>
   );
 }
