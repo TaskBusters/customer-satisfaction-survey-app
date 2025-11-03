@@ -1,20 +1,34 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Button } from "flowbite-react";
 import { useNavigate } from "react-router-dom";
 import { HiCog, HiOutlineUserCircle, HiChevronUp } from "react-icons/hi";
 
 const Navbar = ({
   username = "Guest",
-  onClickHome, // These can be custom handlers if you want, or omit for just routing
+  onClickHome,
   onClickSettings,
   onClickLogin,
   onClickRegister,
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const dropdownTimeout = useRef();
   const navigate = useNavigate();
 
-  // Open on mouse enter, close with delay on mouse leave
+  // Animate on mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Shadow on scroll
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Dropdown handlers
   const handleMouseEnter = () => {
     clearTimeout(dropdownTimeout.current);
     setDropdownOpen(true);
@@ -24,7 +38,16 @@ const Navbar = ({
   };
 
   return (
-    <nav className="flex items-center justify-between px-8 py-4 bg-blue-700">
+    <nav
+      className={`
+        sticky top-0 z-40
+        flex items-center justify-between px-8 py-4 bg-blue-700
+        transition-all duration-500
+        ${mounted ? "translate-y-0 opacity-100" : "-translate-y-4 opacity-0"}
+        ${scrolled ? "shadow-lg" : "shadow"}
+      `}
+      style={{ willChange: "transform, opacity" }}
+    >
       <div className="flex-1 flex items-center">
         <button
           type="button"

@@ -34,6 +34,16 @@ export default function AboutCard({ open, onClose }) {
             always have the option not to answer this form.
           </p>
         </>
+        {/* OK Button centered at the bottom, styled with Flowbite Tailwind CSS */}
+        <div className="flex justify-center mt-6">
+          <button
+            type="button"
+            className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-xl px-8 py-2 text-center"
+            onClick={onClose}
+          >
+            OK
+          </button>
+        </div>
       </div>
     </div>
   );
