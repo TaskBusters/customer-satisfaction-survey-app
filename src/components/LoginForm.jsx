@@ -136,9 +136,9 @@ export default function LoginForm() {
           </Link>
         </p>
         <p className="text-sm text-center mt-2">
-          <a href="#" className="text-blue-700 hover:underline">
+          <Link to="/" className="text-blue-700 hover:underline">
             Continue as Guest
-          </a>
+          </Link>
         </p>
       </form>
     </div>

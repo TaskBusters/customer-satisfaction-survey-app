@@ -77,7 +77,7 @@ export default function ForgotPassForm() {
         </Button>
         <div className="flex items-center justify-between mb-5">
           <div className="flex justify-center mt-8">
-            <Link to="/" className="text-sm text-blue-600 hover:underline">
+            <Link to="/login" className="text-sm text-blue-600 hover:underline">
               Back to Login
             </Link>
           </div>

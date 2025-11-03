@@ -253,10 +253,14 @@ export default function RegisterForm() {
                 ))}
           </select>
         </div>
-        <Link to="/" className="text-blue-500 hover:underline">
-          Back to Login
-        </Link>
-
+        <div className="flex items-center justify-between mb-5">
+          <Link to="/login" className="text-blue-500 hover:underline">
+            Back to Login
+          </Link>
+          <Link to="/" className="text-blue-500 hover:underline">
+            Continue as Guest
+          </Link>
+        </div>
         {/* Register button */}
         <button
           type="submit"
