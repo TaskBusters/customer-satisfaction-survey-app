@@ -1,14 +1,9 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
 
-export default function PrivacyPolicyModal({ open, onAccept }) {
+export default function PrivacyPolicyModal({ open, onAccept, onDecline }) {
   const navigate = useNavigate();
 
   if (!open) return null;
-
-  const handleDecline = () => {
-    navigate("/"); // redirects to home
-  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
@@ -34,7 +29,7 @@ export default function PrivacyPolicyModal({ open, onAccept }) {
           </button>
           <button
             className="border-2 rounded-lg px-8 py-2 text-xl font-semibold hover:bg-gray-200"
-            onClick={handleDecline}
+            onClick={onDecline}
           >
             Decline
           </button>

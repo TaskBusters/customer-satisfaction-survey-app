@@ -1,8 +1,50 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { Button, TextInput, Label, Checkbox } from "flowbite-react";
+import { Link, useNavigate } from "react-router-dom";
 import { HiEye, HiEyeOff } from "react-icons/hi";
 import Logo from "./Logo";
+import { useAuth } from "../context/AuthContext";
+import { Toast } from "flowbite-react";
+
+function checkPasswordStrength(password) {
+  if (password.length < 8) return "too short";
+  if (!/[a-z]/.test(password)) return "no lowercase";
+  if (!/[A-Z]/.test(password)) return "no uppercase";
+  if (!/[0-9]/.test(password)) return "no number";
+  if (!/[^A-Za-z0-9]/.test(password)) return "no symbol";
+  return "strong";
+}
+function getStrengthLabel(strength) {
+  switch (strength) {
+    case "too short":
+      return "Password must be at least 8 characters";
+    case "no lowercase":
+      return "Add a lowercase letter";
+    case "no uppercase":
+      return "Add an uppercase letter";
+    case "no number":
+      return "Add a number";
+    case "no symbol":
+      return "Add a symbol";
+    case "strong":
+      return "Strong password";
+    default:
+      return "";
+  }
+}
+function getStrengthColor(strength) {
+  switch (strength) {
+    case "too short":
+    case "no lowercase":
+    case "no uppercase":
+    case "no number":
+    case "no symbol":
+      return "text-red-600";
+    case "strong":
+      return "text-green-600";
+    default:
+      return "";
+  }
+}
 
 export default function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -13,6 +55,22 @@ export default function RegisterForm() {
   const [district, setDistrict] = useState("");
   const [fullName, setFullName] = useState("");
   const [barangay, setBarangay] = useState("");
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastColor, setToastColor] = useState("bg-green-500/90 text-white");
+
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const showToastWithDelay = (message, color, callback) => {
+    setToastMessage(message);
+    setToastColor(color);
+    setShowToast(true);
+    setTimeout(() => {
+      setShowToast(false);
+      if (callback) callback();
+    }, 2000);
+  };
 
   const districts = [
     {
@@ -61,42 +119,94 @@ export default function RegisterForm() {
     },
   ];
 
-  const handleSubmit = (e) => {
-    e.preventDefault(); // THIS prevents the page refresh!
-    // Basic validation
-    if (!email || !password) {
-      alert("Please enter both email and password");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (
+      !email ||
+      !password ||
+      !confirmPassword ||
+      !district ||
+      !barangay ||
+      !fullName
+    ) {
+      showToastWithDelay(
+        "Please fill out all fields.",
+        "bg-red-600/90 text-white"
+      );
       return;
     }
-    // Further logic here (API call, etc.)
-    console.log("Logging in with:", email, password);
+    const passStrength = checkPasswordStrength(password);
+    if (passStrength !== "strong") {
+      showToastWithDelay(
+        "Password is not strong: " + getStrengthLabel(passStrength),
+        "bg-red-600/90 text-white"
+      );
+      return;
+    }
+    if (password !== confirmPassword) {
+      showToastWithDelay("Passwords do not match.", "bg-red-600/90 text-white");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password,
+          fullName,
+          district,
+          barangay,
+        }),
+      });
+      if (res.ok) {
+        login({ email, fullName, district, barangay });
+        showToastWithDelay(
+          "Registration successful!",
+          "bg-green-500/90 text-white",
+          () => navigate("/surveyform")
+        );
+      } else {
+        const data = await res.json();
+        showToastWithDelay(
+          data?.error || "Registration failed",
+          "bg-red-600/90 text-white"
+        );
+      }
+    } catch (err) {
+      showToastWithDelay("Registration Failed", "bg-red-600/90 text-white");
+    }
   };
+
+  const passwordStrength = checkPasswordStrength(password);
 
   return (
     <div
-      className="
-    bg-[#F4F4F4] rounded-lg shadow-2x1
-    w-full max-w-xl   /* Limits max width for big screens, but fills mobile */
-    mx-auto           /* Always centered horizontally */
-    p-8 sm:p-10       /* Responsive padding for breathing room */
-    text-base
-    border-3 border-gray-200
-    min-h-[400px] 
-    "
+      className="bg-[#F4F4F4] rounded-lg shadow-2x1
+        w-full max-w-xl
+        mx-auto
+        p-8 sm:p-10
+        text-base
+        border-3 border-gray-200
+        min-h-[400px]"
     >
+      {/* Toast notification */}
+      {showToast && (
+        <div className="fixed top-4 left-0 right-0 z-50 flex justify-center">
+          <Toast className={`${toastColor} shadow-xl`}>
+            <span className="font-semibold">{toastMessage}</span>
+          </Toast>
+        </div>
+      )}
+
       <Logo />
       <h2 className="text-xl text-center font-bold text-gray-800">
         Register a New Account
       </h2>
 
       <form
-        className="w-full 
-                    max-w-md 
-                    sm:max-w-lg 
-                    md:max-w-xl 
-                    lg:max-w-2xl 
-                    mx-auto
-                  "
+        className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto"
         onSubmit={handleSubmit}
       >
         {/* Full Name */}
@@ -114,12 +224,9 @@ export default function RegisterForm() {
             onChange={(e) => setFullName(e.target.value)}
             placeholder="Enter your full name"
             required
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-                        focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 
-                        placeholder-gray-400"
+            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 placeholder-gray-400"
           />
         </div>
-
         {/* Email */}
         <div className="mb-5">
           <label
@@ -135,14 +242,11 @@ export default function RegisterForm() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="name@example.com"
             required
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-                        focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 
-                        placeholder-gray-400"
+            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 placeholder-gray-400"
           />
         </div>
-
         {/* Password */}
-        <div className="mb-5 relative">
+        <div className="mb-1 relative">
           <label
             htmlFor="password"
             className="block mb-2 text-sm font-medium text-gray-900"
@@ -156,9 +260,7 @@ export default function RegisterForm() {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             required
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-                        focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 pr-10]
-                        placeholder-gray-400"
+            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 pr-10 placeholder-gray-400"
           />
           {/* Eye icon toggle */}
           <button
@@ -169,34 +271,70 @@ export default function RegisterForm() {
             {showPassword ? <HiEye size={20} /> : <HiEyeOff size={20} />}
           </button>
         </div>
-
+        {/* Password strength checker */}
+        <div className="mb-4">
+          <span
+            className={`block text-xs mt-1 ${getStrengthColor(
+              passwordStrength
+            )}`}
+          >
+            {password ? getStrengthLabel(passwordStrength) : ""}
+          </span>
+        </div>
         {/* Confirm Password */}
-        <div className="mb-5 relative">
+        <div className="mb-5">
           <label
             htmlFor="confirmPassword"
             className="block mb-2 text-sm font-medium text-gray-900"
           >
             Confirm Password
           </label>
-          <input
-            type={showConfirmPassword ? "text" : "password"}
-            id="confirmPassword"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 pr-10 placeholder-gray-400"
-          />
-          {/* Eye icon toggle; add logic later */}
-          <button
-            type="button"
-            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="absolute right-0 bottom-3 pr-3 flex items-center text-gray-500"
-          >
-            {showConfirmPassword ? <HiEye size={20} /> : <HiEyeOff size={20} />}
-          </button>
+          <div className="relative">
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              id="confirmPassword"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 pr-10 placeholder-gray-400"
+              autoComplete="new-password"
+            />
+            {/* Eye icon toggle */}
+            <button
+              type="button"
+              aria-label={
+                showConfirmPassword ? "Hide password" : "Show password"
+              }
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              tabIndex={0}
+              className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 focus:outline-none"
+              style={{ top: 0, bottom: 0, height: "100%" }}
+            >
+              {showConfirmPassword ? (
+                <HiEye size={20} />
+              ) : (
+                <HiEyeOff size={20} />
+              )}
+            </button>
+          </div>
+          {/* Password match checker */}
+          <div className="mt-2 h-4">
+            {confirmPassword && (
+              <span
+                className={`text-xs ${
+                  password === confirmPassword
+                    ? "text-green-600"
+                    : "text-red-600"
+                }`}
+              >
+                {password === confirmPassword
+                  ? "Passwords match"
+                  : "Passwords do not match"}
+              </span>
+            )}
+          </div>
         </div>
-
         {/* District dropdown */}
         <div className="mb-5">
           <label
@@ -223,7 +361,6 @@ export default function RegisterForm() {
             ))}
           </select>
         </div>
-
         {/* Barangay dropdown */}
         <div className="mb-5">
           <label
@@ -264,10 +401,7 @@ export default function RegisterForm() {
         {/* Register button */}
         <button
           type="submit"
-          className="text-white bg-blue-700 hover:bg-blue-800 
-             focus:ring-4 focus:outline-black focus:ring-blue-300 
-             font-medium rounded-lg text-sm px-5 py-2.5 text-center
-             mx-auto block w-32 sm:w-40 md:w-48"
+          className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-black focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center mx-auto block w-32 sm:w-40 md:w-48"
         >
           Register
         </button>

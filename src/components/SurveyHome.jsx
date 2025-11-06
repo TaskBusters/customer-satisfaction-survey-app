@@ -1,10 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "flowbite-react";
 import Logo from "./Logo";
-import Navbar from "./Navbar";
 import AboutCard from "./AboutCard";
-import SurveyForm from "./SurveyForm";
+import PrivacyPolicyModal from "./PrivacyPolicyModal";
 
 const SurveyHome = ({
   username = "Guest",
@@ -17,7 +15,18 @@ const SurveyHome = ({
 }) => {
   // Modal state
   const [showAbout, setShowAbout] = useState(false);
-  const navigate = useNavigate(); // <-- Add this line
+  const [showPolicy, setShowPolicy] = useState(false);
+  const navigate = useNavigate();
+
+  // When user accepts policy, redirect to survey
+  const handleAcceptPolicy = () => {
+    setShowPolicy(false);
+    navigate("/surveyform");
+  };
+
+  const handleDeclinePolicy = () => {
+    setShowPolicy(false);
+  };
 
   return (
     <div className="min-h-screen w-screen flex flex-col bg-[#eaeaea]">
@@ -36,7 +45,7 @@ const SurveyHome = ({
               focus:ring-4 focus:outline-black focus:ring-blue-300 
               font-medium rounded-lg text-sm px-5 py-2.5 text-center
               mx-auto block w-full sm:w-40 md:w-48"
-            onClick={() => navigate("/surveyform")}
+            onClick={() => setShowPolicy(true)}
           >
             Take the Survey
           </button>
@@ -53,6 +62,11 @@ const SurveyHome = ({
         </div>
       </div>
       <AboutCard open={showAbout} onClose={() => setShowAbout(false)} />
+      <PrivacyPolicyModal
+        open={showPolicy}
+        onAccept={handleAcceptPolicy}
+        onDecline={handleDeclinePolicy}
+      />
     </div>
   );
 };
