@@ -2,11 +2,11 @@ import React, { useState, useRef, useEffect } from "react";
 import { Button } from "flowbite-react";
 import { useNavigate } from "react-router-dom";
 import { HiCog, HiOutlineUserCircle, HiChevronUp } from "react-icons/hi";
+import UserSettingsModal from "../components/UserSettingsModal";
 
 const Navbar = ({
   username = "Guest",
   onClickHome,
-  onClickSettings,
   onClickLogin,
   onClickRegister,
 }) => {
@@ -15,6 +15,7 @@ const Navbar = ({
   const [scrolled, setScrolled] = useState(false);
   const dropdownTimeout = useRef();
   const navigate = useNavigate();
+  const [showSettings, setShowSettings] = useState(false);
 
   // Animate on mount
   useEffect(() => {
@@ -100,7 +101,11 @@ const Navbar = ({
         <HiCog
           className="text-white text-2xl cursor-pointer"
           title="Settings"
-          onClick={onClickSettings}
+          onClick={() => setShowSettings(true)}
+        />
+        <UserSettingsModal
+          open={showSettings}
+          onClose={() => setShowSettings(false)}
         />
       </div>
     </nav>

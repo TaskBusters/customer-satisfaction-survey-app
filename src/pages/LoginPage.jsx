@@ -1,5 +1,3 @@
-import React from "react";
-import { Link } from "react-router-dom"; // for navigation between pages
 import BackgroundContainer from "../components/BackgroundContainer";
 import LoginForm from "../components/LoginForm";
 import "flowbite"; // Import Flowbite JS

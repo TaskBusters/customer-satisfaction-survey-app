@@ -5,17 +5,23 @@ import TextField from "./TextField";
 import SelectField from "./SelectField";
 import TextAreaField from "./TextAreaField";
 import MatrixField from "./MatrixField";
+import { isFieldRequired } from "../survey/surveyUtils";
 
 export default function SurveyRenderer({ fields, answers, setAnswers }) {
   return (
     <>
       {fields.map((field) => {
-        // Handle conditional display logic (show/hide fields)
+        // Hide fields that should NOT be shown
         if (field.conditional && field.conditional.showIf) {
           const showField = Object.entries(field.conditional.showIf).every(
             ([dep, vals]) => vals.includes(answers[dep])
           );
           if (!showField) return null;
+        }
+
+        // Hide conditional required fields if not required
+        if (field.conditionalRequired && !isFieldRequired(field, answers)) {
+          return null;
         }
 
         switch (field.type) {
@@ -29,6 +35,8 @@ export default function SurveyRenderer({ fields, answers, setAnswers }) {
                 onChange={(val) =>
                   setAnswers((a) => ({ ...a, [field.name]: val }))
                 }
+                required={isFieldRequired(field, answers)}
+                name={field.name}
               />
             );
           case "text":
@@ -41,6 +49,8 @@ export default function SurveyRenderer({ fields, answers, setAnswers }) {
                 onChange={(val) =>
                   setAnswers((a) => ({ ...a, [field.name]: val }))
                 }
+                required={isFieldRequired(field, answers)}
+                name={field.name}
               />
             );
           case "select":
@@ -53,6 +63,7 @@ export default function SurveyRenderer({ fields, answers, setAnswers }) {
                 onChange={(val) =>
                   setAnswers((a) => ({ ...a, [field.name]: val }))
                 }
+                required={isFieldRequired(field, answers)}
               />
             );
           case "textarea":
@@ -65,6 +76,7 @@ export default function SurveyRenderer({ fields, answers, setAnswers }) {
                 onChange={(val) =>
                   setAnswers((a) => ({ ...a, [field.name]: val }))
                 }
+                required={isFieldRequired(field, answers)}
               />
             );
           case "matrix":
@@ -79,6 +91,7 @@ export default function SurveyRenderer({ fields, answers, setAnswers }) {
                 onChange={(matrixVal) =>
                   setAnswers((a) => ({ ...a, [field.name]: matrixVal }))
                 }
+                required={isFieldRequired(field, answers)}
               />
             );
           default:
