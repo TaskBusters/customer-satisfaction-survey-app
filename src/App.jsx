@@ -1,14 +1,21 @@
 import "./App.css";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import SurveyPage from "./pages/SurveyPage";
-import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
-import ForgotPassPage from "./pages/ForgotPassPage";
-import SurveyFormPage from "./pages/SurveyFormPage";
-import AfterSurveyPage from "./pages/AfterSurveyPage";
-import SubmissionsPage from "./pages/SubmissionsPage";
+import SurveyPage from "./pages/survey/SurveyPage";
+import LoginPage from "./pages/authentication/LoginPage";
+import RegisterPage from "./pages/authentication/RegisterPage";
+import ForgotPassPage from "./pages/authentication/ForgotPassPage";
+import SurveyFormPage from "./pages/survey/SurveyFormPage";
+import AfterSurveyPage from "./pages/survey/AfterSurveyPage";
+import SubmissionsPage from "./pages/survey/SubmissionsPage";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedAdminRoute from "./pages/ProtectedAdminRoute";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminSurveysPage from "./pages/admin/AdminSurveysPage";
+import AdminSurveyResponsesPage from "./pages/admin/AdminSurveyResponsesPage";
+import AdminReportsPage from "./pages/admin/AdminReportsPage";
+import AdminProfileSecurityPage from "./pages/admin/AdminProfileSecurityPage";
+import AdminHelpFeedbackPage from "./pages/admin/AdminHelpFeedbackPage";
+import AdminSettingsPage from "./pages/admin/AdminSettingsPage";
 
 function App() {
   return (
@@ -23,6 +30,16 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPassPage />} />
           <Route path="/admin" element={<ProtectedAdminRoute />} />
+          <Route path="/admin/overview" element={<AdminDashboard />} />
+          <Route path="/admin/surveys" element={<AdminSurveysPage />} />
+          <Route
+            path="/admin/responses"
+            element={<AdminSurveyResponsesPage />}
+          />
+          <Route path="/admin/reports" element={<AdminReportsPage />} />
+          <Route path="/admin/profile" element={<AdminProfileSecurityPage />} />
+          <Route path="/admin/help" element={<AdminHelpFeedbackPage />} />
+          <Route path="/admin/settings" element={<AdminSettingsPage />} />
         </Routes>
       </Router>
     </AuthProvider>

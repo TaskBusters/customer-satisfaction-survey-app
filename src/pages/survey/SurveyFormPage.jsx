@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/survey/UserNavbar.jsx";
-import SurveyRenderer from "../components/survey/SurveyRenderer.jsx";
-import Modal from "../components/survey/UserModal.jsx";
-import ClearSurveyModal from "../components/survey/ClearSurveyModal.jsx";
-import ArrowButtonGroup from "../components/survey/ArrowButtonGroup.jsx";
-import fields from "../survey/surveyFields.js";
+import Navbar from "../../components/survey/UserNavbar.jsx";
+import SurveyRenderer from "../../components/survey/SurveyRenderer.jsx";
+import Modal from "../../components/survey/UserModal.jsx";
+import ClearSurveyModal from "../../components/survey/ClearSurveyModal.jsx";
+import ArrowButtonGroup from "../../components/survey/ArrowButtonGroup.jsx";
+import fields from "../../survey/surveyFields.js";
 import {
   getMissingFields,
   isAgeValid,
   hasAnyAnswer,
-} from "../survey/surveyUtils";
+} from "../../survey/surveyUtils.js";
 
 // Simple toast notification component
 function ToastNotif({ show, color, children }) {
