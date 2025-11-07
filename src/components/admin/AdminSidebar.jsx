@@ -1,6 +1,8 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import valenzuelaLogo from "../../assets/valenzuela-logo.png";
+import { useAuth } from "../../context/AuthContext";
+
 import {
   MdDashboard,
   MdAssignment,
@@ -53,11 +55,13 @@ const sidebarLinks = [
 ];
 
 function AdminSidebar() {
+  const { logout } = useAuth();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+
   return (
     <aside className="hidden md:flex flex-col w-72 bg-blue-700 min-h-screen text-white">
-      {" "}
-      {/* blue sidebar */}
+      {/* Logo and header */}
       <div className="flex items-center px-6 py-5 border-b border-blue-800 mb-2">
         <img
           src={FAKE_ADMIN.avatarUrl}
@@ -71,6 +75,7 @@ function AdminSidebar() {
           <div className="text-xs text-blue-100">{FAKE_ADMIN.email}</div>
         </div>
       </div>
+      {/* Sidebar links */}
       <nav className="flex-1">
         <ul>
           {sidebarLinks.map((item) => (
@@ -90,14 +95,32 @@ function AdminSidebar() {
           ))}
         </ul>
       </nav>
+      {/* Logout button */}
       <div className="mt-auto px-6 pb-6">
-        <Link
-          to="/"
-          className="flex items-center px-3 py-2 rounded bg-blue-600 hover:bg-blue-800 border font-semibold text-white transition"
+        <button
+          type="button"
+          onClick={async () => {
+            await logout(); // if logout is async, otherwise remove 'await'
+            navigate("/login");
+          }}
+          className="
+            flex items-center justify-center
+            w-full
+            px-4 py-2
+            rounded
+            bg-white text-blue-700
+            font-semibold
+            border border-blue-700
+            shadow
+            transition
+            hover:bg-blue-50
+            focus:outline-none
+            focus:ring-2 focus:ring-blue-300
+          "
         >
-          <MdArrowBack size={20} className="mr-3" />
-          Back to Main Menu
-        </Link>
+          <MdArrowBack size={22} className="mr-2 text-blue-700" />
+          <span className="text-blue-700 text-center w-full">Logout</span>
+        </button>
       </div>
     </aside>
   );

@@ -14,6 +14,8 @@ const FAKE_USERS = [
     role: "Admin",
     status: "Active",
     lastLogin: "2025-11-05 14:29",
+    district: "District 1",
+    barangay: "Barangay A",
   },
   {
     name: "User 2",
@@ -22,6 +24,8 @@ const FAKE_USERS = [
     role: "Editor",
     status: "Active",
     lastLogin: "2025-11-07 09:12",
+    district: "District 2",
+    barangay: "Barangay B",
   },
   {
     name: "User 3",
@@ -30,6 +34,8 @@ const FAKE_USERS = [
     role: "Viewer",
     status: "Suspended",
     lastLogin: "2025-11-02 18:00",
+    district: "District 3",
+    barangay: "Barangay C",
   },
   {
     name: "User 4",
@@ -38,6 +44,8 @@ const FAKE_USERS = [
     role: "Admin",
     status: "Active",
     lastLogin: "2025-11-01 09:20",
+    district: "District 1",
+    barangay: "Barangay D",
   },
   {
     name: "User 5",
@@ -46,6 +54,8 @@ const FAKE_USERS = [
     role: "Editor",
     status: "Suspended",
     lastLogin: "2025-10-30 12:47",
+    district: "District 2",
+    barangay: "Barangay E",
   },
   {
     name: "User 6",
@@ -54,6 +64,8 @@ const FAKE_USERS = [
     role: "Viewer",
     status: "Active",
     lastLogin: "2025-10-25 08:15",
+    district: "District 3",
+    barangay: "Barangay F",
   },
   {
     name: "User 7",
@@ -62,6 +74,8 @@ const FAKE_USERS = [
     role: "Admin",
     status: "Suspended",
     lastLogin: "2025-10-22 18:49",
+    district: "District 1",
+    barangay: "Barangay G",
   },
   {
     name: "User 8",
@@ -70,6 +84,8 @@ const FAKE_USERS = [
     role: "Editor",
     status: "Active",
     lastLogin: "2025-10-19 20:20",
+    district: "District 2",
+    barangay: "Barangay H",
   },
   {
     name: "User 9",
@@ -78,6 +94,8 @@ const FAKE_USERS = [
     role: "Viewer",
     status: "Active",
     lastLogin: "2025-10-14 16:12",
+    district: "District 3",
+    barangay: "Barangay I",
   },
   {
     name: "User 10",
@@ -86,6 +104,8 @@ const FAKE_USERS = [
     role: "Admin",
     status: "Active",
     lastLogin: "2025-10-12 11:17",
+    district: "District 1",
+    barangay: "Barangay J",
   },
 ];
 
@@ -227,14 +247,13 @@ export default function AdminProfileSecurityPage() {
           onDelete={handleDelete}
           mode="edit"
         />
-        {/* Add modal */}
         <UserDetailsModal
           open={addOpen}
           user={selectedUser}
           onClose={() => setAddOpen(false)}
           onSave={handleAddUserSave}
           isEditing={true}
-          setIsEditing={() => {}}
+          setIsEditing={() => {}} // for add, can be no-op
           mode="add"
         />
       </main>

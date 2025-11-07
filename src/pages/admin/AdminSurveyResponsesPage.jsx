@@ -11,14 +11,42 @@ const FAKE_RESPONSES = [
     office: "Maysan Barangay Hall",
     date: "11/01/25",
     clientType: "Resident",
-    respondents: 12,
+    respondents: 2,
+    respondentsDetails: [
+      {
+        fullName: "Juan Dela Cruz",
+        email: "juan.delacruz@example.com",
+        district: "District 1",
+        barangay: "Barangay Greenfields",
+      },
+      {
+        fullName: "Maria Santos",
+        email: "maria.santos@example.com",
+        district: "District 2",
+        barangay: "Barangay Riverside",
+      },
+    ],
   },
   {
     title: "Community Feedback Survey",
     office: "Maysan Barangay Hall",
     date: "11/01/25",
     clientType: "Business",
-    respondents: 12,
+    respondents: 2,
+    respondentsDetails: [
+      {
+        fullName: "Carlos Reyes",
+        email: "carlos.reyes@example.com",
+        district: "District 1",
+        barangay: "Barangay Greenfields",
+      },
+      {
+        fullName: "Ana Bautista",
+        email: "ana.bautista@example.com",
+        district: "District 2",
+        barangay: "Barangay Riverside",
+      },
+    ],
   },
 ];
 

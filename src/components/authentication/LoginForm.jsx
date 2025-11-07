@@ -81,6 +81,24 @@ export default function LoginForm() {
     // Magic admin user
     let user = { email };
 
+    if (email === "user@example.com") {
+      if (password === "123") {
+        user = {
+          email,
+          isAdmin: false,
+          role: "user",
+          name: "Jane Doe",
+          avatarUrl: "https://i.pravatar.cc/100?img=15",
+        };
+      } else {
+        showToastWithDelay(
+          "Incorrect password for user!",
+          "bg-red-600/90 text-white"
+        );
+        return;
+      }
+    }
+
     if (email === "admin@example.com") {
       if (password === "Admin123!") {
         user.isAdmin = true;
@@ -103,7 +121,7 @@ export default function LoginForm() {
         if (user.isAdmin || user.role === "admin") {
           navigate("/admin");
         } else {
-          navigate("/surveyform");
+          navigate("/");
         }
       }
     );
