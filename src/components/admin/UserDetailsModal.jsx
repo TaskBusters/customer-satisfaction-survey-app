@@ -19,11 +19,15 @@ export default function UserDetailsModal({
   if (!open || (!user && mode !== "add")) return null;
 
   const isAdd = mode === "add";
-  const disabled = !isEditing && !isAdd;
+  const shouldDisableFields = !isEditing && !isAdd;
+
+  // Input classes: consistent color, outline, bg
+  const inputClass =
+    "border border-gray-400 bg-white rounded px-3 py-2 w-full focus:outline-none focus:border-blue-500 transition";
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setEditForm({ ...editForm, [name]: value });
+    setEditForm((curr) => ({ ...curr, [name]: value }));
   };
 
   const handleSave = (e) => {
@@ -60,10 +64,10 @@ export default function UserDetailsModal({
             <label className="block text-xs font-semibold mb-1">Name</label>
             <input
               name="name"
-              className="border rounded px-3 py-2 w-full"
+              className={inputClass}
               value={editForm?.name || ""}
               onChange={handleChange}
-              disabled={disabled && !isAdd}
+              disabled={shouldDisableFields}
               required
             />
           </div>
@@ -72,10 +76,10 @@ export default function UserDetailsModal({
             <input
               type="email"
               name="email"
-              className="border rounded px-3 py-2 w-full"
+              className={inputClass}
               value={editForm?.email || ""}
               onChange={handleChange}
-              disabled={disabled && !isAdd}
+              disabled={shouldDisableFields}
               required
             />
           </div>
@@ -83,10 +87,32 @@ export default function UserDetailsModal({
             <label className="block text-xs font-semibold mb-1">Role</label>
             <input
               name="role"
-              className="border rounded px-3 py-2 w-full"
+              className={inputClass}
               value={editForm?.role || ""}
               onChange={handleChange}
-              disabled={disabled && !isAdd}
+              disabled={shouldDisableFields}
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold mb-1">District</label>
+            <input
+              name="district"
+              className={inputClass}
+              value={editForm?.district || ""}
+              onChange={handleChange}
+              disabled={shouldDisableFields}
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold mb-1">Barangay</label>
+            <input
+              name="barangay"
+              className={inputClass}
+              value={editForm?.barangay || ""}
+              onChange={handleChange}
+              disabled={shouldDisableFields}
               required
             />
           </div>
@@ -94,10 +120,10 @@ export default function UserDetailsModal({
             <label className="block text-xs font-semibold mb-1">Status</label>
             <select
               name="status"
-              className="border rounded px-3 py-2 w-full"
+              className="border border-gray-400 bg-white rounded px-3 py-2 w-full focus:outline-none focus:border-blue-500 transition"
               value={editForm?.status || "Active"}
               onChange={handleChange}
-              disabled={disabled && !isAdd}
+              disabled={shouldDisableFields}
             >
               <option value="Active">Active</option>
               <option value="Suspended">Suspended</option>
@@ -109,10 +135,10 @@ export default function UserDetailsModal({
             </label>
             <input
               name="lastLogin"
-              className="border rounded px-3 py-2 w-full"
+              className={inputClass}
               value={editForm?.lastLogin || ""}
               onChange={handleChange}
-              disabled={disabled && !isAdd}
+              disabled={shouldDisableFields}
             />
           </div>
           <div className="flex gap-3 mt-6">
