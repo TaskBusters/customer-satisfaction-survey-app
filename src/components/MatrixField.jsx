@@ -1,13 +1,7 @@
 import React, { useState } from "react";
 import { isFieldRequired } from "../survey/surveyUtils";
-import {
-  FaAngry,
-  FaFrown,
-  FaMeh,
-  FaSmile,
-  FaLaugh,
-  FaMinusCircle,
-} from "react-icons/fa";
+
+// No need to import icons here if passed in columns prop; see note below.
 
 export default function MatrixField({
   label,
@@ -40,13 +34,7 @@ export default function MatrixField({
       {label && (
         <div className="font-bold mb-4 text-lg text-gray-800">{label}</div>
       )}
-      <span
-        className="
-      text-xs sm:text-sm md:text-base
-      text-center mt-2 font-medium
-      max-w-[6.5rem] break-words leading-tight
-      "
-      ></span>
+
       {rows.map((row, rowIdx) => (
         <div
           key={rowIdx}
@@ -62,7 +50,13 @@ export default function MatrixField({
                     className={`mb-1 ${col.iconColor || ""}`}
                   />
                 )}
-                <span className="text-xs sm:text-sm md:text-base text-center mt-2 font-medium max-w-[6rem] break-words">
+                <span
+                  className="
+                  text-xs sm:text-sm md:text-base
+                  text-center mt-2 font-medium
+                  max-w-[6.5rem] break-words leading-tight
+                "
+                >
                   {col.label}
                 </span>
                 <input
