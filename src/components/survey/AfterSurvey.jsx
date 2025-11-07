@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Logo from "./Logo";
+import Logo from "../authentication/Logo";
 import HelpFaqModal from "./HelpFaqModal";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 export default function AfterSurvey() {
   const navigate = useNavigate();

@@ -1,5 +1,5 @@
-import BackgroundContainer from "../components/BackgroundContainer";
-import LoginForm from "../components/LoginForm";
+import BackgroundContainer from "../components/authentication/BackgroundContainer";
+import LoginForm from "../components/authentication/LoginForm";
 import "flowbite"; // Import Flowbite JS
 
 export default function LoginPage() {

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
-import SurveyRenderer from "../components/SurveyRenderer";
-import Modal from "../components/Modal";
-import ClearSurveyModal from "../components/ClearSurveyModal.jsx";
-import ArrowButtonGroup from "../components/ArrowButtonGroup";
+import Navbar from "../components/survey/UserNavbar.jsx";
+import SurveyRenderer from "../components/survey/SurveyRenderer.jsx";
+import Modal from "../components/survey/UserModal.jsx";
+import ClearSurveyModal from "../components/survey/ClearSurveyModal.jsx";
+import ArrowButtonGroup from "../components/survey/ArrowButtonGroup.jsx";
 import fields from "../survey/surveyFields.js";
 import {
   getMissingFields,

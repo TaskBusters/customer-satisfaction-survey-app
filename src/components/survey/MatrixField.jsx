@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { isFieldRequired } from "../survey/surveyUtils";
+import { isFieldRequired } from "../../survey/surveyUtils";
 
 // No need to import icons here if passed in columns prop; see note below.
 

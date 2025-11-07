@@ -1,5 +1,5 @@
-import SurveyHome from "../components/SurveyHome";
-import Navbar from "../components/Navbar";
+import SurveyHome from "../components/survey/SurveyHome";
+import Navbar from "../components/survey/UserNavbar";
 
 export default function SurveyPage() {
   return (

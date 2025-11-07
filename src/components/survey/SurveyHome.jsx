@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Logo from "./Logo";
+import Logo from "../authentication/Logo";
 import AboutCard from "./AboutCard";
 import PrivacyPolicyModal from "./PrivacyPolicyModal";
 

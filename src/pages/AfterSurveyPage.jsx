@@ -1,5 +1,5 @@
-import AfterSurvey from "../components/AfterSurvey.jsx";
-import Navbar from "../components/Navbar.jsx";
+import AfterSurvey from "../components/survey/AfterSurvey.jsx";
+import Navbar from "../components/survey/UserNavbar.jsx";
 
 export default function AfterSurveyPage() {
   return (

@@ -13,7 +13,7 @@ export default function ProtectedAdminRoute() {
     return (
       <div className="p-10 text-red-600 text-center font-bold">
         You do not have access to this page.
-      </div>  
+      </div>
     );
   }
 

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { HiEye, HiEyeOff } from "react-icons/hi";
 import Logo from "./Logo";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import { Toast } from "flowbite-react";
 
 export default function LoginForm() {
@@ -82,7 +82,7 @@ export default function LoginForm() {
     let user = { email };
 
     if (email === "admin@example.com") {
-      if (password === "admin123") {
+      if (password === "Admin123!") {
         user.isAdmin = true;
         user.role = "admin";
       } else {
