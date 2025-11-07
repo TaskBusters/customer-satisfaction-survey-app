@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { HiEye, HiEyeOff } from "react-icons/hi";
 import Logo from "./Logo";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import { Toast } from "flowbite-react";
 
 export default function LoginForm() {
@@ -27,6 +27,46 @@ export default function LoginForm() {
     }, 2000);
   };
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   if (!email || !password) {
+  //     showToastWithDelay(
+  //       "Please enter both email and password",
+  //       "bg-red-600/90 text-white"
+  //     );
+  //     return;
+  //   }
+  //   try {
+  //     const res = await fetch("/api/login", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ email, password, remember }),
+  //     });
+  //     if (res.ok) {
+  //       // Parse full user info (with admin flag)
+  //       const user = await res.json(); // backend returns { email, isAdmin: true, ... }
+  //       login(user); // store entire user
+
+  //       showToastWithDelay(
+  //         "Login successful!",
+  //         "bg-green-500/90 text-white",
+  //         () => {
+  //           // Redirect based on admin/non-admin
+  //           if (user.isAdmin || user.role === "admin") {
+  //             navigate("/admin");
+  //           } else {
+  //             navigate("/surveyform");
+  //           }
+  //         }
+  //       );
+  //     } else {
+  //       showToastWithDelay("Login failed!", "bg-red-600/90 text-white");
+  //     }
+  //   } catch (err) {
+  //     showToastWithDelay("Network error", "bg-red-600/90 text-white");
+  //   }
+  // };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
@@ -36,25 +76,37 @@ export default function LoginForm() {
       );
       return;
     }
-    try {
-      const res = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, remember }),
-      });
-      if (res.ok) {
-        login({ email });
-        showToastWithDelay(
-          "Login successful!",
-          "bg-green-500/90 text-white",
-          () => navigate("/surveyform")
-        );
+
+    // ---- FRONTEND DEV ONLY ----
+    // Magic admin user
+    let user = { email };
+
+    if (email === "admin@example.com") {
+      if (password === "Admin123!") {
+        user.isAdmin = true;
+        user.role = "admin";
       } else {
-        showToastWithDelay("Login failed!", "bg-red-600/90 text-white");
+        showToastWithDelay(
+          "Incorrect password for admin!",
+          "bg-red-600/90 text-white"
+        );
+        return;
       }
-    } catch (err) {
-      showToastWithDelay("Network error", "bg-red-600/90 text-white");
     }
+
+    login(user);
+
+    showToastWithDelay(
+      "Login successful!",
+      "bg-green-500/90 text-white",
+      () => {
+        if (user.isAdmin || user.role === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/surveyform");
+        }
+      }
+    );
   };
 
   return (

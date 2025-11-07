@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import fields from "../survey/surveyFields";
+import fields from "../../survey/surveyFields";
 
 // --- Standalone Field Components ---
 function RadioField({ label, options, value, onChange }) {

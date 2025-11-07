@@ -1,5 +1,5 @@
 import React from "react";
-import logo from "../assets/valenzuela-logo.png";
+import logo from "../../assets/valenzuela-logo.png";
 import "flowbite"; // Import Flowbite JS
 
 export default function Logo() {

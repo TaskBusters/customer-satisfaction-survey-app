@@ -1,6 +1,6 @@
 import React from "react"; // core React import
-import RegisterForm from "../components/RegisterForm";
-import BackgroundContainer from "../components/BackgroundContainer";
+import RegisterForm from "../components/authentication/RegisterForm";
+import BackgroundContainer from "../components/authentication/BackgroundContainer";
 
 export default function RegisterPage() {
   return (

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { isAgeValid } from "../survey/surveyUtils";
+import { isAgeValid } from "../../survey/surveyUtils";
 
 export default function TextField({
   label,

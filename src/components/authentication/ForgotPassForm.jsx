@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "flowbite-react";
 import Logo from "./Logo";
-import backgroundImage from "../assets/valenzuela-background.png";
+import backgroundImage from "../../assets/valenzuela-background.png";
 import "flowbite";
 
 export default function ForgotPassForm() {

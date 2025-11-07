@@ -1,11 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
-import SurveyRenderer from "../components/SurveyRenderer";
-import Modal from "../components/Modal";
-import ArrowButtonGroup from "../components/ArrowButtonGroup";
+import Navbar from "../components/survey/UserNavbar.jsx";
+import SurveyRenderer from "../components/survey/SurveyRenderer.jsx";
+import Modal from "../components/survey/UserModal.jsx";
+import ClearSurveyModal from "../components/survey/ClearSurveyModal.jsx";
+import ArrowButtonGroup from "../components/survey/ArrowButtonGroup.jsx";
 import fields from "../survey/surveyFields.js";
-import { getMissingFields, isAgeValid } from "../survey/surveyUtils";
+import {
+  getMissingFields,
+  isAgeValid,
+  hasAnyAnswer,
+} from "../survey/surveyUtils";
 
 // Simple toast notification component
 function ToastNotif({ show, color, children }) {
@@ -36,9 +41,21 @@ export default function SurveyFormPage() {
   const [answers, setAnswers] = useState({});
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [showClearSurveyModal, setShowClearSurveyModal] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
   const [toastColor, setToastColor] = useState("bg-green-500/90 text-white");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = ""; // Required for Chrome to show dialog
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -114,17 +131,39 @@ export default function SurveyFormPage() {
         <h2 className="text-3xl text-blue-700 font-bold text-center mb-6">
           Client Satisfaction Survey
         </h2>
+        <ClearSurveyModal
+          open={showClearSurveyModal}
+          onConfirm={() => {
+            setAnswers({});
+            setShowClearSurveyModal(false);
+          }}
+          onCancel={() => setShowClearSurveyModal(false)}
+        />
         <SurveyRenderer
           fields={fields}
           answers={answers}
           setAnswers={setAnswers}
         />
-        <button
-          type="submit"
-          className="bg-blue-700 text-white rounded px-6 py-3 mt-6 mx-auto block"
-        >
-          Submit
-        </button>
+        <div className="flex flex-row justify-between gap-4 mt-8">
+          {hasAnyAnswer(answers) && (
+            <button
+              type="button"
+              className="bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 rounded px-5 py-2 transition"
+              onClick={() => setShowClearSurveyModal(true)}
+            >
+              Clear Survey
+            </button>
+          )}
+          <button
+            type="submit"
+            className="bg-green-600 hover:bg-green-700 text-white rounded
+                          px-4 py-2 text-sm sm:px-6 sm:py-3 sm:text-base
+                          ml-auto
+                        "
+          >
+            Submit
+          </button>
+        </div>
       </form>
       {/* Modal here */}
       <Modal

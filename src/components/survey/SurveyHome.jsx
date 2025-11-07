@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Logo from "./Logo";
+import Logo from "../authentication/Logo";
 import AboutCard from "./AboutCard";
 import PrivacyPolicyModal from "./PrivacyPolicyModal";
 
@@ -29,7 +29,7 @@ const SurveyHome = ({
   };
 
   return (
-    <div className="min-h-screen w-screen flex flex-col bg-[#eaeaea]">
+    <div className="min-h-screen w-full flex flex-col bg-[#eaeaea]  ">
       <div className="flex flex-col flex-1 items-center justify-center">
         <Logo className="w-32 h-32 mb-4" />
         <div className="text-center mb-7">
@@ -41,20 +41,18 @@ const SurveyHome = ({
         <div className="flex flex-col gap-4 w-full max-w-xs">
           <button
             type="button"
-            className="text-white bg-blue-700 hover:bg-blue-800 
-              focus:ring-4 focus:outline-black focus:ring-blue-300 
-              font-medium rounded-lg text-sm px-5 py-2.5 text-center
-              mx-auto block w-full sm:w-40 md:w-48"
+            className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-black focus:ring-blue-300
+                        font-medium rounded-lg text-sm px-5 py-2.5 text-center mx-auto block
+                        w-[90vw] max-w-xs sm:w-40 md:w-48 mb-3"
             onClick={() => setShowPolicy(true)}
           >
             Take the Survey
           </button>
           <button
             type="button"
-            className="text-white bg-blue-700 hover:bg-blue-800 
-              focus:ring-4 focus:outline-black focus:ring-blue-300 
-              font-medium rounded-lg text-sm px-5 py-2.5 text-center
-              mx-auto block sm:w-40 md:w-48 w-full"
+            className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-black focus:ring-blue-300
+                        font-medium rounded-lg text-sm px-5 py-2.5 text-center mx-auto block
+                        w-[90vw] max-w-xs sm:w-40 md:w-48 mb-3"
             onClick={() => setShowAbout(true)}
           >
             About

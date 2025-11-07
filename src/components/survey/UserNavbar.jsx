@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Button } from "flowbite-react";
 import { useNavigate } from "react-router-dom";
 import { HiCog, HiOutlineUserCircle, HiChevronUp } from "react-icons/hi";
-import UserSettingsModal from "../components/UserSettingsModal";
+import UserSettingsModal from "./UserSettingsModal";
 
 const Navbar = ({
   username = "Guest",

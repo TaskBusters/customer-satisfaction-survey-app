@@ -7,6 +7,8 @@ export default function RadioField({
   onChange,
   required = false,
   name,
+  otherValue, // <-- add these
+  onOtherChange, // <--
 }) {
   const [touched, setTouched] = useState(false);
   const hasError = required && touched && (value === undefined || value === "");
@@ -40,6 +42,16 @@ export default function RadioField({
               }}
             />
             <span className="text-base text-gray-700">{opt.label}</span>
+            {/* Inline text input for "Others" */}
+            {opt.value === "others" && value === "others" && (
+              <input
+                type="text" 
+                className="ml-2 border rounded px-2 py-1 w-[160px] focus:ring focus:ring-blue-200"
+                placeholder="Please specify"
+                value={otherValue}
+                onChange={(e) => onOtherChange(e.target.value)}
+              />
+            )}
           </label>
         ))}
       </div>

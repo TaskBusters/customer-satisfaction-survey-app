@@ -1,6 +1,6 @@
 // HelpFaqModal.jsx
 import React from "react";
-import Modal from "./Modal"; // reuse your custom Modal
+import Modal from "./UserModal"; // reuse your custom Modal
 
 const faqList = [
   {

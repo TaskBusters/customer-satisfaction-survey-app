@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { isFieldRequired } from "../survey/surveyUtils";
+import { isFieldRequired } from "../../survey/surveyUtils";
+
+// No need to import icons here if passed in columns prop; see note below.
 
 export default function MatrixField({
   label,
@@ -32,6 +34,7 @@ export default function MatrixField({
       {label && (
         <div className="font-bold mb-4 text-lg text-gray-800">{label}</div>
       )}
+
       {rows.map((row, rowIdx) => (
         <div
           key={rowIdx}
@@ -41,28 +44,19 @@ export default function MatrixField({
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 md:gap-6 items-end w-full">
             {columns.map((col, colIdx) => (
               <div key={colIdx} className="flex flex-col items-center w-full">
+                {col.icon && (
+                  <col.icon
+                    size={32}
+                    className={`mb-1 ${col.iconColor || ""}`}
+                  />
+                )}
                 <span
-                  className={`mb-1 ${col.emojiColor || ""} ${
-                    col.value === "NA"
-                      ? "border-4 border-black rounded-full px-3 inline-flex items-center justify-center"
-                      : ""
-                  }`}
-                  style={{
-                    fontSize: col.value === "NA" ? "2.25rem" : "2rem",
-                    ...(col.value === "NA"
-                      ? {
-                          minWidth: "3.5rem",
-                          height: "3.5rem",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }
-                      : {}),
-                  }}
+                  className="
+                  text-xs sm:text-sm md:text-base
+                  text-center mt-2 font-medium
+                  max-w-[6.5rem] break-words leading-tight
+                "
                 >
-                  {col.emoji || getDefaultEmoji(col.value)}
-                </span>
-                <span className="text-xs sm:text-sm md:text-base text-center mt-2 font-medium max-w-[6rem] break-words">
                   {col.label}
                 </span>
                 <input
@@ -101,23 +95,4 @@ export default function MatrixField({
       )}
     </div>
   );
-}
-
-function getDefaultEmoji(value) {
-  switch (String(value)) {
-    case "1":
-      return "😡";
-    case "2":
-      return "😞";
-    case "3":
-      return "😐";
-    case "4":
-      return "😊";
-    case "5":
-      return "😁";
-    case "NA":
-      return "N/A";
-    default:
-      return "";
-  }
 }
