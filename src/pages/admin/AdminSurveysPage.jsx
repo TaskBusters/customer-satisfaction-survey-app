@@ -103,9 +103,6 @@ export default function AdminSurveysPage() {
               >
                 + Create Survey
               </button>
-              <button className="ml-2 px-5 py-2 border rounded font-semibold bg-white hover:bg-gray-100 transition">
-                Share
-              </button>
               <button className="ml-2 px-5 py-2 border rounded font-semibold bg-blue-600 text-white hover:bg-blue-700 transition">
                 Publish
               </button>

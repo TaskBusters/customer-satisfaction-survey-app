@@ -4,12 +4,12 @@ import Modal from "./UserModal"; // reuse your custom Modal
 
 const faqList = [
   {
-    q: "How do I take the survey?",
-    a: "Click the 'Take the Survey' button on the main page and follow the instructions.",
+    q: "How do I take another survey?",
+    a: "Click the 'Take Another Survey' button on this page and follow the instructions.",
   },
   {
     q: "Can I save my progress?",
-    a: "In-progress surveys are saved automatically as drafts. You can return to edit them later.",
+    a: "At this time, survey responses cannot be saved as drafts. If you refresh or leave the page before submitting, your progress will not be preserved. Please ensure you complete and submit your survey in one session.",
   },
   {
     q: "Who sees my answers?",

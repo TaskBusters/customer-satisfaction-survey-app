@@ -36,6 +36,8 @@ export default function UserDetailsModal({
     if (!isAdd) setIsEditing(false);
   };
 
+  const isAdmin = (editForm?.role || user?.role) === "Admin";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 relative">
@@ -94,28 +96,65 @@ export default function UserDetailsModal({
               required
             />
           </div>
-          <div>
-            <label className="block text-xs font-semibold mb-1">District</label>
-            <input
-              name="district"
-              className={inputClass}
-              value={editForm?.district || ""}
-              onChange={handleChange}
-              disabled={shouldDisableFields}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold mb-1">Barangay</label>
-            <input
-              name="barangay"
-              className={inputClass}
-              value={editForm?.barangay || ""}
-              onChange={handleChange}
-              disabled={shouldDisableFields}
-              required
-            />
-          </div>
+          {isAdmin ? (
+            <>
+              <div>
+                <label className="block text-xs font-semibold mb-1">
+                  Office
+                </label>
+                <input
+                  name="office"
+                  className={inputClass}
+                  value={editForm?.office || ""}
+                  onChange={handleChange}
+                  disabled={shouldDisableFields}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1">
+                  Department
+                </label>
+                <input
+                  name="department"
+                  className={inputClass}
+                  value={editForm?.department || ""}
+                  onChange={handleChange}
+                  disabled={shouldDisableFields}
+                  required
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <label className="block text-xs font-semibold mb-1">
+                  District
+                </label>
+                <input
+                  name="district"
+                  className={inputClass}
+                  value={editForm?.district || ""}
+                  onChange={handleChange}
+                  disabled={shouldDisableFields}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1">
+                  Barangay
+                </label>
+                <input
+                  name="barangay"
+                  className={inputClass}
+                  value={editForm?.barangay || ""}
+                  onChange={handleChange}
+                  disabled={shouldDisableFields}
+                  required
+                />
+              </div>
+            </>
+          )}
           <div>
             <label className="block text-xs font-semibold mb-1">Status</label>
             <select

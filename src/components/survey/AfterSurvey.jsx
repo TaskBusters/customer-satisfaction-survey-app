@@ -30,7 +30,9 @@ export default function AfterSurvey() {
 
         <div className="text-center mb-7">
           <h2 className="font-semibold text-xl">Thank you for taking the</h2>
-          <h2 className="font-bold text-2xl">Customer Satisfaction Survey!</h2>
+          <h2 className="font-bold text-2xl">
+            Customer Satisfaction Measurement Survey!
+          </h2>
         </div>
 
         <div className="flex flex-col gap-4 w-full max-w-xs">

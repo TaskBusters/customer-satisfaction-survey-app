@@ -24,14 +24,28 @@ export default function SurveyRenderer({ fields, answers, setAnswers }) {
               />
             );
           }
+
           content.push(
             <h3
               key={field.section + "-heading"}
-              className="text-blue-700 font-bold text-2xl mb-5"
+              className="text-blue-700 font-bold text-2xl mb-2"
             >
               {field.section}
             </h3>
           );
+
+          // Added instruction text block here
+          if (field.instruction) {
+            content.push(
+              <p
+                key={field.section + "-instruction"}
+                className="mb-6 text-sm text-gray-600"
+              >
+                {field.instruction}
+              </p>
+            );
+          }
+
           prevSection = field.section;
         }
 

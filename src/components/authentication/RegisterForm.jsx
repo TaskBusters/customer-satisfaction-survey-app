@@ -119,7 +119,7 @@ export default function RegisterForm() {
     },
   ];
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (
       !email ||
@@ -148,6 +148,15 @@ export default function RegisterForm() {
       return;
     }
 
+    // ------ FOR FRONTEND TESTING ONLY ------
+    login({ email, fullName, district, barangay });
+    showToastWithDelay(
+      "Registration successful!",
+      "bg-green-500/90 text-white",
+      () => navigate("/")
+    );
+    // ------ END FRONTEND TESTING ONLY ------
+    /* BACKEND BLOCK (COMMENTED FOR NOW)
     try {
       const res = await fetch("/api/register", {
         method: "POST",
@@ -177,6 +186,7 @@ export default function RegisterForm() {
     } catch (err) {
       showToastWithDelay("Registration Failed", "bg-red-600/90 text-white");
     }
+    END BACKEND BLOCK */
   };
 
   const passwordStrength = checkPasswordStrength(password);
