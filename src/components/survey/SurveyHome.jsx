@@ -29,12 +29,14 @@ const SurveyHome = ({
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col bg-[#eaeaea]  ">
-      <div className="flex flex-col flex-1 items-center justify-center">
-        <Logo className="w-32 h-32 mb-4" />
+    <div className="min-h-screen w-full flex flex-col bg-[#eaeaea]">
+      <div className="flex flex-col flex-1 items-center justify-center px-4">
+        <Logo className="w-40 h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 mb-4" />
         <div className="text-center mb-7">
-          <h2 className="font-semibold text-xl">Welcome to the</h2>
-          <h2 className="font-bold text-2xl">
+          <h2 className="font-semibold text-xl md:text-2xl lg:text-3xl">
+            Welcome to the
+          </h2>
+          <h2 className="font-bold text-2xl md:text-3xl lg:text-4xl">
             Customer Satisfaction Measurement Survey!
           </h2>
         </div>
