@@ -8,8 +8,21 @@ export default function ProtectedAdminRoute() {
 
   if (isGuest) return <Navigate to="/login" />;
 
-  // Accept either flag:
-  if (!user.isAdmin && user.role !== "admin") {
+  // Check if user is admin (either isAdmin flag or has admin role)
+  const role = user?.role?.toLowerCase() || "";
+  const isAdmin = user?.isAdmin || 
+    (user?.role && [
+      "superadmin", 
+      "system admin",
+      "surveyadmin", 
+      "survey admin",
+      "analyst", 
+      "report viewer",
+      "support", 
+      "feedback manager"
+    ].includes(role));
+
+  if (!isAdmin) {
     return (
       <div className="p-10 text-red-600 text-center font-bold">
         You do not have access to this page.

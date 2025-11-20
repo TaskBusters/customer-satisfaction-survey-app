@@ -4,6 +4,7 @@ import { HiEye, HiEyeOff } from "react-icons/hi";
 import Logo from "./Logo";
 import { useAuth } from "../../context/AuthContext";
 import { Toast } from "flowbite-react";
+import { GoogleLogin } from "@react-oauth/google";
 
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -13,6 +14,7 @@ export default function LoginForm() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [toastColor, setToastColor] = useState("bg-green-500/90 text-white"); // Success by default
+  const [googleSigningIn, setGoogleSigningIn] = useState(false);
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -27,46 +29,6 @@ export default function LoginForm() {
     }, 2000);
   };
 
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   if (!email || !password) {
-  //     showToastWithDelay(
-  //       "Please enter both email and password",
-  //       "bg-red-600/90 text-white"
-  //     );
-  //     return;
-  //   }
-  //   try {
-  //     const res = await fetch("/api/login", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ email, password, remember }),
-  //     });
-  //     if (res.ok) {
-  //       // Parse full user info (with admin flag)
-  //       const user = await res.json(); // backend returns { email, isAdmin: true, ... }
-  //       login(user); // store entire user
-
-  //       showToastWithDelay(
-  //         "Login successful!",
-  //         "bg-green-500/90 text-white",
-  //         () => {
-  //           // Redirect based on admin/non-admin
-  //           if (user.isAdmin || user.role === "admin") {
-  //             navigate("/admin");
-  //           } else {
-  //             navigate("/surveyform");
-  //           }
-  //         }
-  //       );
-  //     } else {
-  //       showToastWithDelay("Login failed!", "bg-red-600/90 text-white");
-  //     }
-  //   } catch (err) {
-  //     showToastWithDelay("Network error", "bg-red-600/90 text-white");
-  //   }
-  // };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
@@ -77,54 +39,87 @@ export default function LoginForm() {
       return;
     }
 
-    // ---- FRONTEND DEV ONLY ----
-    // Magic admin user
-    let user = { email };
+    // -- BACKEND LOGIN --
+    try {
+      const res = await fetch("http://localhost:4000/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, remember }),
+      });
 
-    if (email === "user@example.com") {
-      if (password === "123") {
-        user = {
-          email,
-          isAdmin: false,
-          role: "user",
-          name: "Jane Doe",
-          avatarUrl: "https://i.pravatar.cc/100?img=15",
-        };
-      } else {
+      if (res.ok) {
+        const user = await res.json();
+        login(user); // store user in auth context
+
         showToastWithDelay(
-          "Incorrect password for user!",
+          "Login successful!",
+          "bg-green-500/90 text-white",
+          () => {
+            if (user.isAdmin) {
+              navigate("/admin");
+            } else {
+              navigate("/");
+            }
+          }
+        );
+      } else {
+        const err = await res.json();
+        showToastWithDelay(
+          err?.error || "Login failed!",
           "bg-red-600/90 text-white"
         );
+      }
+    } catch (error) {
+      showToastWithDelay(
+        "Network error. Please try again.",
+        "bg-red-600/90 text-white"
+      );
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      if (!credentialResponse?.credential) {
+        console.error("[v0] No credential in response:", credentialResponse);
+        showToastWithDelay("Google login failed. Missing credential.", "bg-red-600/90 text-white");
         return;
       }
-    }
+      
+      setGoogleSigningIn(true);
+      console.log("[v0] Attempting Google login with credential");
+      
+      const res = await fetch("http://localhost:4000/api/login/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credential: credentialResponse.credential }),
+      });
 
-    if (email === "admin@example.com") {
-      if (password === "Admin123!") {
-        user.isAdmin = true;
-        user.role = "admin";
-      } else {
+      if (res.ok) {
+        const user = await res.json();
+        console.log("[v0] Google login successful:", user);
+        login(user);
         showToastWithDelay(
-          "Incorrect password for admin!",
-          "bg-red-600/90 text-white"
+          "Signed in with Google!",
+          "bg-green-500/90 text-white",
+          () => {
+            if (user.isAdmin) {
+              navigate("/admin");
+            } else {
+              navigate("/");
+            }
+          }
         );
-        return;
+      } else {
+        const err = await res.json();
+        console.error("[v0] Google login backend error:", err);
+        showToastWithDelay(err?.error || "Google login failed", "bg-red-600/90 text-white");
       }
+    } catch (error) {
+      console.error("[v0] Google login error:", error);
+      showToastWithDelay("Google login failed. Please try again.", "bg-red-600/90 text-white");
+    } finally {
+      setGoogleSigningIn(false);
     }
-
-    login(user);
-
-    showToastWithDelay(
-      "Login successful!",
-      "bg-green-500/90 text-white",
-      () => {
-        if (user.isAdmin || user.role === "admin") {
-          navigate("/admin");
-        } else {
-          navigate("/");
-        }
-      }
-    );
   };
 
   return (
@@ -221,14 +216,35 @@ export default function LoginForm() {
         >
           Login
         </button>
-        {/* Register / Guest */}
+
+        {/* Google Login Divider */}
+        <div className="mt-6">
+          <div className="flex items-center gap-3 text-gray-500 text-xs font-semibold uppercase tracking-wider">
+            <span className="flex-1 h-px bg-gray-300" />
+            <span>or</span>
+            <span className="flex-1 h-px bg-gray-300" />
+          </div>
+          <div className="flex justify-center mt-4">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() =>
+                showToastWithDelay("Google login failed. Please try again.", "bg-red-600/90 text-white")
+              }
+              text="continue_with"
+              shape="pill"
+              size="large"
+              width="280"
+              logo_alignment="left"
+              theme="outline"
+              context="signin"
+            />
+          </div>
+          {googleSigningIn && (
+            <p className="text-xs text-center text-gray-500 mt-2">Connecting to Google…</p>
+          )}
+        </div>
+
         <p className="text-sm text-center mt-4">
-          No account?{" "}
-          <Link to="/register" className="text-blue-600 hover:underline">
-            Register here
-          </Link>
-        </p>
-        <p className="text-sm text-center mt-2">
           <Link to="/" className="text-blue-700 hover:underline">
             Continue as Guest
           </Link>

@@ -58,6 +58,9 @@ export default function RegisterForm() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [toastColor, setToastColor] = useState("bg-green-500/90 text-white");
+  const [registrationStep, setRegistrationStep] = useState("form"); // "form" or "verify"
+  const [verificationCode, setVerificationCode] = useState("");
+  const [tempEmail, setTempEmail] = useState("");
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -119,7 +122,7 @@ export default function RegisterForm() {
     },
   ];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (
       !email ||
@@ -148,17 +151,8 @@ export default function RegisterForm() {
       return;
     }
 
-    // ------ FOR FRONTEND TESTING ONLY ------
-    login({ email, fullName, district, barangay });
-    showToastWithDelay(
-      "Registration successful!",
-      "bg-green-500/90 text-white",
-      () => navigate("/")
-    );
-    // ------ END FRONTEND TESTING ONLY ------
-    /* BACKEND BLOCK (COMMENTED FOR NOW)
     try {
-      const res = await fetch("/api/register", {
+      const res = await fetch("http://localhost:4000/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -169,12 +163,13 @@ export default function RegisterForm() {
           barangay,
         }),
       });
+      
       if (res.ok) {
-        login({ email, fullName, district, barangay });
+        setTempEmail(email);
+        setRegistrationStep("verify");
         showToastWithDelay(
-          "Registration successful!",
-          "bg-green-500/90 text-white",
-          () => navigate("/surveyform")
+          "Registration successful! Please verify your email.",
+          "bg-green-500/90 text-white"
         );
       } else {
         const data = await res.json();
@@ -184,16 +179,118 @@ export default function RegisterForm() {
         );
       }
     } catch (err) {
-      showToastWithDelay("Registration Failed", "bg-red-600/90 text-white");
+      showToastWithDelay("Registration failed", "bg-red-600/90 text-white");
     }
-    END BACKEND BLOCK */
+  };
+
+  const handleVerifyEmail = async (e) => {
+    e.preventDefault();
+    if (!verificationCode) {
+      showToastWithDelay("Please enter the verification code.", "bg-red-600/90 text-white");
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:4000/api/verify-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: tempEmail,
+          code: verificationCode,
+        }),
+      });
+
+      if (res.ok) {
+        login({ email: tempEmail, fullName, district, barangay });
+        showToastWithDelay(
+          "Email verified! Welcome aboard!",
+          "bg-green-500/90 text-white",
+          () => navigate("/")
+        );
+      } else {
+        const data = await res.json();
+        showToastWithDelay(
+          data?.error || "Verification failed",
+          "bg-red-600/90 text-white"
+        );
+      }
+    } catch (err) {
+      showToastWithDelay("Verification failed", "bg-red-600/90 text-white");
+    }
   };
 
   const passwordStrength = checkPasswordStrength(password);
 
+  if (registrationStep === "verify") {
+    return (
+      <div
+        className="bg-[#F4F4F4] rounded-lg shadow-2xl
+          w-full max-w-xl
+          mx-auto
+          p-8 sm:p-10
+          text-base
+          border-3 border-gray-200
+          min-h-[400px]"
+      >
+        {showToast && (
+          <div className="fixed top-4 left-0 right-0 z-50 flex justify-center">
+            <Toast className={`${toastColor} shadow-xl`}>
+              <span className="font-semibold">{toastMessage}</span>
+            </Toast>
+          </div>
+        )}
+
+        <Logo />
+        <h2 className="text-xl text-center font-bold text-gray-800 mb-4">
+          Verify Your Email
+        </h2>
+        <p className="text-center text-gray-600 mb-6">
+          We sent a 6-digit verification code to <strong>{tempEmail}</strong>
+        </p>
+
+        <form
+          className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto"
+          onSubmit={handleVerifyEmail}
+        >
+          <div className="mb-5">
+            <label
+              htmlFor="code"
+              className="block mb-2 text-sm font-medium text-gray-900"
+            >
+              Verification Code
+            </label>
+            <input
+              type="text"
+              id="code"
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value.toUpperCase())}
+              placeholder="000000"
+              maxLength="6"
+              required
+              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 placeholder-gray-400 text-center text-2xl tracking-widest"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-black focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center mx-auto block w-32 sm:w-40 md:w-48"
+          >
+            Verify Email
+          </button>
+
+          <div className="flex justify-center mt-6">
+            <Link to="/login" className="text-blue-500 hover:underline text-sm">
+              Back to Login
+            </Link>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
   return (
     <div
-      className="bg-[#F4F4F4] rounded-lg shadow-2x1
+      className="bg-[#F4F4F4] rounded-lg shadow-2xl
         w-full max-w-xl
         mx-auto
         p-8 sm:p-10
@@ -201,7 +298,6 @@ export default function RegisterForm() {
         border-3 border-gray-200
         min-h-[400px]"
     >
-      {/* Toast notification */}
       {showToast && (
         <div className="fixed top-4 left-0 right-0 z-50 flex justify-center">
           <Toast className={`${toastColor} shadow-xl`}>
@@ -313,9 +409,7 @@ export default function RegisterForm() {
             {/* Eye icon toggle */}
             <button
               type="button"
-              aria-label={
-                showConfirmPassword ? "Hide password" : "Show password"
-              }
+              aria-label={showConfirmPassword ? "Hide password" : "Show password"}
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               tabIndex={0}
               className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 focus:outline-none"

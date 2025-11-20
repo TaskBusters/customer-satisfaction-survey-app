@@ -1,433 +1,208 @@
-import React, { useState, useEffect } from "react";
-import AdminSidebar from "../../components/admin/AdminSidebar";
-import SearchBar from "../../components/admin/SearchBar";
-import SurveyResponseCard from "../../components/admin/SurveyResponseCard";
-import NotificationBar from "../../components/admin/NotificationBar";
-import ResponseDetailsModal from "../../components/admin/ResponseDetailsModal";
+"use client"
 
-// All respondents in respondentsDetails (adjust and expand as needed)
-const FAKE_RESPONSES = [
-  {
-    title: "Customer Satisfaction Survey",
-    office: "Maysan Barangay Hall",
-    date: "11/01/25",
-    clientType: "Resident",
-    respondents: 10,
-    respondentsDetails: [
-      {
-        fullName: "Rafael Cruz",
-        email: "rafael.cruz@example.com",
-        district: "District 2",
-        barangay: "Malanday",
-        responses: {
-          "Client Type": "Resident",
-          Gender: "Male",
-          Age: 27,
-          "Region of Residence": "Region IV",
-          "Service Availed": "Tax Clearance",
-          ccAwareness: "Yes",
-          ccVisibility: "Yes, posters",
-          ccHelpfulness: "Moderately helpful",
-          Suggestions: "Add more payment counters.",
-          Email: "rafael.cruz@example.com",
-          Rating: {
-            SQD0: 4,
-            SQD1: 4,
-            SQD2: 4,
-            SQD3: 5,
-            SQD4: 3,
-            SQD5: 4,
-            SQD6: 4,
-            SQD7: 5,
-            SQD8: 4,
-          },
-        },
-      },
-      {
-        fullName: "Lourdes Dizon",
-        email: "lou.dizon@example.com",
-        district: "District 1",
-        barangay: "Pariancillo Villa",
-        responses: {
-          "Client Type": "Business Owner",
-          Gender: "Female",
-          Age: 41,
-          "Region of Residence": "NCR",
-          "Service Availed": "Market Stall Permit",
-          ccAwareness: "No",
-          ccVisibility: "Not aware",
-          ccHelpfulness: "",
-          Suggestions: "Improve signage to help new clients find the office.",
-          Email: "lou.dizon@example.com",
-          Rating: {
-            SQD0: 3,
-            SQD1: 2,
-            SQD2: 3,
-            SQD3: 2,
-            SQD4: 1,
-            SQD5: 2,
-            SQD6: 2,
-            SQD7: 3,
-            SQD8: 1,
-          },
-        },
-      },
-      {
-        fullName: "Enzo Manalo",
-        email: "enz.manalo@gmail.com",
-        district: "District 3",
-        barangay: "Dalandanan",
-        responses: {
-          "Client Type": "Resident",
-          Gender: "Male",
-          Age: 51,
-          "Region of Residence": "Region III",
-          "Service Availed": "Barangay Clearance",
-          ccAwareness: "Yes",
-          ccVisibility: "Social Media",
-          ccHelpfulness: "Very helpful",
-          Suggestions: "Open earlier on weekends for working people.",
-          Email: "enz.manalo@gmail.com",
-          Rating: {
-            SQD0: 5,
-            SQD1: 5,
-            SQD2: 4,
-            SQD3: 5,
-            SQD4: 5,
-            SQD5: 4,
-            SQD6: 5,
-            SQD7: 4,
-            SQD8: 5,
-          },
-        },
-      },
-      {
-        fullName: "April Lopez",
-        email: "april.lopez@yahoo.com",
-        district: "District 2",
-        barangay: "Canumay East",
-        responses: {
-          "Client Type": "Senior",
-          Gender: "Female",
-          Age: 62,
-          "Region of Residence": "Region II",
-          "Service Availed": "Senior Discount Card",
-          ccAwareness: "Yes",
-          ccVisibility: "Radio Announcements",
-          ccHelpfulness: "Somewhat helpful",
-          Suggestions: "Have senior priority lane in all offices.",
-          Email: "april.lopez@yahoo.com",
-          Rating: {
-            SQD0: 3,
-            SQD1: 3,
-            SQD2: 2,
-            SQD3: 3,
-            SQD4: 2,
-            SQD5: 2,
-            SQD6: 3,
-            SQD7: 3,
-            SQD8: 2,
-          },
-        },
-      },
-      {
-        fullName: "Mico Ramos",
-        email: "m.ramos2010@gmail.com",
-        district: "District 1",
-        barangay: "Balangkas",
-        responses: {
-          "Client Type": "OFW Dependent",
-          Gender: "Male",
-          Age: 19,
-          "Region of Residence": "NCR",
-          "Service Availed": "Passport Endorsement",
-          ccAwareness: "No",
-          ccVisibility: "Not aware",
-          ccHelpfulness: "",
-          Suggestions: "Faster processing for urgent travel needs.",
-          Email: "m.ramos2010@gmail.com",
-          Rating: {
-            SQD0: 2,
-            SQD1: 2,
-            SQD2: 3,
-            SQD3: 1,
-            SQD4: 2,
-            SQD5: 1,
-            SQD6: 2,
-            SQD7: 3,
-            SQD8: 2,
-          },
-        },
-      },
-      {
-        fullName: "Miguel Antonio",
-        email: "miguel.antonio@email.com",
-        district: "District 1",
-        barangay: "Bignay",
-        responses: {
-          "Client Type": "Resident",
-          Gender: "Male",
-          Age: 42,
-          "Region of Residence": "Region IV",
-          "Service Availed": "Barangay Clearance",
-          ccAwareness: "Yes",
-          ccVisibility: "Radio Announcements",
-          ccHelpfulness: "Extremely helpful",
-          Suggestions: "Extend service hours for working people.",
-          Email: "miguel.antonio@email.com",
-          Rating: {
-            SQD0: 4,
-            SQD1: 4,
-            SQD2: 4,
-            SQD3: 3,
-            SQD4: 5,
-            SQD5: 5,
-            SQD6: 5,
-            SQD7: 4,
-            SQD8: 4,
-          },
-        },
-      },
-      {
-        fullName: "Arlene Dimalanta",
-        email: "arlene.dimalanta@email.com",
-        district: "District 2",
-        barangay: "Rincon",
-        responses: {
-          "Client Type": "Resident",
-          Gender: "Female",
-          Age: 38,
-          "Region of Residence": "NCR",
-          "Service Availed": "Business Permit",
-          ccAwareness: "No",
-          ccVisibility: "Not aware",
-          ccHelpfulness: "",
-          Suggestions: "Please provide more seating.",
-          Email: "arlene.dimalanta@email.com",
-          Rating: {
-            SQD0: 3,
-            SQD1: 3,
-            SQD2: 3,
-            SQD3: 3,
-            SQD4: 3,
-            SQD5: 2,
-            SQD6: 4,
-            SQD7: 3,
-            SQD8: 3,
-          },
-        },
-      },
-      {
-        fullName: "Kristoffer Ramos",
-        email: "k.ramos@email.com",
-        district: "District 1",
-        barangay: "Punturin",
-        responses: {
-          "Client Type": "Resident",
-          Gender: "Male",
-          Age: 26,
-          "Region of Residence": "Region III",
-          "Service Availed": "Birth Certificate",
-          ccAwareness: "Yes",
-          ccVisibility: "Social Media",
-          ccHelpfulness: "Helpful",
-          Suggestions: "The only issue was queueing for photocopies.",
-          Email: "k.ramos@email.com",
-          Rating: {
-            SQD0: 5,
-            SQD1: 5,
-            SQD2: 4,
-            SQD3: 4,
-            SQD4: 5,
-            SQD5: 5,
-            SQD6: 4,
-            SQD7: 4,
-            SQD8: 5,
-          },
-        },
-      },
-      {
-        fullName: "Jessica Lagman",
-        email: "jess.lagman@email.com",
-        district: "District 2",
-        barangay: "Balangkas",
-        responses: {
-          "Client Type": "Resident",
-          Gender: "Female",
-          Age: 31,
-          "Region of Residence": "Region IV",
-          "Service Availed": "Indigency Certificate",
-          ccAwareness: "Yes",
-          ccVisibility: "Radio Announcements",
-          ccHelpfulness: "Very helpful",
-          Suggestions:
-            "The aircon was a bit weak, but overall very good experience.",
-          Email: "jess.lagman@email.com",
-          Rating: {
-            SQD0: 4,
-            SQD1: 3,
-            SQD2: 4,
-            SQD3: 5,
-            SQD4: 4,
-            SQD5: 3,
-            SQD6: 5,
-            SQD7: 4,
-            SQD8: 5,
-          },
-        },
-      },
-      {
-        fullName: "April Santos",
-        email: "april.santos@email.com",
-        district: "District 3",
-        barangay: "Riverside",
-        responses: {
-          "Client Type": "Resident",
-          Gender: "Female",
-          Age: 57,
-          "Region of Residence": "NCR",
-          "Service Availed": "Cedula Application",
-          ccAwareness: "Yes",
-          ccVisibility: "Posters",
-          ccHelpfulness: "Not helpful",
-          Suggestions: "Wish application time was shorter.",
-          Email: "april.santos@email.com",
-          Rating: {
-            SQD0: 2,
-            SQD1: 2,
-            SQD2: 3,
-            SQD3: 1,
-            SQD4: 2,
-            SQD5: 1,
-            SQD6: 2,
-            SQD7: 3,
-            SQD8: 2,
-          },
-        },
-      },
-    ],
-  },
-];
-
-const filterOptions = [
-  { label: "Date", key: "date" },
-  { label: "Office", key: "office" },
-  { label: "Client Type", key: "Client Type" },
-  { label: "Gender", key: "Gender" },
-  { label: "Age", key: "Age" },
-  { label: "Region", key: "Region of Residence" },
-  { label: "Service Availed", key: "Service Availed" },
-  { label: "CC Awareness", key: "ccAwareness" },
-  { label: "CC Visibility", key: "ccVisibility" },
-  { label: "CC Helpfulness", key: "ccHelpfulness" },
-];
+import { useState, useEffect } from "react"
+import AdminSidebar from "../../components/admin/AdminSidebar"
+import SearchBar from "../../components/admin/SearchBar"
+import { API_BASE_URL } from "../../utils/api.js"
 
 export default function AdminSurveyResponsesPage() {
-  const [responses, setResponses] = useState([]);
-  const [search, setSearch] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState(filterOptions[0]);
-  const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const [selectedResponse, setSelectedResponse] = useState(null);
+  const [responses, setResponses] = useState([])
+  const [search, setSearch] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [filterRegion, setFilterRegion] = useState("")
+  const [filterClientType, setFilterClientType] = useState("")
+  const [dateFrom, setDateFrom] = useState("")
+  const [dateTo, setDateTo] = useState("")
+  const [regions, setRegions] = useState([])
+  const [clientTypes, setClientTypes] = useState([])
 
   useEffect(() => {
-    setTimeout(() => {
-      setResponses(FAKE_RESPONSES);
-      setLoading(false);
-    }, 350);
-  }, []);
+    setLoading(true)
+    fetch(`${API_BASE_URL}/api/admin/submissions`)
+      .then((res) => res.json())
+      .then((data) => {
+        setResponses(data)
 
-  const filteredResponses = responses
-    .map((survey) => {
-      const filteredRespondents = survey.respondentsDetails.filter((rd) => {
-        // 🔹 selectedFilter.key refers to "date", "office", or "clientType"
-        const fieldValue =
-          survey[selectedFilter.key] ||
-          rd.responses?.[selectedFilter.key] ||
-          "";
+        const uniqueRegions = [...new Set(data.map((r) => r.region).filter(Boolean))]
+        const uniqueClientTypes = [...new Set(data.map((r) => r.client_type).filter(Boolean))]
+        setRegions(uniqueRegions)
+        setClientTypes(uniqueClientTypes)
 
-        return fieldValue
-          .toString()
-          .toLowerCase()
-          .includes(search.toLowerCase());
-      });
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [])
 
-      return {
-        ...survey,
-        respondentsDetails: filteredRespondents,
-        respondents: filteredRespondents.length, // Updates respondent count dynamically
-      };
-    })
-    .filter((survey) => survey.respondentsDetails.length > 0);
+  const filteredResponses = responses.filter((res) => {
+    const searchLower = search.toLowerCase()
+    const matchesSearch =
+      (res.user_name && res.user_name.toLowerCase().includes(searchLower)) ||
+      (res.region && res.region.toLowerCase().includes(searchLower))
 
-  const handleView = (response) => {
-    setSelectedResponse(response);
-    setDetailsOpen(true);
-  };
+    const matchesRegion = !filterRegion || res.region === filterRegion
+    const matchesClientType = !filterClientType || res.client_type === filterClientType
 
-  const handleClearMessage = () => setMessage("");
+    let matchesDateRange = true
+    if (dateFrom || dateTo) {
+      const resDate = new Date(res.submitted_at)
+      if (dateFrom) {
+        const fromDate = new Date(dateFrom)
+        matchesDateRange = resDate >= fromDate
+      }
+      if (dateTo) {
+        const toDate = new Date(dateTo)
+        toDate.setHours(23, 59, 59, 999)
+        matchesDateRange = matchesDateRange && resDate <= toDate
+      }
+    }
+
+    return matchesSearch && matchesRegion && matchesClientType && matchesDateRange
+  })
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
-      <AdminSidebar />
-      <main className="flex-1 p-10">
-        <NotificationBar message={message} onClear={handleClearMessage} />
-        {/* Top controls row: search, filter dropdown */}
-        <div className="flex flex-col md:flex-row justify-between items-center mb-8 w-full gap-6">
-          <div className="flex flex-1">
-            <div className="w-full md:w-auto">
+        <AdminSidebar />
+        <main className="flex-1 p-10">
+        <h1 className="text-3xl font-bold mb-6">Survey Respondents</h1>
+
+        {/* Filters Section */}
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Search */}
+            <div className="lg:col-span-2">
+              <label className="block text-sm font-semibold mb-2">Search</label>
               <SearchBar
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by title, office, or client type"
-                className="max-w-md"
+                placeholder="Name, region..."
+              />
+            </div>
+
+            {/* Region Filter */}
+            <div>
+              <label className="block text-sm font-semibold mb-2">Region</label>
+              <select
+                value={filterRegion}
+                onChange={(e) => setFilterRegion(e.target.value)}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+              >
+                <option value="">All Regions</option>
+                {regions.map((region) => (
+                  <option key={region} value={region}>
+                    {region}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Client Type Filter */}
+            <div>
+              <label className="block text-sm font-semibold mb-2">Client Type</label>
+              <select
+                value={filterClientType}
+                onChange={(e) => setFilterClientType(e.target.value)}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+              >
+                <option value="">All Types</option>
+                {clientTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Date Range */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t">
+            <div>
+              <label className="block text-sm font-semibold mb-2">From Date</label>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2">To Date</label>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
               />
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="font-semibold">Filters:</span>
-            <select
-              value={selectedFilter.key}
-              onChange={(e) =>
-                setSelectedFilter(
-                  filterOptions.find((fo) => fo.key === e.target.value)
-                )
-              }
-              className="border rounded px-2 py-2 ml-2"
-            >
-              {filterOptions.map((option) => (
-                <option value={option.key} key={option.key}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        {/* Scrollable response cards, responsive and neat */}
-        <div className="flex flex-col gap-6 max-h-[calc(100vh-240px)] overflow-y-auto">
-          {loading ? (
-            <div className="text-center text-gray-500 py-20">Loading...</div>
-          ) : filteredResponses.length > 0 ? (
-            filteredResponses.map((response, i) => (
-              <SurveyResponseCard
-                key={i}
-                response={response}
-                onView={() => handleView(response)}
-              />
-            ))
-          ) : (
-            <div className="text-gray-500 text-center p-8 rounded border bg-white">
-              No matching survey responses found.
+
+          {/* Reset Filters */}
+          {(search || filterRegion || filterClientType || dateFrom || dateTo) && (
+            <div className="mt-4 pt-4 border-t flex gap-2">
+              <button
+                onClick={() => {
+                  setSearch("")
+                  setFilterRegion("")
+                  setFilterClientType("")
+                  setDateFrom("")
+                  setDateTo("")
+                }}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 font-semibold text-sm"
+              >
+                Reset Filters
+              </button>
+              <span className="text-sm text-gray-600 self-center">
+                Showing {filteredResponses.length} of {responses.length} responses
+              </span>
             </div>
           )}
         </div>
-        <ResponseDetailsModal
-          open={detailsOpen}
-          response={selectedResponse}
-          onClose={() => setDetailsOpen(false)}
-        />
+
+        {/* Responsive Table */}
+        {loading ? (
+          <div className="text-center text-gray-500 py-10">Loading...</div>
+        ) : (
+          <div className="bg-white rounded-lg shadow overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-100 border-b">
+                <tr>
+                  <th className="px-6 py-3 text-left font-semibold">Name</th>
+                  <th className="px-6 py-3 text-left font-semibold">Gender</th>
+                  <th className="px-6 py-3 text-left font-semibold">Age</th>
+                  <th className="px-6 py-3 text-left font-semibold">Region</th>
+                  <th className="px-6 py-3 text-left font-semibold">Client Type</th>
+                  <th className="px-6 py-3 text-left font-semibold">Satisfaction</th>
+                  <th className="px-6 py-3 text-left font-semibold">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredResponses.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                      No responses found
+                    </td>
+                  </tr>
+                ) : (
+                  filteredResponses.map((res) => (
+                    <tr key={res.id} className="border-b hover:bg-gray-50">
+                      <td className="px-6 py-3">{res.user_name || "Guest"}</td>
+                      <td className="px-6 py-3">{res.gender || "—"}</td>
+                      <td className="px-6 py-3">{res.age || "—"}</td>
+                      <td className="px-6 py-3">{res.region || "—"}</td>
+                      <td className="px-6 py-3">{res.client_type || "—"}</td>
+                      <td className="px-6 py-3 font-semibold">
+                        {res.average_satisfaction ? Number.parseFloat(res.average_satisfaction).toFixed(1) : "—"}
+                      </td>
+                      <td className="px-6 py-3 text-xs text-gray-600">
+                        {new Date(res.submitted_at).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </main>
     </div>
-  );
+  )
 }

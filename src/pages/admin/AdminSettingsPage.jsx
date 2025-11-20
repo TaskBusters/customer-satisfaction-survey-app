@@ -1,96 +1,162 @@
-import React, { useState } from "react";
-import AdminSidebar from "../../components/admin/AdminSidebar";
-import SearchBar from "../../components/admin/SearchBar";
+"use client"
 
-// Replace with backend fetch for live data!
-const FAKE_INFOS = [
-  { label: "About", value: "Info about the app" },
-  { label: "Help & FAQ", value: "FAQ Resource" },
-  { label: "Privacy Policy", value: "Your privacy..." },
-];
+import { useState, useEffect } from "react"
+import AdminSidebar from "../../components/admin/AdminSidebar"
+import NotificationBar from "../../components/admin/NotificationBar"
+import { useAuth } from "../../context/AuthContext"
+import { logAdminAction } from "../../utils/adminLogger"
+import { API_BASE_URL } from "../../utils/api.js"
+import { canManageSettings } from "../../utils/roleUtils"
 
 export default function AdminSettingsPage() {
-  const [infos, setInfos] = useState(FAKE_INFOS);
-  const [search, setSearch] = useState("");
+  const { user } = useAuth()
+  const canEdit = canManageSettings(user?.role)
+  const [language, setLanguage] = useState("english")
+  const [notifications, setNotifications] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [message, setMessage] = useState("")
+  const [msgType, setMsgType] = useState("success")
 
-  // For demo only—filter notifications and info
-  const filteredInfos = infos.filter((info) =>
-    info.label.toLowerCase().includes(search.toLowerCase())
-  );
+  const fetchData = async () => {
+    try {
+      const [settingsRes, notifRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/admin/settings`),
+        fetch(`${API_BASE_URL}/api/admin/notifications`)
+      ]);
+      
+      const settingsData = await settingsRes.json();
+      const notificationsData = await notifRes.json();
+      
+      if (settingsData.language) setLanguage(settingsData.language);
+      setNotifications(notificationsData || []);
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+
+    const notificationInterval = setInterval(() => {
+      fetch(`${API_BASE_URL}/api/admin/notifications`)
+        .then((r) => r.json())
+        .then((data) => {
+          setNotifications(data || []);
+        })
+        .catch((err) => console.error("Error fetching notifications:", err));
+    }, 3000);
+
+    return () => clearInterval(notificationInterval);
+  }, [])
+
+  const handleSaveSettings = async () => {
+    try {
+      await fetch(`${API_BASE_URL}/api/admin/settings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "language", value: language || "" }),
+      })
+
+      await logAdminAction(user.email, user.fullName, "Updated general settings")
+
+      // Trigger reload in dashboard
+      window.dispatchEvent(new CustomEvent('reloadLogs'))
+
+      setMessage("Settings saved successfully!")
+      setMsgType("success")
+      setTimeout(() => setMessage(""), 3000)
+    } catch (err) {
+      setMessage("Failed to save settings")
+      setMsgType("error")
+      setTimeout(() => setMessage(""), 3000)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex">
+        <AdminSidebar />
+        <main className="flex-1 p-10 text-center">Loading...</main>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
-      <AdminSidebar />
-      <main className="flex-1 p-10">
-        <div className="font-bold text-2xl mb-6">Settings</div>
-        <div className="flex justify-between items-center mb-5">
-          <div className="font-semibold">Manage Notifications</div>
-          <div className="w-full md:w-auto">
-            <SearchBar
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search"
-              className="max-w-md"
-            />
-          </div>
-        </div>
-        {/* Notifications Box */}
-        <div
-          className="border rounded bg-white p-8 flex items-center justify-center mb-6"
-          style={{ minHeight: 110 }}
-        >
-          <span className="text-gray-400 text-lg">No Notifications</span>
-        </div>
-        <div className="font-semibold mb-2">Update Information</div>
-        <div className="flex flex-col gap-3">
-          {filteredInfos.length > 0 ? (
-            filteredInfos.map((info, idx) => (
-              <div
-                key={info.label}
-                className="border rounded flex items-center justify-between px-4 py-3 bg-gray-50"
+        <AdminSidebar />
+        <main className="flex-1 p-10">
+        <h1 className="text-3xl font-bold mb-6">Settings</h1>
+        <NotificationBar message={message} onClear={() => setMessage("")} />
+
+        <div className="space-y-6 max-w-4xl">
+          {/* Language Settings */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-bold mb-4 text-gray-900">Language Settings</h2>
+            <div>
+              <label className="block font-semibold mb-2 text-gray-700">Default Language</label>
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                disabled={!canEdit}
+                className={`w-full md:w-64 border border-gray-300 rounded px-4 py-2 ${
+                  !canEdit ? "bg-gray-100 cursor-not-allowed" : ""
+                }`}
               >
-                <span>{info.label}</span>
-                <div className="flex gap-2">
-                  <button
-                    title="Edit"
-                    className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                  >
-                    <svg
-                      width={18}
-                      height={18}
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M15.232 5.232l3.536 3.536M9 11l5.5-5.5a2.121 2.121 0 1 1 3 3L12 14l-4 1 1-4z" />
-                    </svg>
-                  </button>
-                  <button
-                    title="Delete"
-                    className="p-1 text-red-600 hover:bg-red-50 rounded"
-                  >
-                    <svg
-                      width={18}
-                      height={18}
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="text-gray-500 text-center p-6">
-              No update info found.
+                <option value="english">English</option>
+                <option value="filipino">Filipino</option>
+              </select>
             </div>
-          )}
+          </div>
+
+          {/* Save General Settings Button */}
+          <div>
+            <button
+              onClick={handleSaveSettings}
+              disabled={!canEdit}
+              className={`px-6 py-2 bg-blue-600 text-white rounded font-semibold transition ${
+                canEdit ? "hover:bg-blue-700" : "opacity-50 cursor-not-allowed"
+              }`}
+            >
+              Save General Settings
+            </button>
+          </div>
+
+          {/* Notifications Section */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-bold mb-4 text-gray-900">Notifications</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              View recent notifications about user activities and survey submissions.
+            </p>
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {notifications.length === 0 ? (
+                <p className="text-gray-500 text-sm">No notifications yet.</p>
+              ) : (
+                notifications.map((notif) => (
+                  <div key={notif.id} className="border rounded p-4 bg-gray-50">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="font-semibold text-gray-900">{notif.message}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {notif.user_name && `User: ${notif.user_name}`}
+                          {notif.user_email && ` (${notif.user_email})`}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {new Date(notif.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                      <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                        {notif.notification_type}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       </main>
     </div>
-  );
+  )
 }

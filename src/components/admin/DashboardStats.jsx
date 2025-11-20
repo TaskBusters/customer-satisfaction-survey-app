@@ -3,27 +3,25 @@ import DashboardCard from "./DashboardCard";
 import InfoRow from "./InfoRow";
 import { Pie } from "react-chartjs-2";
 import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
-
 Chart.register(ArcElement, Tooltip, Legend);
 
-function DashboardStats({ loading, stats, search }) {
+function DashboardStats({ loading, stats, onShowLogs, search }) {
   if (loading) {
     return <div className="text-center text-gray-500 py-20">Loading...</div>;
   }
   if (!stats) return null;
 
-  // Create a reportChartData if backend provides chart data
   const reportChartData =
     stats.reports && stats.reports.chartData
       ? {
-          labels: stats.reports.chartData.map((d) => d.label),
-          datasets: [
-            {
-              data: stats.reports.chartData.map((d) => d.value),
-              backgroundColor: stats.reports.chartData.map((d) => d.color),
-            },
-          ],
-        }
+        labels: stats.reports.chartData.map((d) => d.label),
+        datasets: [
+          {
+            data: stats.reports.chartData.map((d) => d.value),
+            backgroundColor: stats.reports.chartData.map((d) => d.color),
+          },
+        ],
+      }
       : null;
 
   const cards = [
@@ -56,7 +54,10 @@ function DashboardStats({ loading, stats, search }) {
             label="Registered Respondents"
             value={stats.profile.respondents}
           />
-          <button className="mt-3 text-sm px-4 py-1.5 border font-semibold rounded hover:bg-gray-100 transition">
+          <button
+            className="mt-3 text-sm px-4 py-1.5 border font-semibold rounded hover:bg-gray-100 transition"
+            onClick={onShowLogs}
+          >
             View Logs
           </button>
         </>
@@ -68,7 +69,6 @@ function DashboardStats({ loading, stats, search }) {
         <>
           <InfoRow label="Submitted" value={stats.reports.submitted} />
           <InfoRow label="Drafts" value={stats.reports.drafts} />
-          {/* Show chart if data exists */}
           {reportChartData && (
             <div className="my-3 w-32 h-32 mx-auto">
               <Pie
@@ -86,7 +86,6 @@ function DashboardStats({ loading, stats, search }) {
     },
   ];
 
-  // Filter cards by search (case-insensitive, in the card title)
   const filteredCards = search
     ? cards.filter((card) =>
         card.title.toLowerCase().includes(search.toLowerCase())

@@ -44,11 +44,10 @@ export default function MatrixField({
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 md:gap-6 items-end w-full">
             {columns.map((col, colIdx) => (
               <div key={colIdx} className="flex flex-col items-center w-full">
-                {col.icon && (
-                  <col.icon
-                    size={32}
-                    className={`mb-1 ${col.iconColor || ""}`}
-                  />
+                {col.emoji && (
+                  <span className="text-3xl sm:text-4xl mb-1">
+                    {col.emoji}
+                  </span>
                 )}
                 <span
                   className="

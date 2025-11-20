@@ -1,121 +1,299 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import Navbar from "../../components/survey/UserNavbar.jsx";
-import SurveyRenderer from "../../components/survey/SurveyRenderer.jsx";
-import Modal from "../../components/survey/UserModal.jsx";
-import ClearSurveyModal from "../../components/survey/ClearSurveyModal.jsx";
-import ArrowButtonGroup from "../../components/survey/ArrowButtonGroup.jsx";
-import fields from "../../survey/surveyFields.js";
-import {
-  getMissingFields,
-  isAgeValid,
-  hasAnyAnswer,
-} from "../../survey/surveyUtils.js";
+"use client"
 
-// Simple toast notification component
+import { useState, useEffect } from "react"
+import { useNavigate, useParams, useLocation } from "react-router-dom"
+import Navbar from "../../components/survey/UserNavbar.jsx"
+import SurveyRenderer from "../../components/survey/SurveyRenderer.jsx"
+import UserInfoModal from "../../components/survey/UserInfoModal.jsx"
+import ClearSurveyModal from "../../components/survey/ClearSurveyModal.jsx"
+import ArrowButtonGroup from "../../components/survey/ArrowButtonGroup.jsx"
+import fields from "../../survey/surveyFields.js"
+import { isAgeValid, hasAnyAnswer } from "../../survey/surveyUtils.js"
+import { useAuth } from "../../context/AuthContext"
+import { API_BASE_URL } from "../../utils/api.js"
+import { useTranslation } from "react-i18next"
+
+let cachedFields = null
+let cacheTimestamp = null
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+
 function ToastNotif({ show, color, children }) {
-  if (!show) return null;
+  if (!show) return null
   return (
     <div className="fixed top-4 left-0 right-0 z-50 flex justify-center">
-      <div className={`py-2 px-5 rounded shadow-xl font-semibold ${color}`}>
-        {children}
-      </div>
+      <div className={`py-2 px-5 rounded shadow-xl font-semibold ${color}`}>{children}</div>
     </div>
-  );
+  )
 }
 
 function getSubmittedAnswers(fields, answers) {
   return fields.reduce((result, field) => {
     if (field.conditional && field.conditional.showIf) {
-      const showField = Object.entries(field.conditional.showIf).every(
-        ([dep, vals]) => vals.includes(answers[dep])
-      );
-      if (!showField) return result;
+      const showField = Object.entries(field.conditional.showIf).every(([dep, vals]) => vals.includes(answers[dep]))
+      if (!showField) return result
     }
-    result[field.name] = answers[field.name];
-    return result;
-  }, {});
+    result[field.name] = answers[field.name]
+    return result
+  }, {})
 }
 
 export default function SurveyFormPage() {
-  const [answers, setAnswers] = useState({});
-  const [showErrorModal, setShowErrorModal] = useState(false);
-  const [showToast, setShowToast] = useState(false);
-  const [showClearSurveyModal, setShowClearSurveyModal] = useState(false);
-  const [toastMsg, setToastMsg] = useState("");
-  const [toastColor, setToastColor] = useState("bg-green-500/90 text-white");
-  const navigate = useNavigate();
+  const { id } = useParams()
+  const location = useLocation()
+  const isEditMode = !!id
+  const [answers, setAnswers] = useState({})
+  const [userInfo, setUserInfo] = useState({ fullName: "", email: "" })
+  const [showUserInfoModal, setShowUserInfoModal] = useState(false)
+  const [showErrorModal, setShowErrorModal] = useState(false)
+  const [showToast, setShowToast] = useState(false)
+  const [showClearSurveyModal, setShowClearSurveyModal] = useState(false)
+  const [toastMsg, setToastMsg] = useState("")
+  const [toastColor, setToastColor] = useState("bg-green-500/90 text-white")
+  const [submitting, setSubmitting] = useState(false)
+  const [surveyFields, setSurveyFields] = useState(fields)
+  const [loadingFields, setLoadingFields] = useState(true)
+  const navigate = useNavigate()
+  const { user, isGuest } = useAuth()
+  const { t } = useTranslation()
+
+  // Load survey fields from database
+  useEffect(() => {
+    // Check if cache is still valid
+    if (cachedFields && cacheTimestamp && Date.now() - cacheTimestamp < CACHE_DURATION) {
+      setSurveyFields(cachedFields)
+      setLoadingFields(false)
+      return
+    }
+    setLoadingFields(true)
+    fetch(`${API_BASE_URL}/api/survey-questions`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.length > 0) {
+          const convertedFields = data.map(q => {
+            // Parse JSON strings if they exist
+            let options = []
+            let rows = []
+            let columns = []
+            
+            try {
+              if (q.options) {
+                options = typeof q.options === 'string' ? JSON.parse(q.options) : q.options
+              }
+              if (q.rows) {
+                rows = typeof q.rows === 'string' ? JSON.parse(q.rows) : q.rows
+              }
+              if (q.columns) {
+                columns = typeof q.columns === 'string' ? JSON.parse(q.columns) : q.columns
+              }
+            } catch (e) {
+              console.error("Error parsing field data:", e)
+            }
+            
+            // Restore emojis for matrix columns if missing
+            let restoredColumns = columns || []
+            if (q.field_type === "matrix" && restoredColumns.length > 0) {
+              const emojiMap = {
+                1: "😡",
+                2: "😞",
+                3: "😐",
+                4: "😊",
+                5: "😄",
+                "NA": "➖"
+              }
+              restoredColumns = restoredColumns.map(col => {
+                // If emoji is missing, add it based on value
+                if (!col.emoji && emojiMap[col.value]) {
+                  return {
+                    ...col,
+                    emoji: emojiMap[col.value]
+                  }
+                }
+                return col
+              })
+            }
+            
+            return {
+              section: q.section,
+              name: q.field_name,
+              type: q.field_type,
+              label: q.question_text,
+              required: q.is_required !== 0,
+              options: options || [],
+              rows: rows || [],
+              columns: restoredColumns,
+              instruction: q.instruction || "",
+              dataType: q.field_type === "number" ? "number" : "string"
+            }
+          })
+          cachedFields = convertedFields
+          cacheTimestamp = Date.now()
+          setSurveyFields(convertedFields)
+        } else {
+          setSurveyFields(fields)
+        }
+        setLoadingFields(false)
+      })
+      .catch(() => {
+        setSurveyFields(fields)
+        setLoadingFields(false)
+      })
+  }, [])
+
+  // Load submission data if in edit mode
+  useEffect(() => {
+    if (isEditMode) {
+      const submission = location.state?.submission
+      if (submission && submission.response_data) {
+        const responseData = typeof submission.response_data === 'string' 
+          ? JSON.parse(submission.response_data) 
+          : submission.response_data
+        setAnswers(responseData)
+        setUserInfo({ fullName: submission.user_name || "", email: submission.user_email || "" })
+      } else if (id) {
+        // Fetch submission if not in state
+        fetch(`${API_BASE_URL}/api/submissions/detail/${id}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.response_data) {
+              const responseData = typeof data.response_data === 'string' 
+                ? JSON.parse(data.response_data) 
+                : data.response_data
+              setAnswers(responseData)
+              setUserInfo({ fullName: data.user_name || "", email: data.user_email || "" })
+            }
+          })
+          .catch(err => {
+            console.error("Failed to load submission:", err)
+            setToastMsg(t("survey.loadFailed"))
+            setToastColor("bg-red-600/90 text-white")
+            setShowToast(true)
+            setTimeout(() => {
+              setShowToast(false)
+              navigate("/submissions")
+            }, 2000)
+          })
+      }
+    }
+  }, [isEditMode, id, location.state])
+
+  useEffect(() => {
+    if (!isGuest) {
+      setUserInfo({ fullName: user?.fullName || "", email: user?.email || "" })
+    }
+  }, [user, isGuest])
 
   useEffect(() => {
     const handleBeforeUnload = (e) => {
-      e.preventDefault();
-      e.returnValue = ""; // Required for Chrome to show dialog
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
+      e.preventDefault()
+      e.returnValue = ""
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload)
     return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, []);
+      window.removeEventListener("beforeunload", handleBeforeUnload)
+    }
+  }, [])
+
+  const handleUserInfoSubmit = (info) => {
+    setUserInfo(info)
+    setShowUserInfoModal(false)
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const missingFields = getMissingFields(answers);
-
-    let ageError = false;
-    if (
-      !missingFields.find((f) => f.name === "age") &&
-      !isAgeValid(answers.age)
-    ) {
-      ageError = true;
+    e.preventDefault()
+    
+    // Use surveyFields from state instead of hardcoded fields
+    const missingFields = surveyFields.filter(
+      (field) => {
+        const isRequired = field.required && 
+          (!field.conditionalRequired || 
+           !field.conditionalRequired.skipValues?.includes(answers[field.conditionalRequired.dependsOn]))
+        
+        if (!isRequired) return false
+        
+        if (field.type === "matrix") {
+          return !answers[field.name] || 
+            Object.keys(answers[field.name] || {}).length !== field.rows.length
+        }
+        return !answers[field.name] || answers[field.name].toString().trim() === ""
+      }
+    )
+    
+    // Check clientType_other if clientType is "others"
+    if (answers.clientType === "others" && (!answers.clientType_other || answers.clientType_other.trim() === "")) {
+      missingFields.push({ name: "clientType_other" })
+    }
+    
+    let ageError = false
+    if (!missingFields.find((f) => f.name === "age") && !isAgeValid(answers.age)) {
+      ageError = true
     }
 
     if (missingFields.length > 0 || ageError) {
-      setShowErrorModal(true);
-      setToastMsg("Survey submission failed!");
-      setToastColor("bg-red-600/90 text-white");
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 1800);
-      return;
+      setShowErrorModal(true)
+      setToastMsg(t("survey.submissionFailed"))
+      setToastColor("bg-red-600/90 text-white")
+      setShowToast(true)
+      setTimeout(() => setShowToast(false), 1800)
+      return
     }
 
-    // --- Simulated success for frontend only ---
-    setToastMsg("Survey submitted successfully!");
-    setToastColor("bg-green-500/90 text-white");
-    setShowToast(true);
-    setTimeout(() => {
-      setShowToast(false);
-      navigate("/aftersurvey");
-    }, 1800);
+    setSubmitting(true)
+    setToastMsg(t("survey.submitting"))
+    setToastColor("bg-blue-600/90 text-white")
+    setShowToast(true)
 
-    // Submit only if all required fields are valid
-    const toSubmit = getSubmittedAnswers(fields, answers);
-    // try {
-    //   const res = await fetch("/api/survey", {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify(toSubmit),
-    //   });
-    //   if (res.ok) {
-    //     setToastMsg("Survey submitted successfully!");
-    //     setToastColor("bg-green-500/90 text-white");
-    //     setShowToast(true);
-    //     setTimeout(() => {
-    //       setShowToast(false);
-    //       navigate("/aftersurvey");
-    //     }, 1800);
-    //   } else {
-    //     setToastMsg("Survey submission failed!");
-    //     setToastColor("bg-red-600/90 text-white");
-    //     setShowToast(true);
-    //     setTimeout(() => setShowToast(false), 1800);
-    //   }
-    // } catch (err) {
-    //   setToastMsg("Network error!");
-    //   setToastColor("bg-red-600/90 text-white");
-    //   setShowToast(true);
-    //   setTimeout(() => setShowToast(false), 1800);
-    // }
-  };
+    const toSubmit = getSubmittedAnswers(surveyFields, answers)
+
+    try {
+      let res
+      if (isEditMode && id) {
+        // Update existing submission
+        res = await fetch(`${API_BASE_URL}/api/submissions/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_email: user?.email || null,
+            responses: toSubmit,
+          }),
+        })
+      } else {
+        // Create new submission
+        res = await fetch(`${API_BASE_URL}/api/survey/submit`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_email: user?.email || null,
+            user_name: userInfo.fullName,
+            responses: toSubmit,
+          }),
+        })
+      }
+      
+      if (res.ok) {
+        setToastMsg(isEditMode ? t("survey.updateSuccess") : t("survey.submitSuccess"))
+        setToastColor("bg-green-500/90 text-white")
+        setShowToast(true)
+        setTimeout(() => {
+          setShowToast(false)
+          setSubmitting(false)
+          navigate(isEditMode ? "/submissions" : "/aftersurvey")
+        }, 1800)
+      } else {
+        setToastMsg(isEditMode ? t("survey.updateFailed") : t("survey.submissionFailed"))
+        setToastColor("bg-red-600/90 text-white")
+        setShowToast(true)
+        setSubmitting(false)
+        setTimeout(() => setShowToast(false), 1800)
+      }
+    } catch (err) {
+      console.error("[v0] Submission error:", err.message)
+      setToastMsg(t("survey.networkError"))
+      setToastColor("bg-red-600/90 text-white")
+      setShowToast(true)
+      setSubmitting(false)
+      setTimeout(() => setShowToast(false), 1800)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 pb-12">
@@ -124,53 +302,42 @@ export default function SurveyFormPage() {
       </ToastNotif>
       <ArrowButtonGroup />
       <Navbar />
-      <form
-        onSubmit={handleSubmit}
-        className="max-w-3xl mx-auto p-8 shadow rounded-xl bg-white mt-10"
-      >
+      <UserInfoModal open={showUserInfoModal} onSubmit={handleUserInfoSubmit} onCancel={() => navigate(-1)} />
+      <form onSubmit={handleSubmit} className="max-w-3xl mx-auto p-8 shadow rounded-xl bg-white mt-10">
         <h2 className="text-3xl text-blue-700 font-bold text-center mb-6">
-          Client Satisfaction Survey
+          {isEditMode ? t("survey.editSurvey") : t("survey.title")}
         </h2>
         <ClearSurveyModal
           open={showClearSurveyModal}
           onConfirm={() => {
-            setAnswers({});
-            setShowClearSurveyModal(false);
+            setAnswers({})
+            setShowClearSurveyModal(false)
           }}
           onCancel={() => setShowClearSurveyModal(false)}
         />
-        <SurveyRenderer
-          fields={fields}
-          answers={answers}
-          setAnswers={setAnswers}
-        />
+        <SurveyRenderer fields={surveyFields} answers={answers} setAnswers={setAnswers} disabled={submitting} />
         <div className="flex flex-row justify-between gap-4 mt-8">
           {hasAnyAnswer(answers) && (
             <button
               type="button"
               className="bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 rounded px-5 py-2 transition"
               onClick={() => setShowClearSurveyModal(true)}
+              disabled={submitting}
             >
-              Clear Survey
+              {t("survey.clear")}
             </button>
           )}
           <button
             type="submit"
-            className="bg-green-600 hover:bg-green-700 text-white rounded
-                          px-4 py-2 text-sm sm:px-6 sm:py-3 sm:text-base
-                          ml-auto
-                        "
+            className={`bg-green-600 hover:bg-green-700 text-white rounded
+                      px-4 py-2 text-sm sm:px-6 sm:py-3 sm:text-base ml-auto
+                      ${submitting ? "opacity-60" : ""}`}
+            disabled={submitting}
           >
-            Submit
+            {submitting ? t("survey.submitting") : t("survey.submit")}
           </button>
         </div>
       </form>
-      {/* Modal here */}
-      <Modal
-        open={showErrorModal}
-        title="Please answer all required fields"
-        onClose={() => setShowErrorModal(false)}
-      ></Modal>
     </div>
-  );
+  )
 }

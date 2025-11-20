@@ -1,11 +1,21 @@
-import {
-  FaAngry,
-  FaFrown,
-  FaMeh,
-  FaSmile,
-  FaLaugh,
-  FaMinusCircle,
-} from "react-icons/fa";
+const PHILIPPINE_REGIONS = [
+  { value: "NCR", label: "National Capital Region (NCR)" },
+  { value: "CAR", label: "Cordillera Administrative Region (CAR)" },
+  { value: "Region1", label: "Region I – Ilocos Region" },
+  { value: "Region2", label: "Region II – Cagayan Valley" },
+  { value: "Region3", label: "Region III – Central Luzon" },
+  { value: "Region4A", label: "Region IV‑A – CALABARZON" },
+  { value: "Region4B", label: "MIMAROPA (Region IV-B)" },
+  { value: "Region5", label: "Region V – Bicol Region" },
+  { value: "Region6", label: "Region VI – Western Visayas" },
+  { value: "Region7", label: "Region VII – Central Visayas" },
+  { value: "Region8", label: "Region VIII – Eastern Visayas" },
+  { value: "Region9", label: "Region IX – Zamboanga Peninsula" },
+  { value: "Region10", label: "Region X – Northern Mindanao" },
+  { value: "Region11", label: "Region XI – Davao Region" },
+  { value: "Region12", label: "Region XII – SOCCSKSARGEN" },
+  { value: "Region13", label: "Region XIII – Caraga" },
+]
 
 // ---- FIELD DEFINITIONS ----
 const fields = [
@@ -53,11 +63,7 @@ const fields = [
     label: "Region of Residence",
     dataType: "string",
     required: true,
-    options: [
-      { value: "NCR", label: "National Capital Region (NCR)" },
-      { value: "CAR", label: "Cordillera Administrative Region (CAR)" },
-      // ... add other regions as needed
-    ],
+    options: PHILIPPINE_REGIONS,
   },
   {
     section: "Personal Info",
@@ -80,14 +86,14 @@ const fields = [
     dataType: "number",
     required: true,
     options: [
-      { value: 1, label: "I know what a CC is and I saw this office’s CC." },
+      { value: 1, label: "I know what a CC is and I saw this office's CC." },
       {
         value: 2,
-        label: "I know what a CC is but I did NOT see this office’s CC.",
+        label: "I know what a CC is but I did NOT see this office's CC.",
       },
       {
         value: 3,
-        label: "I learned of the CC only when I saw this office’s CC.",
+        label: "I learned of the CC only when I saw this office's CC.",
       },
       {
         value: 4,
@@ -155,18 +161,15 @@ const fields = [
       },
       {
         name: "SQD3",
-        label:
-          "The steps I needed to do for my transaction were easy and simple.",
+        label: "The steps I needed to do for my transaction were easy and simple.",
       },
       {
         name: "SQD4",
-        label:
-          "I easily found information about my transaction from the office or its website.",
+        label: "I easily found information about my transaction from the office or its website.",
       },
       {
         name: "SQD5",
-        label:
-          "I paid a reasonable amount of fees for my transaction. (If free, mark 'N/A')",
+        label: "I paid a reasonable amount of fees for my transaction. (If free, mark 'N/A')",
       },
       {
         name: "SQD6",
@@ -174,46 +177,39 @@ const fields = [
       },
       {
         name: "SQD7",
-        label:
-          "I was treated courteously by the staff; staff was helpful if asked.",
+        label: "I was treated courteously by the staff; staff was helpful if asked.",
       },
       {
         name: "SQD8",
-        label:
-          "I got what I needed or (if denied) denial was sufficiently explained.",
+        label: "I got what I needed or (if denied) denial was sufficiently explained.",
       },
     ],
     columns: [
       {
         value: 1,
         label: "Strongly Disagree",
-        icon: FaAngry,
-        iconColor: "text-red-500",
+        emoji: "😡",
       },
       {
         value: 2,
         label: "Disagree",
-        icon: FaFrown,
-        iconColor: "text-orange-500",
+        emoji: "😞",
       },
       {
         value: 3,
         label: "Neither Agree nor Disagree",
-        icon: FaMeh,
-        iconColor: "text-yellow-500",
+        emoji: "😐",
       },
-      { value: 4, label: "Agree", icon: FaSmile, iconColor: "text-green-500" },
+      { value: 4, label: "Agree", emoji: "😊" },
       {
         value: 5,
         label: "Strongly Agree",
-        icon: FaLaugh,
-        iconColor: "text-green-600",
+        emoji: "😄",
       },
       {
         value: "NA",
         label: "Not Applicable",
-        icon: FaMinusCircle,
-        iconColor: "text-black",
+        emoji: "➖",
       },
     ],
   },
@@ -237,6 +233,6 @@ const fields = [
     required: false,
     placeholder: "Email",
   },
-];
+]
 
-export default fields;
+export default fields

@@ -24,6 +24,7 @@ function App() {
         <Routes>
           <Route path="/" element={<SurveyPage />} />
           <Route path="/surveyform" element={<SurveyFormPage />} />
+          <Route path="/survey/edit/:id" element={<SurveyFormPage />} />
           <Route path="/aftersurvey" element={<AfterSurveyPage />} />
           <Route path="/submissions" element={<SubmissionsPage />} />
           <Route path="/login" element={<LoginPage />} />

@@ -6,8 +6,10 @@ import SelectField from "./SelectField";
 import TextAreaField from "./TextAreaField";
 import MatrixField from "./MatrixField";
 import { isFieldRequired } from "../../survey/surveyUtils";
+import { useTranslation } from "react-i18next";
 
-export default function SurveyRenderer({ fields, answers, setAnswers }) {
+export default function SurveyRenderer({ fields, answers, setAnswers, disabled }) {
+  const { t } = useTranslation();
   let prevSection = null;
   return (
     <>
@@ -30,7 +32,7 @@ export default function SurveyRenderer({ fields, answers, setAnswers }) {
               key={field.section + "-heading"}
               className="text-blue-700 font-bold text-2xl mb-2"
             >
-              {field.section}
+              {field.section === "Feedback" ? t("survey.feedback") : field.section}
             </h3>
           );
 
@@ -73,6 +75,7 @@ export default function SurveyRenderer({ fields, answers, setAnswers }) {
                   onOtherChange={(val) =>
                     setAnswers((a) => ({ ...a, clientType_other: val }))
                   }
+                  disabled={disabled}
                 />
               );
             } else {
@@ -87,6 +90,7 @@ export default function SurveyRenderer({ fields, answers, setAnswers }) {
                   }
                   required={isFieldRequired(field, answers)}
                   name={field.name}
+                  disabled={disabled}
                 />
               );
             }
@@ -103,6 +107,7 @@ export default function SurveyRenderer({ fields, answers, setAnswers }) {
                 }
                 required={isFieldRequired(field, answers)}
                 name={field.name}
+                disabled={disabled}
               />
             );
             break;
@@ -117,6 +122,7 @@ export default function SurveyRenderer({ fields, answers, setAnswers }) {
                   setAnswers((a) => ({ ...a, [field.name]: val }))
                 }
                 required={isFieldRequired(field, answers)}
+                disabled={disabled}
               />
             );
             break;
@@ -124,13 +130,26 @@ export default function SurveyRenderer({ fields, answers, setAnswers }) {
             content.push(
               <TextAreaField
                 key={field.name}
-                label={field.label}
+                label={
+                  field.name === "suggestions"
+                    ? t("survey.suggestionsLabel")
+                    : field.name === "email"
+                    ? t("survey.emailAddressLabel")
+                    : field.label
+                }
                 value={answers[field.name]}
-                placeholder={field.placeholder}
+                placeholder={
+                  field.name === "suggestions"
+                    ? t("survey.suggestionsPlaceholder")
+                    : field.name === "email"
+                    ? t("survey.emailPlaceholder")
+                    : field.placeholder
+                }
                 onChange={(val) =>
                   setAnswers((a) => ({ ...a, [field.name]: val }))
                 }
                 required={isFieldRequired(field, answers)}
+                disabled={disabled}
               />
             );
             break;
@@ -146,6 +165,7 @@ export default function SurveyRenderer({ fields, answers, setAnswers }) {
                   setAnswers((a) => ({ ...a, [field.name]: matrixVal }))
                 }
                 required={isFieldRequired(field, answers)}
+                disabled={disabled}
               />
             );
             break;
