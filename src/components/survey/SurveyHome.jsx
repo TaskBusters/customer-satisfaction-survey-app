@@ -1,44 +1,45 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import Logo from "../authentication/Logo";
-import AboutCard from "./AboutCard";
-import PrivacyPolicyModal from "./PrivacyPolicyModal";
+"use client"
 
-const SurveyHome = ({
-  username = "Guest",
-  onTakeSurvey,
-  onAbout,
-  onSettings,
-  onExit,
-  onLogin,
-  onSignUp,
-}) => {
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
+import Logo from "../authentication/Logo"
+import AboutCard from "./AboutCard"
+import PrivacyPolicyModal from "./PrivacyPolicyModal"
+import TermsModal from "./TermsModal"
+
+const SurveyHome = ({ username = "Guest", onTakeSurvey, onAbout, onSettings, onExit, onLogin, onSignUp }) => {
   // Modal state
-  const [showAbout, setShowAbout] = useState(false);
-  const [showPolicy, setShowPolicy] = useState(false);
-  const navigate = useNavigate();
+  const [showAbout, setShowAbout] = useState(false)
+  const [showPolicy, setShowPolicy] = useState(false)
+  const [showTerms, setShowTerms] = useState(false)
+  const navigate = useNavigate()
 
-  // When user accepts policy, redirect to survey
   const handleAcceptPolicy = () => {
-    setShowPolicy(false);
-    navigate("/surveyform");
-  };
+    setShowPolicy(false)
+    setShowTerms(true)
+  }
 
   const handleDeclinePolicy = () => {
-    setShowPolicy(false);
-  };
+    setShowPolicy(false)
+  }
+
+  const handleAcceptTerms = () => {
+    setShowTerms(false)
+    navigate("/surveyform")
+  }
+
+  const handleDeclineTerms = () => {
+    setShowTerms(false)
+    setShowPolicy(false)
+  }
 
   return (
     <div className="min-h-screen w-full flex flex-col bg-[#eaeaea]">
       <div className="flex flex-col flex-1 items-center justify-center px-4">
         <Logo className="w-40 h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 mb-4" />
         <div className="text-center mb-7">
-          <h2 className="font-semibold text-xl md:text-2xl lg:text-3xl">
-            Welcome to the
-          </h2>
-          <h2 className="font-bold text-2xl md:text-3xl lg:text-4xl">
-            Customer Satisfaction Measurement Survey!
-          </h2>
+          <h2 className="font-semibold text-xl md:text-2xl lg:text-3xl">Welcome to the</h2>
+          <h2 className="font-bold text-2xl md:text-3xl lg:text-4xl">Customer Satisfaction Measurement Survey!</h2>
         </div>
         <div className="flex flex-col gap-4 w-full max-w-xs">
           <button
@@ -62,13 +63,10 @@ const SurveyHome = ({
         </div>
       </div>
       <AboutCard open={showAbout} onClose={() => setShowAbout(false)} />
-      <PrivacyPolicyModal
-        open={showPolicy}
-        onAccept={handleAcceptPolicy}
-        onDecline={handleDeclinePolicy}
-      />
+      <PrivacyPolicyModal open={showPolicy} onAccept={handleAcceptPolicy} onDecline={handleDeclinePolicy} />
+      <TermsModal open={showTerms} onAccept={handleAcceptTerms} onDecline={handleDeclineTerms} />
     </div>
-  );
-};
+  )
+}
 
-export default SurveyHome;
+export default SurveyHome

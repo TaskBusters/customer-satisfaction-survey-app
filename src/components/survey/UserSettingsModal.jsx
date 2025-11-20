@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { HiX, HiUser, HiGlobe, HiInformationCircle, HiOutlineAdjustments, HiArrowLeft } from "react-icons/hi"
+import { HiX, HiUser, HiGlobe, HiOutlineAdjustments, HiArrowLeft } from "react-icons/hi"
 import { useAuth } from "../../context/AuthContext"
 import { useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
@@ -14,8 +14,8 @@ function AboutContent() {
   useEffect(() => {
     setLoading(true)
     fetch(`${API_BASE_URL}/api/settings`)
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         setAboutText(data.about || "Customer Satisfaction Survey System")
         setLoading(false)
       })
@@ -29,8 +29,10 @@ function AboutContent() {
 
   return (
     <div className="text-gray-700 text-sm whitespace-pre-line">
-      {aboutText.split('\n').map((line, idx) => (
-        <p key={idx} className="mb-2">{line}</p>
+      {aboutText.split("\n").map((line, idx) => (
+        <p key={idx} className="mb-2">
+          {line}
+        </p>
       ))}
     </div>
   )
@@ -106,12 +108,6 @@ export default function UserSettingsModal({ open, onClose }) {
             requiresLogin: false,
           },
         ]),
-    {
-      label: t("common.about"),
-      icon: <HiInformationCircle className="text-xl mr-3 text-blue-600" />,
-      value: "about",
-      requiresLogin: false,
-    },
   ]
 
   console.log("[v0] UserSettingsModal - isGuest:", isGuest, "settingsItems length:", settingsItems.length)
@@ -243,13 +239,6 @@ export default function UserSettingsModal({ open, onClose }) {
                       <p className="font-semibold">{user?.email || "—"}</p>
                     </div>
                   </div>
-                </>
-              )}
-
-              {activeSub === "about" && (
-                <>
-                  <h2 className="text-blue-700 text-lg font-bold">{t("common.about")}</h2>
-                  <AboutContent />
                 </>
               )}
             </div>
