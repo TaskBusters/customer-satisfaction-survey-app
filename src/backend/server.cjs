@@ -1092,12 +1092,11 @@ app.post("/api/admin/log-activity", async (req, res) => {
 // --- Survey Questions API ---
 app.get("/api/admin/survey-questions", async (req, res) => {
   try {
-    // Order by section priority: Personal Info, Citizen's Charter Awareness, Service Satisfaction, Feedback
     const [rows] = await db.query(`SELECT * FROM survey_questions 
       ORDER BY 
         CASE section
           WHEN 'Personal Info' THEN 1
-          WHEN 'Citizen\'s Charter Awareness' THEN 2
+          WHEN 'Citizen\\'s Charter Awareness' THEN 2
           WHEN 'Service Satisfaction' THEN 3
           WHEN 'Feedback' THEN 4
           ELSE 5
@@ -1111,13 +1110,38 @@ app.get("/api/admin/survey-questions", async (req, res) => {
     }));
     res.json(questions);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch questions" });
+    console.error("Fetch questions error:", err);
+    res.status(500).json({ error: "Failed to fetch questions", details: err.message });
   }
 });
 
 app.post("/api/admin/survey-questions", async (req, res) => {
   try {
     const { field_name, section, question_text, field_type, is_required, options, rows, columns, instruction } = req.body;
+    
+    console.log("[v0] Received save request:", {
+      field_name,
+      section,
+      question_text,
+      field_type,
+      is_required,
+      optionsType: typeof options,
+      rowsType: typeof rows,
+      columnsType: typeof columns,
+    });
+    
+    const optionsStr = typeof options === 'string' ? options : JSON.stringify(options || []);
+    const rowsStr = typeof rows === 'string' ? rows : JSON.stringify(rows || []);
+    const columnsStr = typeof columns === 'string' ? columns : JSON.stringify(columns || []);
+    
+    console.log("[v0] Saving to database with stringified values:", {
+      field_name,
+      section,
+      optionsStrLength: optionsStr.length,
+      rowsStrLength: rowsStr.length,
+      columnsStrLength: columnsStr.length,
+    });
+    
     await db.query(
       `INSERT INTO survey_questions (field_name, section, question_text, field_type, is_required, options, \`rows\`, \`columns\`, instruction)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -1125,15 +1149,17 @@ app.post("/api/admin/survey-questions", async (req, res) => {
        section=?, question_text=?, field_type=?, is_required=?, options=?, \`rows\`=?, \`columns\`=?, instruction=?`,
       [
         field_name, section, question_text, field_type, is_required,
-        JSON.stringify(options || []), JSON.stringify(rows || []), JSON.stringify(columns || []), instruction,
+        optionsStr, rowsStr, columnsStr, instruction,
         section, question_text, field_type, is_required,
-        JSON.stringify(options || []), JSON.stringify(rows || []), JSON.stringify(columns || []), instruction
+        optionsStr, rowsStr, columnsStr, instruction
       ]
     );
-    res.json({ ok: true });
+    
+    console.log("[v0] Question saved successfully to database:", field_name);
+    res.json({ ok: true, savedField: field_name });
   } catch (err) {
-    console.error("Save question error:", err);
-    res.status(500).json({ error: "Failed to save question" });
+    console.error("[v0] Save question error:", err);
+    res.status(500).json({ error: "Failed to save question", details: err.message });
   }
 });
 
@@ -1153,7 +1179,7 @@ app.get("/api/survey-questions", async (req, res) => {
       ORDER BY 
         CASE section
           WHEN 'Personal Info' THEN 1
-          WHEN 'Citizen\'s Charter Awareness' THEN 2
+          WHEN 'Citizen\\'s Charter Awareness' THEN 2
           WHEN 'Service Satisfaction' THEN 3
           WHEN 'Feedback' THEN 4
           ELSE 5

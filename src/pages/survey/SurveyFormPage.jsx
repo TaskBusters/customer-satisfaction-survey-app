@@ -58,37 +58,40 @@ export default function SurveyFormPage() {
 
   // Load survey fields from database
   useEffect(() => {
-    // Check if cache is still valid
-    if (cachedFields && cacheTimestamp && Date.now() - cacheTimestamp < CACHE_DURATION) {
-      setSurveyFields(cachedFields)
-      setLoadingFields(false)
-      return
+    const handleSurveyUpdate = () => {
+      console.log("[v0] Survey updated event received, clearing cache")
+      cachedFields = null
+      cacheTimestamp = null
+      setLoadingFields(true)
     }
+
+    window.addEventListener("surveyUpdated", handleSurveyUpdate)
+
     setLoadingFields(true)
     fetch(`${API_BASE_URL}/api/survey-questions`)
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         if (data && data.length > 0) {
-          const convertedFields = data.map(q => {
+          const convertedFields = data.map((q) => {
             // Parse JSON strings if they exist
             let options = []
             let rows = []
             let columns = []
-            
+
             try {
               if (q.options) {
-                options = typeof q.options === 'string' ? JSON.parse(q.options) : q.options
+                options = typeof q.options === "string" ? JSON.parse(q.options) : q.options
               }
               if (q.rows) {
-                rows = typeof q.rows === 'string' ? JSON.parse(q.rows) : q.rows
+                rows = typeof q.rows === "string" ? JSON.parse(q.rows) : q.rows
               }
               if (q.columns) {
-                columns = typeof q.columns === 'string' ? JSON.parse(q.columns) : q.columns
+                columns = typeof q.columns === "string" ? JSON.parse(q.columns) : q.columns
               }
             } catch (e) {
               console.error("Error parsing field data:", e)
             }
-            
+
             // Restore emojis for matrix columns if missing
             let restoredColumns = columns || []
             if (q.field_type === "matrix" && restoredColumns.length > 0) {
@@ -98,20 +101,20 @@ export default function SurveyFormPage() {
                 3: "😐",
                 4: "😊",
                 5: "😄",
-                "NA": "➖"
+                NA: "➖",
               }
-              restoredColumns = restoredColumns.map(col => {
+              restoredColumns = restoredColumns.map((col) => {
                 // If emoji is missing, add it based on value
                 if (!col.emoji && emojiMap[col.value]) {
                   return {
                     ...col,
-                    emoji: emojiMap[col.value]
+                    emoji: emojiMap[col.value],
                   }
                 }
                 return col
               })
             }
-            
+
             return {
               section: q.section,
               name: q.field_name,
@@ -122,7 +125,7 @@ export default function SurveyFormPage() {
               rows: rows || [],
               columns: restoredColumns,
               instruction: q.instruction || "",
-              dataType: q.field_type === "number" ? "number" : "string"
+              dataType: q.field_type === "number" ? "number" : "string",
             }
           })
           cachedFields = convertedFields
@@ -137,6 +140,8 @@ export default function SurveyFormPage() {
         setSurveyFields(fields)
         setLoadingFields(false)
       })
+
+    return () => window.removeEventListener("surveyUpdated", handleSurveyUpdate)
   }, [])
 
   // Load submission data if in edit mode
@@ -144,25 +149,23 @@ export default function SurveyFormPage() {
     if (isEditMode) {
       const submission = location.state?.submission
       if (submission && submission.response_data) {
-        const responseData = typeof submission.response_data === 'string' 
-          ? JSON.parse(submission.response_data) 
-          : submission.response_data
+        const responseData =
+          typeof submission.response_data === "string" ? JSON.parse(submission.response_data) : submission.response_data
         setAnswers(responseData)
         setUserInfo({ fullName: submission.user_name || "", email: submission.user_email || "" })
       } else if (id) {
         // Fetch submission if not in state
         fetch(`${API_BASE_URL}/api/submissions/detail/${id}`)
-          .then(res => res.json())
-          .then(data => {
+          .then((res) => res.json())
+          .then((data) => {
             if (data.response_data) {
-              const responseData = typeof data.response_data === 'string' 
-                ? JSON.parse(data.response_data) 
-                : data.response_data
+              const responseData =
+                typeof data.response_data === "string" ? JSON.parse(data.response_data) : data.response_data
               setAnswers(responseData)
               setUserInfo({ fullName: data.user_name || "", email: data.user_email || "" })
             }
           })
-          .catch(err => {
+          .catch((err) => {
             console.error("Failed to load submission:", err)
             setToastMsg(t("survey.loadFailed"))
             setToastColor("bg-red-600/90 text-white")
@@ -200,29 +203,27 @@ export default function SurveyFormPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     // Use surveyFields from state instead of hardcoded fields
-    const missingFields = surveyFields.filter(
-      (field) => {
-        const isRequired = field.required && 
-          (!field.conditionalRequired || 
-           !field.conditionalRequired.skipValues?.includes(answers[field.conditionalRequired.dependsOn]))
-        
-        if (!isRequired) return false
-        
-        if (field.type === "matrix") {
-          return !answers[field.name] || 
-            Object.keys(answers[field.name] || {}).length !== field.rows.length
-        }
-        return !answers[field.name] || answers[field.name].toString().trim() === ""
+    const missingFields = surveyFields.filter((field) => {
+      const isRequired =
+        field.required &&
+        (!field.conditionalRequired ||
+          !field.conditionalRequired.skipValues?.includes(answers[field.conditionalRequired.dependsOn]))
+
+      if (!isRequired) return false
+
+      if (field.type === "matrix") {
+        return !answers[field.name] || Object.keys(answers[field.name] || {}).length !== field.rows.length
       }
-    )
-    
+      return !answers[field.name] || answers[field.name].toString().trim() === ""
+    })
+
     // Check clientType_other if clientType is "others"
     if (answers.clientType === "others" && (!answers.clientType_other || answers.clientType_other.trim() === "")) {
       missingFields.push({ name: "clientType_other" })
     }
-    
+
     let ageError = false
     if (!missingFields.find((f) => f.name === "age") && !isAgeValid(answers.age)) {
       ageError = true
@@ -268,7 +269,7 @@ export default function SurveyFormPage() {
           }),
         })
       }
-      
+
       if (res.ok) {
         setToastMsg(isEditMode ? t("survey.updateSuccess") : t("survey.submitSuccess"))
         setToastColor("bg-green-500/90 text-white")

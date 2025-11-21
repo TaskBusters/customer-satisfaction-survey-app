@@ -31,6 +31,9 @@ const ensureEmojis = (columns) => {
   })
 }
 
+let cachedFields = null
+let cacheTimestamp = null
+
 export default function AdminSurveysPage() {
   const { user } = useAuth()
   const canEdit = canEditSurvey(user?.role)
@@ -43,62 +46,100 @@ export default function AdminSurveysPage() {
 
   useEffect(() => {
     // Load questions from database
-    fetch(`${API_BASE_URL}/api/admin/survey-questions`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.length > 0) {
-          // Convert database format to field format
-          const convertedFields = data.map((q) => {
-            // Parse JSON strings if they exist
-            let options = []
-            let rows = []
-            let columns = []
+    const loadFields = async () => {
+      if (cachedFields && Date.now() - cacheTimestamp < 5 * 60 * 1000) {
+        setSurveys(cachedFields)
+        setLoading(false)
+      } else {
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/admin/survey-questions`)
+          const data = await res.json()
 
-            try {
-              if (q.options) {
-                options = typeof q.options === "string" ? JSON.parse(q.options) : q.options
-              }
-              if (q.rows) {
-                rows = typeof q.rows === "string" ? JSON.parse(q.rows) : q.rows
-              }
-              if (q.columns) {
-                columns = typeof q.columns === "string" ? JSON.parse(q.columns) : q.columns
-              }
-            } catch (e) {
-              console.error("Error parsing field data:", e)
-            }
+          if (data && data.length > 0) {
+            // Convert database format to field format
+            const convertedFields = data.map((q) => {
+              // Parse JSON strings if they exist
+              let options = []
+              let rows = []
+              let columns = []
 
-            // Ensure emojis are present in matrix columns
-            let restoredColumns = columns || []
-            if (q.field_type === "matrix" && restoredColumns.length > 0) {
-              restoredColumns = ensureEmojis(restoredColumns)
-            }
+              try {
+                if (q.options) {
+                  options = typeof q.options === "string" ? JSON.parse(q.options) : q.options
+                }
+                if (q.rows) {
+                  rows = typeof q.rows === "string" ? JSON.parse(q.rows) : q.rows
+                }
+                if (q.columns) {
+                  columns = typeof q.columns === "string" ? JSON.parse(q.columns) : q.columns
+                }
+              } catch (e) {
+                console.error("Error parsing field data:", e)
+              }
 
-            return {
-              section: q.section,
-              name: q.field_name,
-              type: q.field_type,
-              label: q.question_text,
-              required: q.is_required !== 0,
-              options: options || [],
-              rows: rows || [],
-              columns: restoredColumns,
-              instruction: q.instruction || "",
-            }
-          })
-          setSurveys(convertedFields)
-        } else {
-          // If no questions in DB, save default fields
-          saveFieldsToDatabase(fields)
+              // Ensure emojis are present in matrix columns
+              let restoredColumns = columns || []
+              if (q.field_type === "matrix" && restoredColumns.length > 0) {
+                restoredColumns = ensureEmojis(restoredColumns)
+              }
+
+              return {
+                section: q.section,
+                name: q.field_name,
+                type: q.field_type,
+                label: q.question_text,
+                required: q.is_required !== 0,
+                options: options || [],
+                rows: rows || [],
+                columns: restoredColumns,
+                instruction: q.instruction || "",
+              }
+            })
+            setSurveys(convertedFields)
+            cachedFields = convertedFields
+            cacheTimestamp = Date.now()
+          } else {
+            // If no questions in DB, save default fields
+            saveFieldsToDatabase(fields)
+            setSurveys(fields)
+            cachedFields = fields
+            cacheTimestamp = Date.now()
+          }
+        } catch (err) {
+          console.error("Failed to load questions:", err)
           setSurveys(fields)
         }
-        setLoading(false)
-      })
-      .catch((err) => {
-        console.error("Failed to load questions:", err)
-        setSurveys(fields)
-        setLoading(false)
-      })
+      }
+
+      try {
+        const settingsRes = await fetch(`${API_BASE_URL}/api/settings`)
+        const settings = await settingsRes.json()
+        setPublished(settings.survey_published === "true")
+      } catch (err) {
+        console.error("Failed to load publish status:", err)
+        setPublished(false)
+      }
+
+      setLoading(false)
+    }
+
+    loadFields()
+
+    const handlePublishStatusChange = () => {
+      const loadPublishStatus = async () => {
+        try {
+          const settingsRes = await fetch(`${API_BASE_URL}/api/settings`)
+          const settings = await settingsRes.json()
+          setPublished(settings.survey_published === "true")
+        } catch (err) {
+          console.error("Failed to load publish status:", err)
+        }
+      }
+      loadPublishStatus()
+    }
+
+    window.addEventListener("publishStatusChanged", handlePublishStatusChange)
+    return () => window.removeEventListener("publishStatusChanged", handlePublishStatusChange)
   }, [])
 
   const saveFieldsToDatabase = async (fieldsToSave) => {
@@ -136,6 +177,8 @@ export default function AdminSurveysPage() {
   const handleSaveField = async () => {
     if (!editingField) return
 
+    console.log("[v0] handleSaveField called with:", editingField)
+
     try {
       // Ensure emojis are present in columns
       const columnsWithEmojis = ensureEmojis(editingField.columns || [])
@@ -158,8 +201,16 @@ export default function AdminSurveysPage() {
       })
 
       if (!response.ok) {
+        const errorText = await response.text()
+        console.log("[v0] Save failed with status:", response.status, "error:", errorText)
         throw new Error("Failed to save question")
       }
+
+      console.log("[v0] Question saved successfully, reloading data...")
+
+      // Clear cache after saving to force refresh
+      cachedFields = null
+      cacheTimestamp = null
 
       // Reload questions from database to get the latest data
       const res = await fetch(`${API_BASE_URL}/api/admin/survey-questions`)
@@ -185,6 +236,11 @@ export default function AdminSurveysPage() {
             console.error("Error parsing field data:", e)
           }
 
+          let restoredColumns = columns || []
+          if (q.field_type === "matrix" && restoredColumns.length > 0) {
+            restoredColumns = ensureEmojis(restoredColumns)
+          }
+
           return {
             section: q.section,
             name: q.field_name,
@@ -193,11 +249,13 @@ export default function AdminSurveysPage() {
             required: q.is_required !== 0,
             options: options || [],
             rows: rows || [],
-            columns: columns || [],
+            columns: restoredColumns,
             instruction: q.instruction || "",
           }
         })
         setSurveys(convertedFields)
+        cachedFields = convertedFields
+        cacheTimestamp = Date.now()
       }
 
       // Check if this is a new question or an edit
@@ -207,13 +265,16 @@ export default function AdminSurveysPage() {
 
       setSaveMessage("Question saved successfully!")
       setTimeout(() => setSaveMessage(""), 3000)
-      setShowModal(false)
+
       setEditingField(null)
+      setShowModal(false)
 
       // Reload logs in dashboard if it's open
       window.dispatchEvent(new CustomEvent("reloadLogs"))
+      // Dispatch event to reload survey in user panel
+      window.dispatchEvent(new CustomEvent("surveyUpdated"))
     } catch (err) {
-      console.error("Save error:", err)
+      console.error("[v0] Save error:", err)
       setSaveMessage("Failed to save question!")
       setTimeout(() => setSaveMessage(""), 3000)
     }
@@ -221,12 +282,15 @@ export default function AdminSurveysPage() {
 
   const handleAddField = () => {
     setEditingField({
-      section: "Feedback",
+      section: "Personal Info",
       name: "newField_" + Date.now(),
       type: "text",
-      label: "New Field",
+      label: "New Question",
       required: false,
       options: [],
+      rows: [],
+      columns: [],
+      instruction: "",
     })
     setShowModal(true)
   }
@@ -246,6 +310,8 @@ export default function AdminSurveysPage() {
 
         // Reload logs in dashboard if it's open
         window.dispatchEvent(new CustomEvent("reloadLogs"))
+        // Dispatch event to update publish status in user panel
+        window.dispatchEvent(new CustomEvent("publishStatusChanged"))
       } catch (err) {
         setSaveMessage("Failed to publish survey!")
         setTimeout(() => setSaveMessage(""), 3000)
@@ -268,6 +334,8 @@ export default function AdminSurveysPage() {
 
         // Reload logs in dashboard if it's open
         window.dispatchEvent(new CustomEvent("reloadLogs"))
+        // Dispatch event to update publish status in user panel
+        window.dispatchEvent(new CustomEvent("publishStatusChanged"))
       } catch (err) {
         setSaveMessage("Failed to unpublish survey!")
         setTimeout(() => setSaveMessage(""), 3000)
@@ -275,30 +343,27 @@ export default function AdminSurveysPage() {
     }
   }
 
-  useEffect(() => {
-    // Check publish status
-    fetch(`${API_BASE_URL}/api/admin/settings`)
-      .then((res) => res.json())
-      .then((data) => {
-        setPublished(data.survey_published === "true")
-      })
-      .catch(() => {})
-  }, [])
-
   const handleDeleteField = async (fieldName) => {
     if (window.confirm("Delete this field?")) {
+      console.log("[v0] Deleting field:", fieldName)
       try {
         await fetch(`${API_BASE_URL}/api/admin/survey-questions/${fieldName}`, {
           method: "DELETE",
         })
         setSurveys(surveys.filter((f) => f.name !== fieldName))
+        // Clear cache after deletion
+        cachedFields = null
+        cacheTimestamp = null
         await logAdminAction(user.email, user.fullName, `Deleted survey question: ${fieldName}`)
         setSaveMessage("Question deleted successfully!")
         setTimeout(() => setSaveMessage(""), 3000)
 
         // Reload logs in dashboard if it's open
         window.dispatchEvent(new CustomEvent("reloadLogs"))
+        // Dispatch event to reload survey in user panel
+        window.dispatchEvent(new CustomEvent("surveyUpdated"))
       } catch (err) {
+        console.error("[v0] Delete error:", err)
         setSaveMessage("Failed to delete question!")
         setTimeout(() => setSaveMessage(""), 3000)
       }
@@ -447,8 +512,7 @@ export default function AdminSurveysPage() {
                                       const updatedRows = field.rows.filter((_, idx) => idx !== rowIdx)
                                       const updatedField = { ...field, rows: updatedRows }
                                       setEditingField(updatedField)
-                                      // Save the updated field
-                                      handleSaveField.call({ ...field, rows: updatedRows })
+                                      handleSaveField(updatedField)
                                     }
                                   }}
                                   disabled={!canEdit}
