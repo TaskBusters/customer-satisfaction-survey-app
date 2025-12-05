@@ -308,6 +308,95 @@ async function ensureSeedUsers() {
 }
 ensureSeedUsers();
 
+app.post("/api/auth/admin/create-account", async (req, res) => {
+  try {
+    const { fullName, email, password, role } = req.body;
+
+    // Validation
+    if (!fullName || !email || !password || !role) {
+      return res.status(400).json({ success: false, message: "All fields are required" });
+    }
+
+    // Check if email already exists
+    const [existingUsers] = await db.query("SELECT id FROM users WHERE email = ?", [email]);
+    if (existingUsers.length > 0) {
+      return res.status(409).json({ success: false, message: "Email already registered" });
+    }
+
+    // Validate password strength
+    const pwdCheck = validatePassword(password);
+    if (pwdCheck !== "strong") {
+      return res.status(400).json({ success: false, message: pwdCheck });
+    }
+
+    // Hash password
+    const hash = await bcrypt.hash(password, 10);
+
+    // Create admin account
+    await db.query(
+      "INSERT INTO users (email, password, fullName, role, isAdmin, email_verified) VALUES (?, ?, ?, ?, ?, ?)",
+      [email, hash, fullName, role, true, true]
+    );
+
+    // Log the action
+    await logAdminAction("system", "System", `Created new admin account for ${fullName} (${email}) with role: ${role}`);
+
+    res.status(200).json({ success: true, message: "Admin account created successfully" });
+  } catch (err) {
+    console.error("Admin creation error:", err);
+    res.status(500).json({ success: false, message: "Failed to create admin account: " + err.message });
+  }
+});
+
+app.post("/api/auth/send-verification-code", async (req, res) => {
+  try {
+    const { email, fullName, code } = req.body;
+
+    if (!email || !code) {
+      return res.status(400).json({ error: "Email and code are required" });
+    }
+
+    // Check if email already exists in admins table
+    const [existing] = await db.query("SELECT id FROM users WHERE email = ? AND isAdmin = TRUE", [email]);
+    if (existing.length) {
+      return res.status(400).json({ error: "Email already exists in admin accounts" });
+    }
+
+    let emailSent = false;
+    try {
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: "Admin Account Verification Code - Customer Satisfaction Survey",
+        html: `
+          <h2>Admin Account Registration</h2>
+          <p>Hi ${fullName},</p>
+          <p>Thank you for being invited to join as an admin. Here is your email verification code:</p>
+          <h1 style="color: #007bff; letter-spacing: 5px; font-size: 36px;">${code}</h1>
+          <p><strong>This code will expire in 24 hours.</strong></p>
+          <p>If you did not expect this invitation, please ignore this email.</p>
+          <hr>
+          <p><small>This is an automated message, please do not reply.</small></p>
+        `
+      });
+      console.log("Admin verification email sent to:", email);
+      emailSent = true;
+    } catch (emailErr) {
+      console.error("Email sending error:", emailErr);
+      emailSent = false;
+    }
+
+    if (!emailSent) {
+      return res.status(500).json({ error: "Failed to send verification email. Please try again." });
+    }
+
+    res.status(200).json({ ok: true, message: "Verification code sent to email" });
+  } catch (err) {
+    console.error("Send verification error:", err);
+    res.status(400).json({ error: "Failed to send verification code" });
+  }
+});
+
 app.get("/api/submissions/:email", async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -1360,5 +1449,39 @@ async function logAdminAction(email, name, action, details = null) {
     console.error("Error logging admin action:", err);
   }
 }
+
+app.post("/api/admin/delete-account", async (req, res) => {
+  try {
+    const { requesterEmail, requesterRole, targetEmail } = req.body;
+
+    // Only superadmin can delete admin accounts
+    if (!requesterRole || requesterRole.toLowerCase() !== "superadmin") {
+      return res.status(403).json({ error: "Only superadmins can delete admin accounts" });
+    }
+
+    // Prevent self-deletion
+    if (requesterEmail === targetEmail) {
+      return res.status(400).json({ error: "You cannot delete your own account" });
+    }
+
+    // Check if target admin exists
+    const [adminRows] = await db.query("SELECT id, fullName, email FROM users WHERE email = ? AND isAdmin = TRUE", [targetEmail]);
+    if (!adminRows.length) {
+      return res.status(404).json({ error: "Admin account not found" });
+    }
+
+    // Delete the admin account
+    await db.query("DELETE FROM users WHERE email = ?", [targetEmail]);
+
+    // Log the action
+    await logAdminAction(requesterEmail, "System", "DELETE_ADMIN", `Deleted admin account: ${targetEmail}`);
+
+    res.status(200).json({ ok: true, message: "Admin account deleted successfully" });
+  } catch (err) {
+    console.error("Delete admin error:", err);
+    res.status(400).json({ error: "Failed to delete admin account" });
+  }
+});
+
 
 app.listen(4000, () => console.log("Backend API running on http://localhost:4000"));

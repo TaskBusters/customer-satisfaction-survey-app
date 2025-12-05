@@ -5,7 +5,6 @@ import AdminSidebar from "../../components/admin/AdminSidebar"
 import NotificationBar from "../../components/admin/NotificationBar"
 import { useAuth } from "../../context/AuthContext"
 import { API_BASE_URL } from "../../utils/api.js"
-import { logAdminAction } from "../../utils/adminLogger"
 import { canEditRoles } from "../../utils/roleUtils"
 
 function RoleEditModal({ open, user, onClose, onSave }) {
@@ -46,20 +45,401 @@ function RoleEditModal({ open, user, onClose, onSave }) {
   )
 }
 
+function CreateAdminModal({ open, user, onClose, onSave, loading }) {
+  const [step, setStep] = useState(1)
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    role: "surveyadmin",
+  })
+  const [verificationCode, setVerificationCode] = useState("")
+  const [sentCode, setSentCode] = useState("")
+  const [errors, setErrors] = useState({})
+  const [showPassword, setShowPassword] = useState(false)
+
+  const validateForm = () => {
+    const newErrors = {}
+
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = "Full name is required"
+    } else if (formData.fullName.trim().length < 2) {
+      newErrors.fullName = "Full name must be at least 2 characters"
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required"
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address"
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password is required"
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters"
+    } else if (!/[A-Z]/.test(formData.password)) {
+      newErrors.password = "Password must contain at least one uppercase letter"
+    } else if (!/[a-z]/.test(formData.password)) {
+      newErrors.password = "Password must contain at least one lowercase letter"
+    } else if (!/[0-9]/.test(formData.password)) {
+      newErrors.password = "Password must contain at least one number"
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Please confirm your password"
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match"
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleSendVerificationCode = async () => {
+    const newErrors = {}
+
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = "Full name is required"
+    } else if (formData.fullName.trim().length < 2) {
+      newErrors.fullName = "Full name must be at least 2 characters"
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required"
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address"
+    }
+
+    setErrors(newErrors)
+    if (Object.keys(newErrors).length > 0) return
+
+    try {
+      const code = Math.floor(100000 + Math.random() * 900000).toString()
+
+      // Send verification email
+      const emailRes = await fetch(`${API_BASE_URL}/api/auth/send-verification-code`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          fullName: formData.fullName,
+          code: code,
+        }),
+      })
+
+      const emailData = await emailRes.json()
+
+      if (!emailRes.ok) {
+        setErrors({ email: emailData.error || "Failed to send verification email" })
+        return
+      }
+
+      setSentCode(code)
+      setStep(2)
+    } catch (err) {
+      setErrors({ email: "Failed to send verification email" })
+    }
+  }
+
+  const handleVerifyEmail = () => {
+    if (verificationCode !== sentCode) {
+      setErrors({ verificationCode: "Verification code is incorrect" })
+      return
+    }
+    setStep(3)
+    setErrors({})
+  }
+
+  const handleSubmit = async () => {
+    if (!validateForm()) {
+      return
+    }
+    await onSave(formData)
+    setFormData({ fullName: "", email: "", password: "", confirmPassword: "", role: "surveyadmin" })
+    setErrors({})
+    setStep(1)
+    setVerificationCode("")
+    setSentCode("")
+  }
+
+  if (!open) return null
+
+  return (
+    <div className="fixed z-50 inset-0 bg-black/30 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl max-h-screen overflow-y-auto">
+        <h2 className="font-bold mb-4 text-lg">Create New Admin Account</h2>
+
+        {step === 1 && (
+          <>
+            <div className="space-y-3 mb-4">
+              <div>
+                <label className="block text-sm font-semibold mb-1">Full Name</label>
+                <input
+                  type="text"
+                  className={`w-full border rounded px-3 py-2 ${errors.fullName ? "border-red-500" : "border-gray-300"}`}
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  placeholder="Enter full name"
+                  disabled={loading}
+                />
+                {errors.fullName && <p className="text-xs text-red-600 mt-1">{errors.fullName}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-1">Email</label>
+                <input
+                  type="email"
+                  className={`w-full border rounded px-3 py-2 ${errors.email ? "border-red-500" : "border-gray-300"}`}
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="Enter email"
+                  disabled={loading}
+                />
+                {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-1">Password</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className={`w-full border rounded px-3 py-2 pr-10 ${
+                      errors.password ? "border-red-500" : "border-gray-300"
+                    }`}
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="Enter password (min 6 chars)"
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-2 text-gray-500 text-sm"
+                  >
+                    {showPassword ? "Hide" : "Show"}
+                  </button>
+                </div>
+                {errors.password && <p className="text-xs text-red-600 mt-1">{errors.password}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-1">Confirm Password</label>
+                <input
+                  type="password"
+                  className={`w-full border rounded px-3 py-2 ${
+                    errors.confirmPassword ? "border-red-500" : "border-gray-300"
+                  }`}
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  placeholder="Confirm password"
+                  disabled={loading}
+                />
+                {errors.confirmPassword && <p className="text-xs text-red-600 mt-1">{errors.confirmPassword}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-1">Admin Role</label>
+                <select
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  value={formData.role}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  disabled={loading}
+                >
+                  <option value="surveyadmin">Survey Administrator</option>
+                  <option value="analyst">Analyst / Report Viewer</option>
+                  <option value="support">Support / Feedback Manager</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <button
+                className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-50"
+                onClick={onClose}
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold disabled:opacity-50"
+                onClick={handleSendVerificationCode}
+                disabled={loading}
+              >
+                Send Verification Code
+              </button>
+            </div>
+          </>
+        )}
+
+        {step === 2 && (
+          <>
+            <p className="text-sm text-gray-600 mb-4">
+              A verification code has been sent to <strong>{formData.email}</strong>
+            </p>
+            <div className="space-y-3 mb-4">
+              <div>
+                <label className="block text-sm font-semibold mb-1">Verification Code</label>
+                <input
+                  type="text"
+                  className={`w-full border rounded px-3 py-2 text-center text-2xl tracking-widest ${
+                    errors.verificationCode ? "border-red-500" : "border-gray-300"
+                  }`}
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value.toUpperCase())}
+                  placeholder="000000"
+                  maxLength="6"
+                  disabled={loading}
+                />
+                {errors.verificationCode && <p className="text-xs text-red-600 mt-1">{errors.verificationCode}</p>}
+                <p className="text-xs text-gray-500 mt-2">Enter the 6-digit code sent to the email</p>
+              </div>
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <button
+                className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-50"
+                onClick={() => {
+                  setStep(1)
+                  setVerificationCode("")
+                  setSentCode("")
+                  setErrors({})
+                }}
+                disabled={loading}
+              >
+                Back
+              </button>
+              <button
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold disabled:opacity-50"
+                onClick={handleVerifyEmail}
+                disabled={loading}
+              >
+                Verify Code
+              </button>
+            </div>
+          </>
+        )}
+
+        {step === 3 && (
+          <>
+            <p className="text-sm text-gray-600 mb-4">Email verified! Now create the admin account.</p>
+            <div className="space-y-3 mb-4">
+              <div>
+                <p className="text-sm">
+                  <strong>Full Name:</strong> {formData.fullName}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm">
+                  <strong>Email:</strong> {formData.email}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm">
+                  <strong>Role:</strong> {formData.role}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <button
+                className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-50"
+                onClick={onClose}
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-semibold disabled:opacity-50"
+                onClick={() => {
+                  onSave(formData)
+                  setFormData({ fullName: "", email: "", password: "", confirmPassword: "", role: "surveyadmin" })
+                  setErrors({})
+                  setStep(1)
+                  setVerificationCode("")
+                  setSentCode("")
+                }}
+                disabled={loading}
+              >
+                {loading ? "Creating..." : "Create Admin"}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function DeleteAdminModal({ open, admin, onClose, onConfirm, loading }) {
+  if (!open) return null
+  return (
+    <div className="fixed z-50 inset-0 bg-black/30 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-2xl">
+        <h2 className="font-bold mb-4 text-lg text-red-600">Delete Admin Account</h2>
+        <p className="text-gray-700 mb-4">
+          Are you sure you want to delete the admin account for <strong>{admin?.fullName}</strong> ({admin?.email})?
+        </p>
+        <p className="text-sm text-red-500 mb-4">
+          This action cannot be undone. All associated logs will remain for audit purposes.
+        </p>
+        <div className="flex gap-2 justify-end">
+          <button
+            className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-50"
+            onClick={onClose}
+            disabled={loading}
+          >
+            Cancel
+          </button>
+          <button
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-semibold disabled:opacity-50"
+            onClick={() => onConfirm(admin.email)}
+            disabled={loading}
+          >
+            {loading ? "Deleting..." : "Delete Account"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminProfileSecurityPage() {
-  const { user: currentUser } = useAuth()
+  const { user: currentUser, authToken } = useAuth()
   const canEdit = canEditRoles(currentUser?.role)
+  const isSuperAdmin = currentUser?.role === "superadmin"
   const [admins, setAdmins] = useState([])
   const [loading, setLoading] = useState(true)
-  const [message, setMessage] = useState("")
-  const [msgType, setMsgType] = useState("success")
+  const [notification, setNotification] = useState({ message: "", type: "success" })
   const [targetAdmin, setTargetAdmin] = useState(null)
   const [roleModalOpen, setRoleModalOpen] = useState(false)
+  const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
   const [allLogs, setAllLogs] = useState([])
+
+  const fetchAdmins = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/users`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      })
+      const data = await res.json()
+      setAdmins(data || [])
+    } catch (err) {
+      console.error("Failed to fetch admins:", err)
+    }
+  }
 
   const reloadLogs = async () => {
     try {
-      const logsRes = await fetch(`${API_BASE_URL}/api/admin/logs`)
+      const logsRes = await fetch(`${API_BASE_URL}/api/admin/logs`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      })
       const logsData = await logsRes.json()
       setAllLogs(logsData || [])
     } catch (err) {
@@ -69,24 +449,16 @@ export default function AdminProfileSecurityPage() {
 
   useEffect(() => {
     setLoading(true)
-    Promise.all([
-      fetch(`${API_BASE_URL}/api/admin/users`).then((res) => res.json()),
-      fetch(`${API_BASE_URL}/api/admin/logs`).then((res) => res.json())
-    ])
-      .then(([usersData, logsData]) => {
-        setAdmins(usersData)
-        setAllLogs(logsData || [])
-        setLoading(false)
-      })
+    Promise.all([fetchAdmins(), reloadLogs()])
+      .then(() => setLoading(false))
       .catch((err) => {
         console.error(err)
         setLoading(false)
       })
-    
-    // Listen for reload events
+
     const handleReloadLogs = () => reloadLogs()
-    window.addEventListener('reloadLogs', handleReloadLogs)
-    return () => window.removeEventListener('reloadLogs', handleReloadLogs)
+    window.addEventListener("reloadLogs", handleReloadLogs)
+    return () => window.removeEventListener("reloadLogs", handleReloadLogs)
   }, [])
 
   const handleEditRole = (admin) => {
@@ -98,7 +470,10 @@ export default function AdminProfileSecurityPage() {
     try {
       const res = await fetch(`${API_BASE_URL}/api/admin/update-role`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
         body: JSON.stringify({
           requesterEmail: currentUser.email,
           requesterRole: currentUser.role,
@@ -107,42 +482,123 @@ export default function AdminProfileSecurityPage() {
         }),
       })
       const data = await res.json()
-      
+
       if (res.ok) {
-        // Reload admin list from server to get the updated role
-        const usersRes = await fetch(`${API_BASE_URL}/api/admin/users`)
-        const usersData = await usersRes.json()
-        setAdmins(usersData)
-        
-        // Reload logs to show the new log entry
-        const logsRes = await fetch(`${API_BASE_URL}/api/admin/logs`)
-        const logsData = await logsRes.json()
-        setAllLogs(logsData || [])
-        
-        // Trigger reload in dashboard
-        window.dispatchEvent(new CustomEvent('reloadLogs'))
-        
-        // Update current user if they edited their own role (shouldn't happen, but just in case)
+        fetchAdmins()
+        reloadLogs()
+        window.dispatchEvent(new CustomEvent("reloadLogs"))
+
         if (targetAdmin.email === currentUser.email) {
-          // Reload page or update current user context
           window.location.reload()
         }
-        
-        setMessage("Role updated successfully! Changes are permanent.")
-        setMsgType("success")
-        setTimeout(() => setMessage(""), 3000)
+
+        setNotification({
+          message: "Role updated successfully! Changes are permanent.",
+          type: "success",
+        })
+        setTimeout(() => setNotification({ message: "", type: "success" }), 3000)
         setRoleModalOpen(false)
         setTargetAdmin(null)
       } else {
         throw new Error(data.error || "Failed to update role")
       }
     } catch (err) {
-      setMessage("Failed to update role: " + (err.message || "Unknown error"))
-      setMsgType("error")
-      setTimeout(() => setMessage(""), 3000)
+      setNotification({
+        message: "Failed to update role: " + (err.message || "Unknown error"),
+        type: "error",
+      })
+      setTimeout(() => setNotification({ message: "", type: "success" }), 3000)
     }
   }
 
+  const handleCreateAdmin = async (formData) => {
+    try {
+      setLoading(true)
+      const response = await fetch(`${API_BASE_URL}/api/auth/admin/create-account`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          fullName: formData.fullName,
+          email: formData.email,
+          password: formData.password,
+          role: formData.role,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+
+      if (data.success) {
+        setNotification({
+          message: "Admin account created successfully!",
+          type: "success",
+        })
+        setCreateModalOpen(false)
+        fetchAdmins()
+      } else {
+        setNotification({
+          message: data.message || "Failed to create admin account",
+          type: "error",
+        })
+      }
+    } catch (error) {
+      console.error("Error creating admin:", error)
+      setNotification({
+        message: error.message || "Failed to create admin account",
+        type: "error",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDeleteAdmin = async (adminEmail) => {
+    setDeleteLoading(true)
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/delete-account`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          requesterEmail: currentUser.email,
+          requesterRole: currentUser.role,
+          targetEmail: adminEmail,
+        }),
+      })
+      const data = await res.json()
+
+      if (res.ok) {
+        fetchAdmins()
+        reloadLogs()
+
+        setNotification({
+          message: "Admin account deleted successfully!",
+          type: "success",
+        })
+        setDeleteModalOpen(false)
+        setDeleteTarget(null)
+        setTimeout(() => setNotification({ message: "", type: "success" }), 3000)
+      } else {
+        throw new Error(data.error || "Failed to delete admin account")
+      }
+    } catch (err) {
+      setNotification({
+        message: "Failed to delete admin account: " + (err.message || "Unknown error"),
+        type: "error",
+      })
+      setTimeout(() => setNotification({ message: "", type: "success" }), 3000)
+    } finally {
+      setDeleteLoading(false)
+    }
+  }
 
   const getRoleDescription = (role) => {
     const roleLower = role?.toLowerCase() || ""
@@ -161,16 +617,28 @@ export default function AdminProfileSecurityPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
-        <AdminSidebar />
-        <main className="flex-1 p-10">
-        <h1 className="text-3xl font-bold mb-6">Admin Accounts & Security</h1>
-        <NotificationBar message={message} onClear={() => setMessage("")} msgType={msgType} />
-        
+      <AdminSidebar />
+      <main className="flex-1 p-10">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold mb-4">Admin Accounts & Security</h1>
+          <button
+            onClick={() => setCreateModalOpen(true)}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold transition"
+          >
+            + Create Admin Account
+          </button>
+        </div>
+        <NotificationBar
+          message={notification.message}
+          onClear={() => setNotification({ message: "", type: "success" })}
+          msgType={notification.type}
+        />
+
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
-          <strong>Note:</strong> Only System Administrators can access this page to manage admin roles and view activity logs.
+          <strong>Note:</strong> Only System Administrators can access this page to manage admin roles and view activity
+          logs.
         </div>
 
-        {/* Current Admin Info */}
         {currentUser && (
           <div className="bg-white rounded-lg shadow p-6 mb-6">
             <h2 className="text-xl font-bold mb-4">Your Account</h2>
@@ -248,6 +716,17 @@ export default function AdminProfileSecurityPage() {
                             >
                               Edit Role
                             </button>
+                            {isSuperAdmin && currentUser.email !== admin.email && (
+                              <button
+                                onClick={() => {
+                                  setDeleteTarget(admin)
+                                  setDeleteModalOpen(true)
+                                }}
+                                className="px-3 py-1 text-sm border border-red-200 bg-red-50 text-red-700 rounded hover:bg-red-100 transition"
+                              >
+                                Delete
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -259,7 +738,6 @@ export default function AdminProfileSecurityPage() {
           )}
         </div>
 
-        {/* Admin Activity Logs Table */}
         <div className="bg-white rounded-lg shadow mt-6">
           <div className="px-6 py-4 border-b bg-gray-50">
             <p className="font-semibold text-gray-900">Admin Activity Logs</p>
@@ -311,6 +789,20 @@ export default function AdminProfileSecurityPage() {
           user={targetAdmin}
           onClose={() => setRoleModalOpen(false)}
           onSave={handleSaveRole}
+        />
+        <CreateAdminModal
+          open={createModalOpen}
+          user={currentUser}
+          onClose={() => setCreateModalOpen(false)}
+          onSave={handleCreateAdmin}
+          loading={loading}
+        />
+        <DeleteAdminModal
+          open={deleteModalOpen}
+          admin={deleteTarget}
+          onClose={() => setDeleteModalOpen(false)}
+          onConfirm={handleDeleteAdmin}
+          loading={deleteLoading}
         />
       </main>
     </div>

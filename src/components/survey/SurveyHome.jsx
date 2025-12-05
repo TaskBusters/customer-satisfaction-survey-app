@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import Logo from "../authentication/Logo"
 import AboutCard from "./AboutCard"
 import PrivacyPolicyModal from "./PrivacyPolicyModal"
@@ -16,6 +17,7 @@ const SurveyHome = ({ username = "Guest", onTakeSurvey, onAbout, onSettings, onE
   const [isPublished, setIsPublished] = useState(true)
   const [loadingStatus, setLoadingStatus] = useState(true)
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   useEffect(() => {
     const fetchPublishStatus = async () => {
@@ -120,7 +122,7 @@ const SurveyHome = ({ username = "Guest", onTakeSurvey, onAbout, onSettings, onE
                         w-[90vw] max-w-xs sm:w-40 md:w-48 mb-3"
             onClick={() => setShowPolicy(true)}
           >
-            Take the Survey
+            {t("survey.takeSurvey")}
           </button>
           <button
             type="button"
@@ -129,7 +131,7 @@ const SurveyHome = ({ username = "Guest", onTakeSurvey, onAbout, onSettings, onE
                         w-[90vw] max-w-xs sm:w-40 md:w-48 mb-3"
             onClick={() => setShowAbout(true)}
           >
-            About
+            {t("survey.about")}
           </button>
         </div>
       </div>

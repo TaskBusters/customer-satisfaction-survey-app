@@ -1,16 +1,19 @@
-import React from "react";
-import { useTranslation } from "react-i18next";
+"use client"
+import { useTranslation } from "react-i18next"
 
 export default function AboutCard({ open, onClose }) {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
-  if (!open) return null;
+  if (!open) return null
 
-  const aboutContent = `The system is a centralized survey management platform designed to support a single, fully editable survey. It provides administrators with an integrated environment for configuring survey content, managing responses, generating analytics, and reviewing user feedback. Built with role-based access control, the system ensures secure, structured, and efficient handling of survey data.
+  // Use i18n key directly without fallback to ensure English is shown
+  const aboutContent = t("aboutSurvey.content", {
+    defaultValue: `This system is a centralized survey management platform designed to support a single, fully editable survey. It provides administrators with an integrated environment for configuring survey content, managing responses, generating analytics, and reviewing user feedback. Built with role-based access control, the system ensures secure, structured, and efficient handling of survey data.
 
-The platform aims to streamline the end-to-end survey workflow—from creation and response collection to reporting and analysis—while maintaining data integrity and compliance with privacy standards. Its modular design supports key administrative functions such as profile management, analytics generation, feedback review, and system configuration.
+The platform aims to simplify the end-to-end survey workflow—from creation and response collection to reporting and analysis—while maintaining data integrity and compliance with privacy standards. Its modular design supports key administrative functions such as profile management, analytics generation, feedback review, and system configuration.
 
-This system was developed to help organizations or academic institutions collect meaningful insights, ensure respondent confidentiality, and promote responsible digital data practices.`;
+This system was built to help organizations and academic institutions collect meaningful insights, ensure respondent confidentiality, and advance responsible digital data practices.`,
+  })
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -21,12 +24,12 @@ This system was developed to help organizations or academic institutions collect
         >
           ×
         </button>
-        <h2 className="text-3xl font-bold text-center mb-6 text-blue-700">
-          {t("common.about")}
-        </h2>
+        <h2 className="text-3xl font-bold text-center mb-6 text-blue-700">{t("common.about")}</h2>
         <div className="text-gray-700 space-y-4 text-sm leading-relaxed mb-6">
           {aboutContent.split("\n\n").map((paragraph, idx) => (
-            <p key={idx} className="text-justify">{paragraph}</p>
+            <p key={idx} className="text-justify">
+              {paragraph}
+            </p>
           ))}
         </div>
         <div className="flex justify-center">
@@ -39,5 +42,5 @@ This system was developed to help organizations or academic institutions collect
         </div>
       </div>
     </div>
-  );
+  )
 }
