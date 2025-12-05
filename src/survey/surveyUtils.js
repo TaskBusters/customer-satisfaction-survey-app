@@ -40,7 +40,7 @@ export function isAgeValid(age) {
   return Number.isInteger(ageNum) && ageNum >= 1 && ageNum <= 120;
 }
 
-export  function hasAnyAnswer(answers) {
+export function hasAnyAnswer(answers) {
   return Object.values(answers).some((value) => {
     // Handles nested matrix objects, arrays, and strings
     if (value == null || value === "") return false;
