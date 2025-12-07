@@ -83,6 +83,7 @@ export default function RegisterForm() {
         { value: "arkongBato", label: "Arkong Bato" },
         { value: "balangkas", label: "Balangkas" },
         { value: "bignay", label: "Bignay" },
+        { value: "bisig", label: "Bisig" },
         { value: "canumayEast", label: "Canumay East" },
         { value: "canumayWest", label: "Canumay West" },
         { value: "coloong", label: "Coloong" },
@@ -163,7 +164,7 @@ export default function RegisterForm() {
           barangay,
         }),
       });
-      
+
       if (res.ok) {
         setTempEmail(email);
         setRegistrationStep("verify");
@@ -186,7 +187,10 @@ export default function RegisterForm() {
   const handleVerifyEmail = async (e) => {
     e.preventDefault();
     if (!verificationCode) {
-      showToastWithDelay("Please enter the verification code.", "bg-red-600/90 text-white");
+      showToastWithDelay(
+        "Please enter the verification code.",
+        "bg-red-600/90 text-white"
+      );
       return;
     }
 
@@ -263,11 +267,13 @@ export default function RegisterForm() {
               type="text"
               id="code"
               value={verificationCode}
-              onChange={(e) => setVerificationCode(e.target.value.toUpperCase())}
+              onChange={(e) =>
+                setVerificationCode(e.target.value.toUpperCase())
+              }
               placeholder="000000"
               maxLength="6"
               required
-              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 placeholder-gray-400 text-center text-2xl tracking-widest"
+              className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 placeholder-gray-400 text-center text-2xl tracking-widest"
             />
           </div>
 
@@ -409,7 +415,9 @@ export default function RegisterForm() {
             {/* Eye icon toggle */}
             <button
               type="button"
-              aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+              aria-label={
+                showConfirmPassword ? "Hide password" : "Show password"
+              }
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               tabIndex={0}
               className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 focus:outline-none"

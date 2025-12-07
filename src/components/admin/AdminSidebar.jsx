@@ -14,6 +14,7 @@ import {
   MdArrowBack,
   MdMenu,
   MdClose,
+  MdNotifications,
 } from "react-icons/md";
 
 const FAKE_ADMIN = {
@@ -50,9 +51,9 @@ const sidebarLinks = [
     icon: <MdHelpOutline size={22} />,
   },
   {
-    label: "Settings",
-    route: "/admin/settings",
-    icon: <MdSettings size={22} />,
+    label: "Notifications",
+    route: "/admin/notifications",
+    icon: <MdNotifications size={22} />,
   },
 ];
 
@@ -68,46 +69,46 @@ function AdminSidebar() {
     if (!user) {
       return false;
     }
-    
+
     // If user has isAdmin flag but no role, allow all (backward compatibility)
     if (user.isAdmin && !user.role) {
       return true;
     }
-    
+
     if (!user.role) {
       return route === "/admin/overview";
     }
-    
+
     const role = user.role.toLowerCase();
-    
+
     // System Administrator (Super Admin) - Full access to everything
     if (role === "superadmin" || role === "system admin") {
       return true;
     }
-    
+
     // Survey Administrator - Full access EXCEPT Profile & Security (role management)
     if (role === "surveyadmin" || role === "survey admin") {
       return route !== "/admin/profile"; // Can access everything except role management
     }
-    
+
     // Analyst / Report Viewer - Read-only access to responses and reports
     if (role === "analyst" || role === "report viewer") {
       return ["/admin/overview", "/admin/reports"].includes(route);
     }
-    
+
     // Support / Feedback Manager - Limited to Help & Feedback
     if (role === "support" || role === "feedback manager") {
       return ["/admin/overview", "/admin/help"].includes(route);
     }
-    
+
     // Default: allow overview for any admin user
     return route === "/admin/overview";
   };
 
   // Show all links, but mark which ones are accessible
-  const linksWithAccess = sidebarLinks.map(link => ({
+  const linksWithAccess = sidebarLinks.map((link) => ({
     ...link,
-    hasAccess: canAccess(link.route)
+    hasAccess: canAccess(link.route),
   }));
 
   return (
@@ -120,11 +121,29 @@ function AdminSidebar() {
         {mobileMenuOpen ? <MdClose size={24} /> : <MdMenu size={24} />}
       </button>
 
-      {/* Sidebar */}
+      {/* Sidebar - MODIFIED FOR STICKY BEHAVIOR */}
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-40 flex flex-col w-72 bg-blue-700 min-h-screen text-white transform transition-transform duration-300 ease-in-out ${
-          mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        }`}
+        className={`
+          // Use 'sticky' on desktop, 'fixed' on mobile (as before)
+          fixed md:sticky 
+          
+          // Pin it to the top universally. This is CRITICAL for fixed/sticky stability.
+          **top-0** // Mobile specific: take up full height vertically
+          inset-y-0 left-0 
+          
+          // Desktop: Ensure it takes full viewport height when it sticks
+          md:h-screen 
+
+          // Common styles
+          z-40 flex flex-col w-72 bg-blue-700 text-white transition-transform duration-300 ease-in-out 
+          
+          // Mobile open/close logic
+          ${
+            mobileMenuOpen
+              ? "translate-x-0"
+              : "-translate-x-full md:translate-x-0"
+          } 
+        `}
       >
         {/* Logo and header */}
         <div className="flex items-center px-6 py-5 border-b border-blue-800 mb-2">
@@ -137,7 +156,9 @@ function AdminSidebar() {
             <div className="text-lg font-semibold text-white">
               Admin Dashboard
             </div>
-            <div className="text-xs text-blue-100">{user?.email || "Admin"}</div>
+            <div className="text-xs text-blue-100">
+              {user?.email || "Admin"}
+            </div>
           </div>
         </div>
         {/* Sidebar links */}
@@ -153,7 +174,7 @@ function AdminSidebar() {
                       ? "bg-blue-800 bg-opacity-90 border-l-4 border-white font-semibold"
                       : item.hasAccess
                       ? "hover:bg-blue-600 bg-opacity-70"
-                      : "opacity-60 hover:bg-blue-600 bg-opacity-50"
+                      : "opacity-60 hover:bg-blue-600 bg-opacity-50 pointer-events-none"
                   } text-white`}
                 >
                   <span className="mr-4 text-white">{item.icon}</span>

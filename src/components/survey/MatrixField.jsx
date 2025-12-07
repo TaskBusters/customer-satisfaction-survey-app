@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState } from "react";
 import { isFieldRequired } from "../../survey/surveyUtils";
 
 export default function MatrixField({
@@ -14,42 +14,6 @@ export default function MatrixField({
   answers = {},
 }) {
   const [touched, setTouched] = useState(false);
-
-  const scrollRef = useRef(null);
-  const isDraggingRef = useRef(false);
-  const startXRef = useRef(0);
-  const scrollLeftRef = useRef(0);
-
-  const onMouseDown = useCallback((e) => {
-    isDraggingRef.current = true;
-    if (scrollRef.current) {
-      startXRef.current = e.pageX - scrollRef.current.offsetLeft;
-      scrollLeftRef.current = scrollRef.current.scrollLeft;
-      scrollRef.current.style.cursor = "grabbing";
-    }
-  }, []);
-
-  const onMouseMove = useCallback((e) => {
-    if (!isDraggingRef.current || !scrollRef.current) return;
-    e.preventDefault();
-    const x = e.pageX - scrollRef.current.offsetLeft;
-    const walk = x - startXRef.current;
-    scrollRef.current.scrollLeft = scrollLeftRef.current - walk;
-  }, []);
-
-  const onMouseUp = useCallback(() => {
-    isDraggingRef.current = false;
-    if (scrollRef.current) {
-      scrollRef.current.style.cursor = "grab";
-    }
-  }, []);
-
-  const onMouseLeave = useCallback(() => {
-    isDraggingRef.current = false;
-    if (scrollRef.current) {
-      scrollRef.current.style.cursor = "grab";
-    }
-  }, []);
 
   const effectiveRequired = field.conditionalRequired
     ? isFieldRequired(field, answers)
@@ -83,13 +47,12 @@ export default function MatrixField({
           <div className="font-bold text-lg sm:text-xl mb-3">{row.label}</div>
 
           <div
-            ref={scrollRef}
-            onMouseDown={onMouseDown}
-            onMouseMove={onMouseMove}
-            onMouseUp={onMouseUp}
-            onMouseLeave={onMouseLeave}
-            className="flex flex-row gap-8 w-full overflow-x-auto py-2 px-8"
-            style={{ cursor: "grab" }}
+            className={`
+              grid w-full gap-4 sm:gap-6 
+              grid-cols-3 
+              md:grid-cols-4 
+              lg:grid-cols-5 
+            `}
           >
             {columns.map((col, colIdx) => {
               const isSelected = String(value[row.name]) === String(col.value);
@@ -98,33 +61,19 @@ export default function MatrixField({
                 <div
                   key={colIdx}
                   className={`
-    flex flex-col justify-between items-center 
-    rounded-xl px-2 py-3 cursor-pointer select-none
-    transition-all duration-150 ease-out
-    outline-none
-    ${
-      isSelected
-        ? "scale-105 shadow-md bg-blue-200"
-        : "hover:scale-105 hover:shadow"
-    }
-  `}
-                  style={{
-                    height: "200px",
-                    minWidth: "140px", // <-- INCREASED MINIMUM WIDTH
-                    maxWidth: "150px",
-                    ...(colIdx === 0 && { marginLeft: "8px" }),
-                  }}
-                  onClick={(e) => {
-                    if (
-                      Math.abs(
-                        scrollLeftRef.current - scrollRef.current.scrollLeft
-                      ) > 5
-                    ) {
-                      e.preventDefault();
-                      return;
+                    flex flex-col justify-start items-center 
+                    rounded-xl px-2 py-3 cursor-pointer select-none
+                    transition-all duration-150 ease-out
+                    outline-none h-auto // 🛑 H-AUTO: Allow height to adjust based on wrapped text
+                    min-h-[180px] // 🛑 MIN-H: Set a reasonable minimum height
+                    ${
+                      isSelected
+                        ? "scale-105 shadow-md bg-blue-200 ring-2 ring-blue-500"
+                        : "hover:scale-105 hover:shadow-lg"
                     }
-                    handleAnswer(row.name, col.value);
-                  }}
+                  `}
+                  // 🛑 REMOVED fixed height style={{ height: "200px" }}
+                  onClick={() => handleAnswer(row.name, col.value)}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
@@ -140,13 +89,13 @@ export default function MatrixField({
                     </span>
                   )}
 
-                  {/* LABEL with blue hover */}
+                  {/* LABEL - Must be flexible */}
                   <span
                     className="
                       text-xs sm:text-sm md:text-base text-center font-medium
                       break-words whitespace-normal leading-tight
-                      transition-all duration-200
-                      cursor-pointer
+                      transition-all duration-200 flex-grow // 🛑 FLEX-GROW: Pushes the radio button down
+                      cursor-pointer mt-2 mb-3 // 🛑 MARGINS: Add vertical margin for spacing
                       hover:text-blue-600
                       active:text-blue-800
                     "
@@ -163,10 +112,11 @@ export default function MatrixField({
                     className="h-0 w-0 opacity-0 pointer-events-none"
                   />
 
+                  {/* 🛑 RADIO BUTTON CONTAINER - Must be isolated and consistently centered */}
                   <div
                     className={`
                       h-7 w-7 rounded-full border-2 
-                      flex items-center justify-center
+                      flex items-center justify-center flex-shrink-0 // 🛑 FLEX-SHRINK-0: Prevents squeezing
                       ${
                         isSelected
                           ? "border-blue-600 bg-blue-600"

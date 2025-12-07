@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Button } from "flowbite-react";
+import { Button, Toast } from "flowbite-react";
 import Logo from "./Logo";
-import { Toast } from "flowbite-react";
-import backgroundImage from "../../assets/valenzuela-background.png";
 import "flowbite";
+import { HiEye, HiEyeOff } from "react-icons/hi";
 
 export default function ForgotPassForm() {
   const [email, setEmail] = useState("");
@@ -182,7 +181,7 @@ export default function ForgotPassForm() {
       )}
 
       <Logo />
-      
+
       {step === "email" && (
         <>
           <h2 className="text-xl text-center font-bold text-gray-800 mb-6 mt-2">
@@ -232,7 +231,10 @@ export default function ForgotPassForm() {
             </Button>
             <div className="flex items-center justify-between">
               <div className="flex justify-center mt-8">
-                <Link to="/login" className="text-sm text-blue-600 hover:underline">
+                <Link
+                  to="/login"
+                  className="text-sm text-blue-600 hover:underline"
+                >
                   Back to Login
                 </Link>
               </div>
@@ -280,8 +282,12 @@ export default function ForgotPassForm() {
                 onChange={(e) => setResetCode(e.target.value.toUpperCase())}
                 placeholder="000000"
                 maxLength="6"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
                 required
-                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
+                className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg 
                   focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 
                   placeholder-gray-400 text-center text-2xl tracking-widest"
               />
@@ -353,11 +359,15 @@ export default function ForgotPassForm() {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-0 bottom-3 pr-3 flex items-center text-gray-500"
               >
-                {showPassword ? "👁️" : "🙈"}
+                {showPassword ? <HiEye size={20} /> : <HiEyeOff size={20} />}
               </button>
             </div>
             <div className="mb-4">
-              <span className={`block text-xs mt-1 ${getStrengthColor(passwordStrength)}`}>
+              <span
+                className={`block text-xs mt-1 ${getStrengthColor(
+                  passwordStrength
+                )}`}
+              >
                 {newPassword ? getStrengthLabel(passwordStrength) : ""}
               </span>
             </div>
@@ -384,7 +394,11 @@ export default function ForgotPassForm() {
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute right-0 bottom-3 pr-3 flex items-center text-gray-500"
               >
-                {showConfirmPassword ? "👁️" : "🙈"}
+                {showConfirmPassword ? (
+                  <HiEye size={20} />
+                ) : (
+                  <HiEyeOff size={20} />
+                )}
               </button>
             </div>
             {confirmPassword && (
@@ -429,7 +443,7 @@ export default function ForgotPassForm() {
                 }}
                 className="text-sm text-blue-600 hover:underline"
               >
-                Start Over
+                Cancel and Start Over
               </button>
             </div>
           </form>
