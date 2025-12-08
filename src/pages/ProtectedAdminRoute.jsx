@@ -10,17 +10,19 @@ export default function ProtectedAdminRoute() {
 
   // Check if user is admin (either isAdmin flag or has admin role)
   const role = user?.role?.toLowerCase() || "";
-  const isAdmin = user?.isAdmin || 
-    (user?.role && [
-      "superadmin", 
-      "system admin",
-      "surveyadmin", 
-      "survey admin",
-      "analyst", 
-      "report viewer",
-      "support", 
-      "feedback manager"
-    ].includes(role));
+  const isAdmin =
+    user?.isAdmin ||
+    (user?.role &&
+      [
+        "superadmin",
+        "system admin",
+        "surveyadmin",
+        "survey admin",
+        "analyst",
+        "report viewer",
+        "support",
+        "feedback manager",
+      ].includes(role));
 
   if (!isAdmin) {
     return (

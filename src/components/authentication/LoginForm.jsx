@@ -10,10 +10,9 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-  const [toastColor, setToastColor] = useState("bg-green-500/90 text-white"); // Success by default
+  const [toastColor, setToastColor] = useState("bg-green-500/90 text-white");
   const [googleSigningIn, setGoogleSigningIn] = useState(false);
 
   const { login } = useAuth();
@@ -39,24 +38,23 @@ export default function LoginForm() {
       return;
     }
 
-    // -- BACKEND LOGIN --
     try {
       const res = await fetch("http://localhost:4000/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, remember }),
+        body: JSON.stringify({ email, password }),
       });
 
       if (res.ok) {
         const user = await res.json();
-        login(user); // store user in auth context
+        login(user);
 
         showToastWithDelay(
           "Login successful!",
           "bg-green-500/90 text-white",
           () => {
             if (user.isAdmin) {
-              navigate("/admin");
+              navigate("/admin/overview");
             } else {
               navigate("/");
             }
@@ -80,14 +78,15 @@ export default function LoginForm() {
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
       if (!credentialResponse?.credential) {
-        console.error("[v0] No credential in response:", credentialResponse);
-        showToastWithDelay("Google login failed. Missing credential.", "bg-red-600/90 text-white");
+        showToastWithDelay(
+          "Google login failed. Missing credential.",
+          "bg-red-600/90 text-white"
+        );
         return;
       }
-      
+
       setGoogleSigningIn(true);
-      console.log("[v0] Attempting Google login with credential");
-      
+
       const res = await fetch("http://localhost:4000/api/login/google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -96,14 +95,14 @@ export default function LoginForm() {
 
       if (res.ok) {
         const user = await res.json();
-        console.log("[v0] Google login successful:", user);
         login(user);
+
         showToastWithDelay(
           "Signed in with Google!",
           "bg-green-500/90 text-white",
           () => {
             if (user.isAdmin) {
-              navigate("/admin");
+              navigate("/admin/dashboard");
             } else {
               navigate("/");
             }
@@ -111,12 +110,16 @@ export default function LoginForm() {
         );
       } else {
         const err = await res.json();
-        console.error("[v0] Google login backend error:", err);
-        showToastWithDelay(err?.error || "Google login failed", "bg-red-600/90 text-white");
+        showToastWithDelay(
+          err?.error || "Google login failed",
+          "bg-red-600/90 text-white"
+        );
       }
     } catch (error) {
-      console.error("[v0] Google login error:", error);
-      showToastWithDelay("Google login failed. Please try again.", "bg-red-600/90 text-white");
+      showToastWithDelay(
+        "Google login failed. Please try again.",
+        "bg-red-600/90 text-white"
+      );
     } finally {
       setGoogleSigningIn(false);
     }
@@ -124,7 +127,6 @@ export default function LoginForm() {
 
   return (
     <div className="bg-[#F4F4F4] rounded-lg shadow-2xl w-80 sm:w-96 md:w-[28rem] lg:w-[32rem] xl:w-[36rem] p-8 sm:p-8 md:p-10 text-sm md:text-base border-3 border-gray-200">
-      {/* Toast notification */}
       {showToast && (
         <div className="fixed top-4 left-0 right-0 z-50 flex justify-center">
           <Toast className={`${toastColor} shadow-xl`}>
@@ -134,9 +136,11 @@ export default function LoginForm() {
       )}
 
       <Logo />
+
       <h2 className="text-xl text-center font-bold text-gray-800">
         Welcome, User!
       </h2>
+
       <form
         className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto"
         onSubmit={handleSubmit}
@@ -159,6 +163,7 @@ export default function LoginForm() {
             className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 placeholder-gray-400"
           />
         </div>
+
         {/* Password */}
         <div className="mb-5 relative">
           <label
@@ -176,7 +181,6 @@ export default function LoginForm() {
             onChange={(e) => setPassword(e.target.value)}
             className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 pr-10 placeholder-gray-400"
           />
-          {/* Eye icon toggle */}
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
@@ -185,31 +189,25 @@ export default function LoginForm() {
             {showPassword ? <HiEye size={20} /> : <HiEyeOff size={20} />}
           </button>
         </div>
-        {/* Remember Me + Forgot Password */}
+
+        {/* Register + Forgot */}
         <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center">
-            <input
-              id="remember"
-              type="checkbox"
-              checked={remember}
-              onChange={(e) => setRemember(e.target.checked)}
-              className="w-4 h-4 border border-gray-300 rounded-sm bg-gray-50 focus:ring-3 focus:ring-blue-300"
-            />
-            <label
-              htmlFor="remember"
-              className="ms-2 text-sm font-medium text-gray-900"
-            >
-              Remember me
-            </label>
-          </div>
+          <Link
+            to="/register"
+            className="text-sm text-blue-700 hover:underline"
+          >
+            Register now!
+          </Link>
+
           <Link
             to="/forgot-password"
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm text-blue-700 hover:underline"
           >
             Forgot password?
           </Link>
         </div>
-        {/* Login Button */}
+
+        {/* Login */}
         <button
           type="submit"
           className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-black focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center mx-auto block w-32 sm:w-40 md:w-48"
@@ -217,18 +215,22 @@ export default function LoginForm() {
           Login
         </button>
 
-        {/* Google Login Divider */}
+        {/* Google Login */}
         <div className="mt-6">
           <div className="flex items-center gap-3 text-gray-500 text-xs font-semibold uppercase tracking-wider">
             <span className="flex-1 h-px bg-gray-300" />
             <span>or</span>
             <span className="flex-1 h-px bg-gray-300" />
           </div>
+
           <div className="flex justify-center mt-4">
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
               onError={() =>
-                showToastWithDelay("Google login failed. Please try again.", "bg-red-600/90 text-white")
+                showToastWithDelay(
+                  "Google login failed. Please try again.",
+                  "bg-red-600/90 text-white"
+                )
               }
               text="continue_with"
               shape="pill"
@@ -239,8 +241,11 @@ export default function LoginForm() {
               context="signin"
             />
           </div>
+
           {googleSigningIn && (
-            <p className="text-xs text-center text-gray-500 mt-2">Connecting to Google…</p>
+            <p className="text-xs text-center text-gray-500 mt-2">
+              Connecting to Google…
+            </p>
           )}
         </div>
 
