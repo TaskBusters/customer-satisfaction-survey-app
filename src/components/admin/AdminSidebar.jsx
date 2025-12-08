@@ -17,12 +17,6 @@ import {
   MdNotifications,
 } from "react-icons/md";
 
-const FAKE_ADMIN = {
-  name: "Admin",
-  email: "admin@example.com",
-  avatarUrl: valenzuelaLogo,
-};
-
 const sidebarLinks = [
   {
     label: "Overview",
@@ -61,59 +55,55 @@ function AdminSidebar() {
   const { logout, user } = useAuth();
   const { pathname } = useLocation();
   const navigate = useNavigate();
+
+  const [isDesktopCollapsed, setIsDesktopCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Role-based access control - check if user can access a route
+  // --- Role-based access control (unchanged) ---
   const canAccess = (route) => {
-    // If no user, deny access
     if (!user) {
       return false;
     }
-
-    // If user has isAdmin flag but no role, allow all (backward compatibility)
     if (user.isAdmin && !user.role) {
       return true;
     }
-
     if (!user.role) {
       return route === "/admin/overview";
     }
 
     const role = user.role.toLowerCase();
 
-    // System Administrator (Super Admin) - Full access to everything
     if (role === "superadmin" || role === "system admin") {
       return true;
     }
 
-    // Survey Administrator - Full access EXCEPT Profile & Security (role management)
     if (role === "surveyadmin" || role === "survey admin") {
-      return route !== "/admin/profile"; // Can access everything except role management
+      return route !== "/admin/profile";
     }
 
-    // Analyst / Report Viewer - Read-only access to responses and reports
     if (role === "analyst" || role === "report viewer") {
       return ["/admin/overview", "/admin/reports"].includes(route);
     }
 
-    // Support / Feedback Manager - Limited to Help & Feedback
     if (role === "support" || role === "feedback manager") {
       return ["/admin/overview", "/admin/help"].includes(route);
     }
 
-    // Default: allow overview for any admin user
     return route === "/admin/overview";
   };
 
-  // Show all links, but mark which ones are accessible
   const linksWithAccess = sidebarLinks.map((link) => ({
     ...link,
     hasAccess: canAccess(link.route),
   }));
 
+  // Define dynamic width classes
+  const sidebarWidthClass = isDesktopCollapsed ? "w-20" : "w-72";
+  const contentHiddenClass = isDesktopCollapsed ? "hidden" : "block";
+
   return (
     <>
-      {/* Mobile menu button */}
+      {/* Mobile menu button (always visible, outside of the main sidebar for mobile overlay) */}
       <button
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         className="md:hidden fixed top-4 left-4 z-50 p-2 bg-blue-700 text-white rounded-lg shadow-lg"
@@ -121,21 +111,18 @@ function AdminSidebar() {
         {mobileMenuOpen ? <MdClose size={24} /> : <MdMenu size={24} />}
       </button>
 
-      {/* Sidebar - MODIFIED FOR STICKY BEHAVIOR */}
+      {/* Sidebar */}
       <aside
         className={`
-          // Use 'sticky' on desktop, 'fixed' on mobile (as before)
-          fixed md:sticky 
-          
-          // Pin it to the top universally. This is CRITICAL for fixed/sticky stability.
-          **top-0** // Mobile specific: take up full height vertically
-          inset-y-0 left-0 
-          
-          // Desktop: Ensure it takes full viewport height when it sticks
+          // Sticky/Fixed behavior
+          fixed md:sticky top-0 inset-y-0 left-0 
           md:h-screen 
 
+          // Dynamic Width based on desktop state
+          ${sidebarWidthClass}
+          
           // Common styles
-          z-40 flex flex-col w-72 bg-blue-700 text-white transition-transform duration-300 ease-in-out 
+          z-40 flex flex-col bg-blue-700 text-white transition-all duration-300 ease-in-out 
           
           // Mobile open/close logic
           ${
@@ -145,14 +132,26 @@ function AdminSidebar() {
           } 
         `}
       >
-        {/* Logo and header */}
-        <div className="flex items-center px-6 py-5 border-b border-blue-800 mb-2">
+        {/* --- Top Header/Toggle Area --- */}
+        <div
+          // MODIFIED: Increased right padding (pr-6) when expanded, and adjusted justify when collapsed
+          className={`flex items-center px-4 py-5 border-b border-blue-800 transition-all duration-300 ${
+            isDesktopCollapsed ? "justify-center" : "pr-6"
+          }`}
+        >
+          {/* Logo/Icon */}
           <img
             src={valenzuelaLogo}
-            alt="Valenzuela Logo"
-            className="w-10 h-10 rounded-full border border-blue-300 mr-3"
+            alt="Logo"
+            // MODIFIED: Added mr-3 for spacing to the right of the logo when expanded
+            className={`w-10 h-10 rounded-full border border-blue-300 shrink-0 ${
+              isDesktopCollapsed ? "" : "mr-3"
+            }`}
           />
-          <div>
+          {/* Dashboard Title */}
+          <div
+            className={`overflow-hidden whitespace-nowrap flex-1 ${contentHiddenClass}`}
+          >
             <div className="text-lg font-semibold text-white">
               Admin Dashboard
             </div>
@@ -160,60 +159,106 @@ function AdminSidebar() {
               {user?.email || "Admin"}
             </div>
           </div>
+
+          {/* DESKTOP COLLAPSE BUTTON (Hamburger Menu) */}
+          <button
+            onClick={() => setIsDesktopCollapsed(!isDesktopCollapsed)}
+            // MODIFIED: Increased padding (p-2) and ring size (ring-2) to make the circle bigger
+            className={`hidden md:block shrink-0 p-2 rounded-full hover:bg-blue-600 transition-colors duration-200 ring-2 ring-blue-500 ${
+              isDesktopCollapsed
+                ? "absolute top-5 right-[-14px] bg-blue-700"
+                : "ml-2"
+            }`}
+            title={isDesktopCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+          >
+            {isDesktopCollapsed ? <MdMenu size={24} /> : <MdClose size={24} />}
+          </button>
         </div>
+
         {/* Sidebar links */}
-        <nav className="flex-1 overflow-y-auto">
+        <nav className="flex-1 overflow-y-auto mt-2">
           <ul>
             {linksWithAccess.map((item) => (
               <li key={item.label}>
                 <Link
                   to={item.route}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center px-7 py-2 transition rounded-lg ${
+                  onClick={() => {
+                    if (mobileMenuOpen) {
+                      setMobileMenuOpen(false); // Close mobile menu if open
+                    }
+                  }}
+                  className={`flex items-center py-2 transition rounded-lg mx-3 ${
                     pathname === item.route
                       ? "bg-blue-800 bg-opacity-90 border-l-4 border-white font-semibold"
                       : item.hasAccess
                       ? "hover:bg-blue-600 bg-opacity-70"
                       : "opacity-60 hover:bg-blue-600 bg-opacity-50 pointer-events-none"
-                  } text-white`}
+                  } text-white ${
+                    isDesktopCollapsed ? "justify-center px-0" : "px-4"
+                  }`}
+                  title={isDesktopCollapsed ? item.label : undefined} // Add tooltip on collapse
                 >
-                  <span className="mr-4 text-white">{item.icon}</span>
-                  {item.label}
+                  {/* Icon remains visible in all states */}
+                  <span
+                    className={`text-white shrink-0 ${
+                      isDesktopCollapsed ? "" : "mr-3"
+                    }`}
+                  >
+                    {item.icon}
+                  </span>
+
+                  {/* Label hides when collapsed */}
+                  <span className={`whitespace-nowrap ${contentHiddenClass}`}>
+                    {item.label}
+                  </span>
                 </Link>
               </li>
             ))}
           </ul>
         </nav>
-        {/* Logout button */}
-        <div className="mt-auto px-6 pb-6">
+
+        {/* Logout button Container */}
+        <div className="px-3 pb-6 border-t border-blue-800 mt-auto pt-3">
+          {/* Logout button */}
           <button
             type="button"
             onClick={async () => {
               await logout();
               navigate("/login");
             }}
-            className="
-              flex items-center justify-center
-              w-full
-              px-4 py-2
-              rounded
-              bg-white text-blue-700
-              font-semibold
-              border border-blue-700
-              shadow
-              transition
-              hover:bg-blue-50
-              focus:outline-none
-              focus:ring-2 focus:ring-blue-300
-            "
+            className={`
+                    flex items-center justify-center
+                    w-full
+                    px-4 py-2
+                    rounded
+                    bg-white text-blue-700
+                    font-semibold
+                    border border-blue-700
+                    shadow
+                    transition
+                    hover:bg-blue-50
+                    focus:outline-none
+                    focus:ring-2 focus:ring-blue-300
+                `}
+            title={isDesktopCollapsed ? "Logout" : undefined}
           >
-            <MdArrowBack size={22} className="mr-2 text-blue-700" />
-            <span className="text-blue-700 text-center w-full">Logout</span>
+            {/* Icon remains visible */}
+            <MdArrowBack
+              size={22}
+              className={`shrink-0 ${isDesktopCollapsed ? "" : "mr-2"}`}
+            />
+
+            {/* Text hides when collapsed */}
+            <span
+              className={`text-blue-700 text-center w-full ${contentHiddenClass}`}
+            >
+              Logout
+            </span>
           </button>
         </div>
       </aside>
 
-      {/* Mobile overlay */}
+      {/* Mobile overlay (unchanged) */}
       {mobileMenuOpen && (
         <div
           className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
