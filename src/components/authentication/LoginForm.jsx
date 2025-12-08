@@ -53,12 +53,8 @@ export default function LoginForm() {
           "Login successful!",
           "bg-green-500/90 text-white",
           () => {
-            // 🛑 ADMIN REDIRECTION LOGIC (Standard Login)
             if (user.isAdmin) {
-              // Admin stays on the login page. Do nothing, or navigate to '/login'
-              // if LoginForm is not already mounted on '/login'
-              // Assuming LoginForm is on a route like '/login', we do nothing:
-              console.log("Admin logged in. Staying on login page.");
+              navigate("/admin/overview");
             } else {
               navigate("/");
             }
@@ -82,7 +78,6 @@ export default function LoginForm() {
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
       if (!credentialResponse?.credential) {
-        console.error("[v0] No credential in response:", credentialResponse);
         showToastWithDelay(
           "Google login failed. Missing credential.",
           "bg-red-600/90 text-white"
@@ -91,7 +86,6 @@ export default function LoginForm() {
       }
 
       setGoogleSigningIn(true);
-      console.log("[v0] Attempting Google login with credential");
 
       const res = await fetch("http://localhost:4000/api/login/google", {
         method: "POST",
@@ -101,16 +95,14 @@ export default function LoginForm() {
 
       if (res.ok) {
         const user = await res.json();
-        console.log("[v0] Google login successful:", user);
         login(user);
+
         showToastWithDelay(
           "Signed in with Google!",
           "bg-green-500/90 text-white",
           () => {
-            // 🛑 ADMIN REDIRECTION LOGIC (Google Login)
             if (user.isAdmin) {
-              // Admin stays on the login page. Do nothing.
-              console.log("Admin logged in via Google. Staying on login page.");
+              navigate("/admin/dashboard");
             } else {
               navigate("/");
             }
@@ -118,14 +110,12 @@ export default function LoginForm() {
         );
       } else {
         const err = await res.json();
-        console.error("[v0] Google login backend error:", err);
         showToastWithDelay(
           err?.error || "Google login failed",
           "bg-red-600/90 text-white"
         );
       }
     } catch (error) {
-      console.error("[v0] Google login error:", error);
       showToastWithDelay(
         "Google login failed. Please try again.",
         "bg-red-600/90 text-white"
@@ -146,6 +136,7 @@ export default function LoginForm() {
       )}
 
       <Logo />
+
       <h2 className="text-xl text-center font-bold text-gray-800">
         Welcome, User!
       </h2>
@@ -199,7 +190,7 @@ export default function LoginForm() {
           </button>
         </div>
 
-        {/* Register + Forgot Password */}
+        {/* Register + Forgot */}
         <div className="flex items-center justify-between mb-5">
           <Link
             to="/register"
@@ -216,7 +207,7 @@ export default function LoginForm() {
           </Link>
         </div>
 
-        {/* Login Button */}
+        {/* Login */}
         <button
           type="submit"
           className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-black focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center mx-auto block w-32 sm:w-40 md:w-48"
@@ -231,6 +222,7 @@ export default function LoginForm() {
             <span>or</span>
             <span className="flex-1 h-px bg-gray-300" />
           </div>
+
           <div className="flex justify-center mt-4">
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
@@ -249,6 +241,7 @@ export default function LoginForm() {
               context="signin"
             />
           </div>
+
           {googleSigningIn && (
             <p className="text-xs text-center text-gray-500 mt-2">
               Connecting to Google…
