@@ -37,3 +37,18 @@ body::-webkit-scrollbar-thumb:hover {
   scrollbar-width: thin;
   scrollbar-color: #1d4ed8 #f1f1f1;
 }
+
+/* Hide scrollbar for Chrome, Edge, Safari */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for Firefox */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+/* Hide scrollbar for IE/Edge Legacy */
+.no-scrollbar {
+  -ms-overflow-style: none;
+}
