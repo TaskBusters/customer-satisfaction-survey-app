@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { API_BASE_URL } from "../../utils/api.js";
+import { HiEye, HiEyeOff } from "react-icons/hi";
 
 export default function CreateAdminModal({ open, onClose, onSave, loading }) {
   const [step, setStep] = useState(1);
@@ -12,10 +13,12 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
     confirmPassword: "",
     role: "surveyadmin",
   });
+
   const [verificationCode, setVerificationCode] = useState("");
   const [sentCode, setSentCode] = useState("");
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const validateForm = () => {
     const newErrors = {};
@@ -118,6 +121,7 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
   const handleFinalSubmit = async () => {
     if (!validateForm()) return;
     await onSave(formData);
+
     setFormData({
       fullName: "",
       email: "",
@@ -125,6 +129,7 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
       confirmPassword: "",
       role: "surveyadmin",
     });
+
     setErrors({});
     setStep(1);
     setVerificationCode("");
@@ -138,9 +143,11 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
       <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl max-h-screen overflow-y-auto">
         <h2 className="font-bold mb-4 text-lg">Create New Admin Account</h2>
 
+        {/* STEP 1 — Enter Details */}
         {step === 1 && (
           <>
             <div className="space-y-3 mb-4">
+              {/* Full Name */}
               <div>
                 <label className="block text-sm font-semibold mb-1">
                   Full Name
@@ -162,6 +169,7 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
                 )}
               </div>
 
+              {/* Email */}
               <div>
                 <label className="block text-sm font-semibold mb-1">
                   Email
@@ -183,6 +191,7 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
                 )}
               </div>
 
+              {/* Password */}
               <div>
                 <label className="block text-sm font-semibold mb-1">
                   Password
@@ -197,15 +206,19 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
                     onChange={(e) =>
                       setFormData({ ...formData, password: e.target.value })
                     }
-                    placeholder="Enter password (min 6 chars)"
+                    placeholder="Enter password"
                     disabled={loading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2 text-gray-500 text-sm"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
                   >
-                    {showPassword ? "Hide" : "Show"}
+                    {showPassword ? (
+                      <HiEyeOff size={20} />
+                    ) : (
+                      <HiEye size={20} />
+                    )}
                   </button>
                 </div>
                 {errors.password && (
@@ -213,27 +226,41 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
                 )}
               </div>
 
+              {/* Confirm Password */}
               <div>
                 <label className="block text-sm font-semibold mb-1">
                   Confirm Password
                 </label>
-                <input
-                  type="password"
-                  className={`w-full border rounded px-3 py-2 ${
-                    errors.confirmPassword
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
-                  value={formData.confirmPassword}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      confirmPassword: e.target.value,
-                    })
-                  }
-                  placeholder="Confirm password"
-                  disabled={loading}
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    className={`w-full border rounded px-3 py-2 pr-10 ${
+                      errors.confirmPassword
+                        ? "border-red-500"
+                        : "border-gray-300"
+                    }`}
+                    value={formData.confirmPassword}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        confirmPassword: e.target.value,
+                      })
+                    }
+                    placeholder="Confirm password"
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                  >
+                    {showConfirmPassword ? (
+                      <HiEyeOff size={20} />
+                    ) : (
+                      <HiEye size={20} />
+                    )}
+                  </button>
+                </div>
                 {errors.confirmPassword && (
                   <p className="text-xs text-red-600 mt-1">
                     {errors.confirmPassword}
@@ -241,12 +268,13 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
                 )}
               </div>
 
+              {/* Role */}
               <div>
                 <label className="block text-sm font-semibold mb-1">
                   Admin Role
                 </label>
                 <select
-                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  className="w-full border rounded px-3 py-2 border-gray-300"
                   value={formData.role}
                   onChange={(e) =>
                     setFormData({ ...formData, role: e.target.value })
@@ -260,6 +288,7 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
               </div>
             </div>
 
+            {/* Buttons */}
             <div className="flex gap-2 justify-end">
               <button
                 className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-50"
@@ -279,12 +308,14 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
           </>
         )}
 
+        {/* STEP 2 — Verify Code */}
         {step === 2 && (
           <>
             <p className="text-sm text-gray-600 mb-4">
               A verification code has been sent to{" "}
               <strong>{formData.email}</strong>
             </p>
+
             <div className="space-y-3 mb-4">
               <div>
                 <label className="block text-sm font-semibold mb-1">
@@ -298,18 +329,18 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
                       : "border-gray-300"
                   }`}
                   value={verificationCode}
-                  onChange={(e) =>
-                    setVerificationCode(e.target.value.toUpperCase())
-                  }
+                  onChange={(e) => setVerificationCode(e.target.value)}
                   placeholder="000000"
-                  maxLength="6"
+                  maxLength={6}
                   disabled={loading}
                 />
+
                 {errors.verificationCode && (
                   <p className="text-xs text-red-600 mt-1">
                     {errors.verificationCode}
                   </p>
                 )}
+
                 <p className="text-xs text-gray-500 mt-2">
                   Enter the 6-digit code sent to the email
                 </p>
@@ -329,6 +360,7 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
               >
                 Back
               </button>
+
               <button
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold disabled:opacity-50"
                 onClick={handleVerifyEmail}
@@ -340,11 +372,13 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
           </>
         )}
 
+        {/* STEP 3 — Confirm */}
         {step === 3 && (
           <>
             <p className="text-sm text-gray-600 mb-4">
               Email verified! Now create the admin account.
             </p>
+
             <div className="space-y-3 mb-4">
               <p className="text-sm">
                 <strong>Full Name:</strong> {formData.fullName}
@@ -365,6 +399,7 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
               >
                 Cancel
               </button>
+
               <button
                 className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-semibold disabled:opacity-50"
                 onClick={handleFinalSubmit}
