@@ -102,7 +102,7 @@ export default function LoginForm() {
           "bg-green-500/90 text-white",
           () => {
             if (user.isAdmin) {
-              navigate("/admin/dashboard");
+              navigate("/admin/overview");
             } else {
               navigate("/");
             }
