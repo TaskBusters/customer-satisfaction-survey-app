@@ -5,6 +5,7 @@ import Logo from "./Logo";
 import { useAuth } from "../../context/AuthContext";
 import { Toast } from "flowbite-react";
 import { GoogleLogin } from "@react-oauth/google";
+import { useLocation } from "react-router-dom";
 
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -17,6 +18,18 @@ export default function LoginForm() {
 
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  const next = params.get("next");
+  const messageParam = params.get("message");
+  const [redirectMessage, setRedirectMessage] = useState(() => {
+    if (!messageParam) return "";
+    try {
+      return decodeURIComponent(messageParam);
+    } catch (e) {
+      return messageParam;
+    }
+  });
 
   const showToastWithDelay = (message, color, callback) => {
     setToastMessage(message);
@@ -53,6 +66,17 @@ export default function LoginForm() {
           "Login successful!",
           "bg-green-500/90 text-white",
           () => {
+            // If there is an intended 'next' path (from ProtectedRoute), honor it.
+            if (next) {
+              try {
+                const decoded = decodeURIComponent(next);
+                navigate(decoded, { replace: true });
+                return;
+              } catch (e) {
+                // fall back if invalid
+              }
+            }
+
             if (user.isAdmin) {
               navigate("/admin/overview");
             } else {
@@ -101,6 +125,14 @@ export default function LoginForm() {
           "Signed in with Google!",
           "bg-green-500/90 text-white",
           () => {
+            if (next) {
+              try {
+                const decoded = decodeURIComponent(next);
+                navigate(decoded, { replace: true });
+                return;
+              } catch (e) {}
+            }
+
             if (user.isAdmin) {
               navigate("/admin/overview");
             } else {
@@ -136,6 +168,24 @@ export default function LoginForm() {
       )}
 
       <Logo />
+
+      {redirectMessage && (
+        <div className="mb-4">
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded">
+            <div className="flex items-start justify-between">
+              <div className="text-sm text-yellow-700">{redirectMessage}</div>
+              <button
+                type="button"
+                onClick={() => setRedirectMessage("")}
+                className="text-yellow-700 font-bold ml-4"
+                aria-label="Dismiss message"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <h2 className="text-xl text-center font-bold text-gray-800">
         Welcome, User!

@@ -31,7 +31,7 @@ export default function TextField({
         id={name}
         name={name}
         required={required}
-        className={`bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 placeholder-gray-400 ${
+        className={`bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 placeholder-gray-400 placeholder-opacity-100 ${
           hasError || outOfRangeError ? "border-red-500" : ""
         }`}
         value={value || ""}

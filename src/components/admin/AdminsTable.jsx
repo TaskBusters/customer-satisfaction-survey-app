@@ -1,4 +1,5 @@
 "use client";
+import Pagination from "../common/Pagination";
 
 export default function AdminsTable({
   admins,
@@ -138,26 +139,13 @@ export default function AdminsTable({
       )}
 
       {adminTotalPages > 1 && (
-        <div className="flex justify-between items-center px-6 py-3 border-t">
-          <span className="text-sm text-gray-700">
-            Page {adminPage} of {adminTotalPages}
-          </span>
-          <div className="flex space-x-2">
-            <button
-              onClick={() => paginateAdmins(adminPage - 1)}
-              disabled={adminPage === 1}
-              className="px-3 py-1 text-sm border rounded text-gray-700 bg-gray-50 hover:bg-gray-100 disabled:opacity-50"
-            >
-              &larr; Previous
-            </button>
-            <button
-              onClick={() => paginateAdmins(adminPage + 1)}
-              disabled={adminPage === adminTotalPages}
-              className="px-3 py-1 text-sm border rounded text-gray-700 bg-gray-50 hover:bg-gray-100 disabled:opacity-50"
-            >
-              Next &rarr;
-            </button>
-          </div>
+        <div className="px-6 py-3 border-t">
+          <Pagination
+            currentPage={adminPage}
+            totalPages={adminTotalPages}
+            onPageChange={paginateAdmins}
+            showInfo={true}
+          />
         </div>
       )}
     </div>

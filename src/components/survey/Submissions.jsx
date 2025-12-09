@@ -373,7 +373,8 @@ const DetailRow = ({ label, value }) => (
 
 // Recursive viewer for response data to display label-value rows
 const ResponseDataViewer = ({ data }) => {
-  if (data === null || data === undefined) return <div className="text-sm text-gray-500">—</div>;
+  if (data === null || data === undefined)
+    return <div className="text-sm text-gray-500">—</div>;
 
   if (typeof data !== "object") {
     return <div className="text-sm text-gray-900">{String(data)}</div>;
@@ -384,7 +385,9 @@ const ResponseDataViewer = ({ data }) => {
       <div className="space-y-2">
         {data.map((item, idx) => (
           <div key={idx} className="pl-3">
-            <div className="text-xs text-gray-500 font-medium">Item {idx + 1}</div>
+            <div className="text-xs text-gray-500 font-medium">
+              Item {idx + 1}
+            </div>
             <div className="pl-2">
               <ResponseDataViewer data={item} />
             </div>
@@ -397,7 +400,10 @@ const ResponseDataViewer = ({ data }) => {
   return (
     <div className="space-y-2">
       {Object.entries(data).map(([key, value]) => (
-        <div key={key} className="flex flex-col sm:flex-row sm:items-start gap-1">
+        <div
+          key={key}
+          className="flex flex-col sm:flex-row sm:items-start gap-1"
+        >
           <div className="w-full sm:w-1/3 text-gray-500 text-sm">{key}:</div>
           <div className="flex-1 text-sm text-gray-900">
             {value === null || value === undefined ? (

@@ -64,15 +64,15 @@ export default function MatrixField({
                     flex flex-col justify-start items-center 
                     rounded-xl px-2 py-3 cursor-pointer select-none
                     transition-all duration-150 ease-out
-                    outline-none h-auto // 🛑 H-AUTO: Allow height to adjust based on wrapped text
-                    min-h-[180px] // 🛑 MIN-H: Set a reasonable minimum height
+                    outline-none h-auto
+                    min-h-[180px]
                     ${
                       isSelected
                         ? "scale-105 shadow-md bg-blue-200 ring-2 ring-blue-500"
                         : "hover:scale-105 hover:shadow-lg"
                     }
                   `}
-                  // 🛑 REMOVED fixed height style={{ height: "200px" }}
+                  // fixed height removed to allow content to size naturally
                   onClick={() => handleAnswer(row.name, col.value)}
                   role="button"
                   tabIndex={0}
@@ -89,13 +89,13 @@ export default function MatrixField({
                     </span>
                   )}
 
-                  {/* LABEL - Must be flexible */}
+                  {/* Option label */}
                   <span
                     className="
                       text-xs sm:text-sm md:text-base text-center font-medium
                       break-words whitespace-normal leading-tight
-                      transition-all duration-200 flex-grow // 🛑 FLEX-GROW: Pushes the radio button down
-                      cursor-pointer mt-2 mb-3 // 🛑 MARGINS: Add vertical margin for spacing
+                      transition-all duration-200 flex-grow
+                      cursor-pointer mt-2 mb-3
                       hover:text-blue-600
                       active:text-blue-800
                     "
@@ -112,11 +112,11 @@ export default function MatrixField({
                     className="h-0 w-0 opacity-0 pointer-events-none"
                   />
 
-                  {/* 🛑 RADIO BUTTON CONTAINER - Must be isolated and consistently centered */}
+                  {/* Radio indicator */}
                   <div
                     className={`
                       h-7 w-7 rounded-full border-2 
-                      flex items-center justify-center flex-shrink-0 // 🛑 FLEX-SHRINK-0: Prevents squeezing
+                      flex items-center justify-center flex-shrink-0
                       ${
                         isSelected
                           ? "border-blue-600 bg-blue-600"

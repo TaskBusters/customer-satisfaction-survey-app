@@ -196,8 +196,6 @@ const SurveyHome = ({
 
   return (
     <div className={commonContainerClasses} style={commonHeightStyle}>
-      {/* 🛑 CORE FIX: Re-added 'flex-1' and 'justify-center', and added a negative top margin ('-mt-10') to pull the centered block up. */}
-
       <div className="flex flex-col flex-1 items-center justify-center px-4 -mt-10">
         <Logo className="w-40 h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 mb-4" />
 

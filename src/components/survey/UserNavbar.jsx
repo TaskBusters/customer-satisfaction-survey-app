@@ -8,6 +8,7 @@ import {
 } from "react-icons/hi";
 import UserSettingsModal from "./UserSettingsModal";
 import { useAuth } from "../../context/AuthContext";
+import GoVoiceLogo from "../../assets/GoVoiceFaviconLight.png";
 
 const Navbar = ({ onClickHome, onClickLogin, onClickRegister }) => {
   const { user, logout } = useAuth();
@@ -22,6 +23,9 @@ const Navbar = ({ onClickHome, onClickLogin, onClickRegister }) => {
   const location = useLocation();
 
   const isSurveyHomePage = location.pathname === "/";
+  const hideLogo =
+    location.pathname.startsWith("/surveyform") ||
+    location.pathname === "/aftersurvey";
 
   useEffect(() => {
     setMounted(true);
@@ -53,6 +57,24 @@ const Navbar = ({ onClickHome, onClickLogin, onClickRegister }) => {
       style={{ willChange: "transform, opacity" }}
     >
       <div className="flex-1 flex items-center">
+        {!hideLogo && (
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="flex items-center gap-3 mr-4 focus:outline-none"
+            title="GoVoice Home"
+          >
+            <img
+              src={GoVoiceLogo}
+              alt="GoVoice Valenzuela"
+              className="w-8 h-8 sm:w-9 sm:h-9 object-contain"
+            />
+            <span className="text-white font-bold text-lg sm:text-xl tracking-wide">
+              GoVoice
+            </span>
+          </button>
+        )}
+
         <button
           type="button"
           className={`

@@ -30,16 +30,19 @@ const transporter = nodemailer.createTransport({
   secure: false,
   auth: {
     user: process.env.EMAIL_USER, // reads EMAIL_USER from .env
-    pass: process.env.EMAIL_PASS  // reads EMAIL_PASS from .env
+    pass: process.env.EMAIL_PASS, // reads EMAIL_PASS from .env
   },
   tls: {
-    rejectUnauthorized: false
-  }
+    rejectUnauthorized: false,
+  },
 });
 
-
 function randomCode(length = 6) {
-  return Math.random().toString().substring(2, 2 + length).padEnd(length, '0').substring(0, length);
+  return Math.random()
+    .toString()
+    .substring(2, 2 + length)
+    .padEnd(length, "0")
+    .substring(0, length);
 }
 
 function validatePassword(password) {
@@ -105,7 +108,9 @@ async function initializeDatabase() {
     )`);
 
     try {
-      await db.query(`ALTER TABLE admin_logs ADD COLUMN IF NOT EXISTS admin_name VARCHAR(100)`);
+      await db.query(
+        `ALTER TABLE admin_logs ADD COLUMN IF NOT EXISTS admin_name VARCHAR(100)`
+      );
     } catch (e) {
       // Column may already exist, ignore error
     }
@@ -179,62 +184,72 @@ async function ensureSeedUsers() {
       password: "AppDev_*",
       fullName: "Jasmine Basarte",
       isAdmin: true,
-      role: "superadmin"
+      role: "superadmin",
     },
     {
       email: "akcinaj.14.macam@gmail.com",
       password: "Support123!",
       fullName: "Janicka Akim Macam",
       isAdmin: true,
-      role: "support"
+      role: "support",
     },
     {
       email: "rodelynjulia@gmail.com",
       password: "SurveyAdmin123!",
       fullName: "Rodelyn Julia",
       isAdmin: true,
-      role: "surveyadmin"
+      role: "surveyadmin",
     },
     {
       email: "angel316.aep@gmail.com",
       password: "ReportView123!",
       fullName: "Angel Patawaran",
       isAdmin: true,
-      role: "analyst"
-    }
+      role: "analyst",
+    },
   ];
-  
+
   const surveyUser = {
     email: "janraizenb@gmail.com",
     password: "SurveyTest!123",
     fullName: "Jan Raizen Buenaventura",
     isAdmin: false,
-    role: "user"
+    role: "user",
   };
 
   for (const u of [...admins, surveyUser]) {
     // Get full user data in one query
-    const [rows] = await db.query("SELECT id, password, role, isAdmin, fullName, email_verified FROM users WHERE email = ?", [u.email]);
+    const [rows] = await db.query(
+      "SELECT id, password, role, isAdmin, fullName, email_verified FROM users WHERE email = ?",
+      [u.email]
+    );
     if (!rows.length) {
       // Create new user with hashed password
       const hash = await bcrypt.hash(u.password, 10);
       // Assume admins are verified on seed, regular users need email verification.
-      const emailVerified = u.role === "user" ? false : true; 
+      const emailVerified = u.role === "user" ? false : true;
       await db.query(
         "INSERT INTO users (email, password, fullName, isAdmin, role, email_verified) VALUES (?, ?, ?, ?, ?, ?)",
         [u.email, hash, u.fullName, u.isAdmin, u.role, emailVerified]
       );
-      console.log("Seeded new user:", u.email, u.role, "Verified:", emailVerified);
+      console.log(
+        "Seeded new user:",
+        u.email,
+        u.role,
+        "Verified:",
+        emailVerified
+      );
     } else {
       // Update existing user - ensure password is hashed and role is set
       const existingUser = rows[0];
-      
+
       let needsUpdate = false;
       let updateFields = [];
       let updateValues = [];
-      
+
       // Check if password needs to be updated (if it's not hashed or wrong)
-      const isPasswordHashed = existingUser.password && existingUser.password.startsWith('$2');
+      const isPasswordHashed =
+        existingUser.password && existingUser.password.startsWith("$2");
       if (!isPasswordHashed) {
         // Password is not hashed, update it
         const hash = await bcrypt.hash(u.password, 10);
@@ -259,32 +274,38 @@ async function ensureSeedUsers() {
           needsUpdate = true;
         }
       }
-      
+
       // Always ensure isAdmin is set correctly for admin users
       if (u.isAdmin) {
         // Check if isAdmin needs to be updated (handle both boolean and int from DB)
-        const currentIsAdmin = existingUser.isAdmin === 1 || existingUser.isAdmin === true;
+        const currentIsAdmin =
+          existingUser.isAdmin === 1 || existingUser.isAdmin === true;
         if (currentIsAdmin !== u.isAdmin) {
           updateFields.push("isAdmin = ?");
           updateValues.push(u.isAdmin ? 1 : 0);
           needsUpdate = true;
         }
-        
+
         // Only set role if user doesn't have a role yet (preserve existing roles) or if it's explicitly different
-        if (!existingUser.role || existingUser.role === null || existingUser.role === '' || existingUser.role !== u.role) {
+        if (
+          !existingUser.role ||
+          existingUser.role === null ||
+          existingUser.role === "" ||
+          existingUser.role !== u.role
+        ) {
           updateFields.push("role = ?");
           updateValues.push(u.role);
           needsUpdate = true;
         }
       }
-      
+
       // Update fullName if provided and different
       if (u.fullName && existingUser.fullName !== u.fullName) {
         updateFields.push("fullName = ?");
         updateValues.push(u.fullName);
         needsUpdate = true;
       }
-      
+
       // Ensure email_verified is handled correctly
       // For seeded admins, they should be verified. For the survey user, they will need verification.
       const desiredVerifiedStatus = u.role === "user" ? false : true;
@@ -292,16 +313,23 @@ async function ensureSeedUsers() {
         updateFields.push("email_verified = ?");
         updateValues.push(desiredVerifiedStatus ? 1 : 0);
         needsUpdate = true;
-        console.log(`User ${u.email} verification status updated to ${desiredVerifiedStatus}`);
+        console.log(
+          `User ${u.email} verification status updated to ${desiredVerifiedStatus}`
+        );
       }
-      
+
       if (needsUpdate) {
         updateValues.push(u.email);
         await db.query(
           `UPDATE users SET ${updateFields.join(", ")} WHERE email = ?`,
           updateValues
         );
-        console.log("Updated user:", u.email, "Fields:", updateFields.join(", "));
+        console.log(
+          "Updated user:",
+          u.email,
+          "Fields:",
+          updateFields.join(", ")
+        );
       }
     }
   }
@@ -314,13 +342,20 @@ app.post("/api/auth/admin/create-account", async (req, res) => {
 
     // Validation
     if (!fullName || !email || !password || !role) {
-      return res.status(400).json({ success: false, message: "All fields are required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "All fields are required" });
     }
 
     // Check if email already exists
-    const [existingUsers] = await db.query("SELECT id FROM users WHERE email = ?", [email]);
+    const [existingUsers] = await db.query(
+      "SELECT id FROM users WHERE email = ?",
+      [email]
+    );
     if (existingUsers.length > 0) {
-      return res.status(409).json({ success: false, message: "Email already registered" });
+      return res
+        .status(409)
+        .json({ success: false, message: "Email already registered" });
     }
 
     // Validate password strength
@@ -339,12 +374,23 @@ app.post("/api/auth/admin/create-account", async (req, res) => {
     );
 
     // Log the action
-    await logAdminAction("system", "System", `Created new admin account for ${fullName} (${email}) with role: ${role}`);
+    await logAdminAction(
+      "system",
+      "System",
+      `Created new admin account for ${fullName} (${email}) with role: ${role}`
+    );
 
-    res.status(200).json({ success: true, message: "Admin account created successfully" });
+    res
+      .status(200)
+      .json({ success: true, message: "Admin account created successfully" });
   } catch (err) {
     console.error("Admin creation error:", err);
-    res.status(500).json({ success: false, message: "Failed to create admin account: " + err.message });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Failed to create admin account: " + err.message,
+      });
   }
 });
 
@@ -357,9 +403,14 @@ app.post("/api/auth/send-verification-code", async (req, res) => {
     }
 
     // Check if email already exists in admins table
-    const [existing] = await db.query("SELECT id FROM users WHERE email = ? AND isAdmin = TRUE", [email]);
+    const [existing] = await db.query(
+      "SELECT id FROM users WHERE email = ? AND isAdmin = TRUE",
+      [email]
+    );
     if (existing.length) {
-      return res.status(400).json({ error: "Email already exists in admin accounts" });
+      return res
+        .status(400)
+        .json({ error: "Email already exists in admin accounts" });
     }
 
     let emailSent = false;
@@ -367,7 +418,8 @@ app.post("/api/auth/send-verification-code", async (req, res) => {
       await transporter.sendMail({
         from: process.env.EMAIL_USER,
         to: email,
-        subject: "Admin Account Verification Code - Customer Satisfaction Survey",
+        subject:
+          "Admin Account Verification Code - Customer Satisfaction Survey",
         html: `
           <h2>Admin Account Registration</h2>
           <p>Hi ${fullName},</p>
@@ -377,7 +429,7 @@ app.post("/api/auth/send-verification-code", async (req, res) => {
           <p>If you did not expect this invitation, please ignore this email.</p>
           <hr>
           <p><small>This is an automated message, please do not reply.</small></p>
-        `
+        `,
       });
       console.log("Admin verification email sent to:", email);
       emailSent = true;
@@ -387,10 +439,16 @@ app.post("/api/auth/send-verification-code", async (req, res) => {
     }
 
     if (!emailSent) {
-      return res.status(500).json({ error: "Failed to send verification email. Please try again." });
+      return res
+        .status(500)
+        .json({
+          error: "Failed to send verification email. Please try again.",
+        });
     }
 
-    res.status(200).json({ ok: true, message: "Verification code sent to email" });
+    res
+      .status(200)
+      .json({ ok: true, message: "Verification code sent to email" });
   } catch (err) {
     console.error("Send verification error:", err);
     res.status(400).json({ error: "Failed to send verification code" });
@@ -457,10 +515,12 @@ app.put("/api/submissions/:id", async (req, res) => {
     let avgSatisfaction = 0;
     if (responses.sqdRatings) {
       const ratings = Object.values(responses.sqdRatings)
-        .filter(r => r !== 'NA' && typeof r === 'number')
-        .map(r => r);
+        .filter((r) => r !== "NA" && typeof r === "number")
+        .map((r) => r);
       if (ratings.length > 0) {
-        avgSatisfaction = (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(2);
+        avgSatisfaction = (
+          ratings.reduce((a, b) => a + b, 0) / ratings.length
+        ).toFixed(2);
       }
     }
 
@@ -485,13 +545,20 @@ app.put("/api/submissions/:id", async (req, res) => {
         responses.email,
         avgSatisfaction,
         JSON.stringify(responses),
-        req.params.id
+        req.params.id,
       ]
     );
 
     await db.query(
       "INSERT INTO notifications (notification_type, message, user_email, user_name) VALUES (?, ?, ?, ?)",
-      ["survey_edited", `Survey submission updated by ${responses.fullName || row.user_name || "User"}`, user_email, responses.fullName || row.user_name || "User"]
+      [
+        "survey_edited",
+        `Survey submission updated by ${
+          responses.fullName || row.user_name || "User"
+        }`,
+        user_email,
+        responses.fullName || row.user_name || "User",
+      ]
     );
 
     res.json({ ok: true });
@@ -510,13 +577,20 @@ app.delete("/api/submissions/:id", async (req, res) => {
     if (!row || row.user_email !== user_email) {
       return res.status(403).json({ error: "Forbidden" });
     }
-    
+
     await db.query(
       "INSERT INTO notifications (notification_type, message, user_email, user_name) VALUES (?, ?, ?, ?)",
-      ["survey_deleted", `Survey submission deleted by ${row.user_name || "User"}`, user_email, row.user_name || "User"]
+      [
+        "survey_deleted",
+        `Survey submission deleted by ${row.user_name || "User"}`,
+        user_email,
+        row.user_name || "User",
+      ]
     );
 
-    await db.query("DELETE FROM survey_responses WHERE id = ?", [req.params.id]);
+    await db.query("DELETE FROM survey_responses WHERE id = ?", [
+      req.params.id,
+    ]);
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: "Failed to delete submission" });
@@ -542,9 +616,18 @@ app.get("/api/admin/analytics", async (req, res) => {
       params.push(dateFilter);
     }
 
-    const [allResponses] = await db.query(`SELECT * FROM survey_responses ${whereClause}`, params);
-    const [total] = await db.query(`SELECT COUNT(*) as count FROM survey_responses ${whereClause}`, params);
-    const [avgSat] = await db.query(`SELECT AVG(average_satisfaction) as avg FROM survey_responses ${whereClause}`, params);
+    const [allResponses] = await db.query(
+      `SELECT * FROM survey_responses ${whereClause}`,
+      params
+    );
+    const [total] = await db.query(
+      `SELECT COUNT(*) as count FROM survey_responses ${whereClause}`,
+      params
+    );
+    const [avgSat] = await db.query(
+      `SELECT AVG(average_satisfaction) as avg FROM survey_responses ${whereClause}`,
+      params
+    );
 
     // Calculate distributions
     const byRegion = {};
@@ -552,13 +635,17 @@ app.get("/api/admin/analytics", async (req, res) => {
     const byClientType = {};
     const sqdDistribution = {};
 
-    allResponses.forEach(r => {
+    allResponses.forEach((r) => {
       if (r.region) byRegion[r.region] = (byRegion[r.region] || 0) + 1;
       if (r.gender) byGender[r.gender] = (byGender[r.gender] || 0) + 1;
-      if (r.client_type) byClientType[r.client_type] = (byClientType[r.client_type] || 0) + 1;
+      if (r.client_type)
+        byClientType[r.client_type] = (byClientType[r.client_type] || 0) + 1;
 
       try {
-        const sqdRatings = typeof r.sqd_ratings === "string" ? JSON.parse(r.sqd_ratings) : r.sqd_ratings || {};
+        const sqdRatings =
+          typeof r.sqd_ratings === "string"
+            ? JSON.parse(r.sqd_ratings)
+            : r.sqd_ratings || {};
         Object.entries(sqdRatings).forEach(([key, val]) => {
           if (val !== "NA" && typeof val === "number") {
             sqdDistribution[key] = (sqdDistribution[key] || 0) + 1;
@@ -570,10 +657,21 @@ app.get("/api/admin/analytics", async (req, res) => {
     res.json({
       totalResponses: total[0].count,
       averageSatisfaction: avgSat[0].avg || 0,
-      byRegion: Object.entries(byRegion).map(([region, count]) => ({ region, count })),
-      byGender: Object.entries(byGender).map(([gender, count]) => ({ gender, count })),
-      byClientType: Object.entries(byClientType).map(([client_type, count]) => ({ client_type, count })),
-      sqdDistribution: Object.entries(sqdDistribution).map(([name, count]) => ({ name, count }))
+      byRegion: Object.entries(byRegion).map(([region, count]) => ({
+        region,
+        count,
+      })),
+      byGender: Object.entries(byGender).map(([gender, count]) => ({
+        gender,
+        count,
+      })),
+      byClientType: Object.entries(byClientType).map(
+        ([client_type, count]) => ({ client_type, count })
+      ),
+      sqdDistribution: Object.entries(sqdDistribution).map(([name, count]) => ({
+        name,
+        count,
+      })),
     });
   } catch (err) {
     console.error("Analytics error:", err);
@@ -589,14 +687,16 @@ app.get("/api/admin/logs", async (req, res) => {
        ORDER BY log_time DESC 
        LIMIT 1000`
     );
-    
-    res.json(rows.map(row => ({
-      id: row.id,
-      admin_email: row.admin_email,
-      admin_name: row.admin_name || "System",
-      action: row.action,
-      log_time: row.log_time
-    })));
+
+    res.json(
+      rows.map((row) => ({
+        id: row.id,
+        admin_email: row.admin_email,
+        admin_name: row.admin_name || "System",
+        action: row.action,
+        log_time: row.log_time,
+      }))
+    );
   } catch (err) {
     console.error("Error fetching logs:", err);
     res.status(500).json({ error: "Failed to fetch logs" });
@@ -620,29 +720,49 @@ app.post("/api/register", async (req, res) => {
   const { email, password, fullName, district, barangay } = req.body;
   const pwdCheck = validatePassword(password);
   if (pwdCheck !== "strong") return res.status(400).json({ error: pwdCheck });
-  
+
   try {
     // Check if email already exists
-    const [existingUsers] = await db.query("SELECT id, email_verified FROM users WHERE email = ?", [email]);
+    const [existingUsers] = await db.query(
+      "SELECT id, email_verified FROM users WHERE email = ?",
+      [email]
+    );
     if (existingUsers.length > 0) {
       // If user exists and is verified, inform them to log in.
       // If user exists but is not verified, prompt them to check their email for verification code.
       if (existingUsers[0].email_verified) {
-        return res.status(409).json({ error: "Email already registered. Please log in." });
+        return res
+          .status(409)
+          .json({ error: "Email already registered. Please log in." });
       } else {
-        return res.status(409).json({ error: "Email already registered. Please verify your email. Check your inbox for the verification code." });
+        return res
+          .status(409)
+          .json({
+            error:
+              "Email already registered. Please verify your email. Check your inbox for the verification code.",
+          });
       }
     }
-    
+
     const hash = await bcrypt.hash(password, 10);
     const verificationCode = randomCode(6);
     const codeExpiry = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
-    
+
     await db.query(
       "INSERT INTO users (email, password, fullName, district, barangay, role, reset_code, reset_code_expiry, email_verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [email, hash, fullName, district, barangay, "user", verificationCode, codeExpiry, false] // email_verified is false by default
+      [
+        email,
+        hash,
+        fullName,
+        district,
+        barangay,
+        "user",
+        verificationCode,
+        codeExpiry,
+        false,
+      ] // email_verified is false by default
     );
-    
+
     let emailSent = false;
     try {
       await transporter.sendMail({
@@ -656,7 +776,7 @@ app.post("/api/register", async (req, res) => {
           <h1 style="color: #007bff; letter-spacing: 5px;">${verificationCode}</h1>
           <p>This code will expire in 24 hours.</p>
           <p>If you did not register for this account, please ignore this email.</p>
-        `
+        `,
       });
       console.log("Verification email sent to:", email);
       emailSent = true;
@@ -664,14 +784,24 @@ app.post("/api/register", async (req, res) => {
       console.error("Email sending error:", emailErr);
       emailSent = false;
     }
-    
+
     if (!emailSent) {
       // Delete the user we just created since email failed
       await db.query("DELETE FROM users WHERE email = ?", [email]);
-      return res.status(500).json({ error: "Failed to send verification email. Registration cancelled. Please try again." });
+      return res
+        .status(500)
+        .json({
+          error:
+            "Failed to send verification email. Registration cancelled. Please try again.",
+        });
     }
-    
-    res.status(200).json({ ok: true, message: "Registration successful. Please verify your email." });
+
+    res
+      .status(200)
+      .json({
+        ok: true,
+        message: "Registration successful. Please verify your email.",
+      });
   } catch (err) {
     console.error("Register error:", err);
     res.status(400).json({ error: "Registration failed. Please try again." });
@@ -682,16 +812,21 @@ app.post("/api/verify-email", async (req, res) => {
   try {
     const { email, code } = req.body;
     const [[user]] = await db.query(
-      "SELECT reset_code, reset_code_expiry, email_verified FROM users WHERE email = ?", [email]
+      "SELECT reset_code, reset_code_expiry, email_verified FROM users WHERE email = ?",
+      [email]
     );
-    
+
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
-    
-    if (user.reset_code === code && Date.now() < Number(user.reset_code_expiry)) {
+
+    if (
+      user.reset_code === code &&
+      Date.now() < Number(user.reset_code_expiry)
+    ) {
       await db.query(
-        "UPDATE users SET reset_code = NULL, reset_code_expiry = NULL, email_verified = TRUE WHERE email = ?", [email]
+        "UPDATE users SET reset_code = NULL, reset_code_expiry = NULL, email_verified = TRUE WHERE email = ?",
+        [email]
       );
       res.status(200).json({ ok: true });
     } else {
@@ -710,24 +845,34 @@ app.post("/api/login", async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
     }
-    
-    const [[user]] = await db.query("SELECT * FROM users WHERE email=?", [email]);
+
+    const [[user]] = await db.query("SELECT * FROM users WHERE email=?", [
+      email,
+    ]);
     if (!user) {
       console.log("Login failed: User not found for email:", email);
       return res.status(401).json({ error: "Incorrect email or password" });
     }
-    
+
     if (!user.email_verified) {
-      return res.status(403).json({ error: "Please verify your email first. Check your inbox for the verification code." });
+      return res
+        .status(403)
+        .json({
+          error:
+            "Please verify your email first. Check your inbox for the verification code.",
+        });
     }
-    
+
     // Check if password is hashed (starts with $2)
-    const isPasswordHashed = user.password && user.password.startsWith('$2');
+    const isPasswordHashed = user.password && user.password.startsWith("$2");
     if (!isPasswordHashed) {
       console.log("Login failed: Password not hashed for user:", email);
       // If password is not hashed, hash it now and update the user
       const hash = await bcrypt.hash(password, 10);
-      await db.query("UPDATE users SET password = ? WHERE email = ?", [hash, email]);
+      await db.query("UPDATE users SET password = ? WHERE email = ?", [
+        hash,
+        email,
+      ]);
       // Try to compare again
       const match = await bcrypt.compare(password, hash);
       if (!match) {
@@ -740,15 +885,22 @@ app.post("/api/login", async (req, res) => {
         return res.status(401).json({ error: "Incorrect email or password" });
       }
     }
-    
-    console.log("Login successful for:", email, "Role:", user.role, "isAdmin:", user.isAdmin);
+
+    console.log(
+      "Login successful for:",
+      email,
+      "Role:",
+      user.role,
+      "isAdmin:",
+      user.isAdmin
+    );
     res.json({
       email: user.email,
       fullName: user.fullName,
       district: user.district,
       barangay: user.barangay,
       isAdmin: !!user.isAdmin,
-      role: user.role
+      role: user.role,
     });
   } catch (err) {
     console.error("Login error:", err);
@@ -769,13 +921,20 @@ app.post("/api/login/google", async (req, res) => {
     });
     const payload = ticket.getPayload();
     const email = payload?.email?.toLowerCase();
-    const fullName = payload?.name || `${payload?.given_name || ""} ${payload?.family_name || ""}`.trim();
+    const fullName =
+      payload?.name ||
+      `${payload?.given_name || ""} ${payload?.family_name || ""}`.trim();
 
     if (!email) {
-      return res.status(400).json({ error: "Google account email not available" });
+      return res
+        .status(400)
+        .json({ error: "Google account email not available" });
     }
 
-    const [[existingUser]] = await db.query("SELECT * FROM users WHERE email=?", [email]);
+    const [[existingUser]] = await db.query(
+      "SELECT * FROM users WHERE email=?",
+      [email]
+    );
     let userRecord = existingUser;
 
     if (!existingUser) {
@@ -784,15 +943,22 @@ app.post("/api/login/google", async (req, res) => {
         "INSERT INTO users (email, password, fullName, isAdmin, role, email_verified) VALUES (?, ?, ?, ?, ?, ?)",
         [email, placeholderPassword, fullName || email, false, "user", true]
       );
-      const [[createdUser]] = await db.query("SELECT * FROM users WHERE id=?", [insertResult.insertId]);
+      const [[createdUser]] = await db.query("SELECT * FROM users WHERE id=?", [
+        insertResult.insertId,
+      ]);
       userRecord = createdUser;
     } else if (fullName && !existingUser.fullName) {
-      await db.query("UPDATE users SET fullName=? WHERE email=?", [fullName, email]);
+      await db.query("UPDATE users SET fullName=? WHERE email=?", [
+        fullName,
+        email,
+      ]);
       userRecord = { ...existingUser, fullName };
     } else if (existingUser && !existingUser.email_verified) {
-        // If user exists but is not verified (e.g., registered via form then tried google login)
-        await db.query("UPDATE users SET email_verified = TRUE WHERE email = ?", [email]);
-        userRecord = { ...existingUser, email_verified: true };
+      // If user exists but is not verified (e.g., registered via form then tried google login)
+      await db.query("UPDATE users SET email_verified = TRUE WHERE email = ?", [
+        email,
+      ]);
+      userRecord = { ...existingUser, email_verified: true };
     }
 
     res.json({
@@ -828,24 +994,31 @@ app.post("/api/forgot-password", async (req, res) => {
     const { email } = req.body;
     const pinCode = randomCode(6);
     const expiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
-    
-    const [rows] = await db.query("SELECT id, fullName, email_verified FROM users WHERE email = ?", [email]);
+
+    const [rows] = await db.query(
+      "SELECT id, fullName, email_verified FROM users WHERE email = ?",
+      [email]
+    );
     if (!rows.length) {
       // Don't reveal if email exists
       return res.status(200).json({ ok: true });
     }
-    
+
     const user = rows[0];
     // Only send reset code if the email is verified
     if (!user.email_verified) {
-        return res.status(403).json({ error: "Please verify your email before resetting your password." });
+      return res
+        .status(403)
+        .json({
+          error: "Please verify your email before resetting your password.",
+        });
     }
 
     await db.query(
       "UPDATE users SET reset_code = ?, reset_code_expiry = ? WHERE email = ?",
       [pinCode, expiresAt, email]
     );
-    
+
     let emailSent = false;
     try {
       await transporter.sendMail({
@@ -861,7 +1034,7 @@ app.post("/api/forgot-password", async (req, res) => {
           <p>If you did not request a password reset, please ignore this email and your password will remain unchanged.</p>
           <hr>
           <p><small>This is an automated message, please do not reply.</small></p>
-        `
+        `,
       });
       console.log("Reset email sent to:", email);
       emailSent = true;
@@ -869,13 +1042,18 @@ app.post("/api/forgot-password", async (req, res) => {
       console.error("Email sending error:", emailErr);
       emailSent = false;
     }
-    
+
     if (!emailSent) {
       // Clear the reset code we just set since email failed
-      await db.query("UPDATE users SET reset_code = NULL, reset_code_expiry = NULL WHERE email = ?", [email]);
-      return res.status(500).json({ error: "Failed to send reset email. Please try again." });
+      await db.query(
+        "UPDATE users SET reset_code = NULL, reset_code_expiry = NULL WHERE email = ?",
+        [email]
+      );
+      return res
+        .status(500)
+        .json({ error: "Failed to send reset email. Please try again." });
     }
-    
+
     res.status(200).json({ ok: true });
   } catch (err) {
     console.error("Forgot pass error:", err);
@@ -888,7 +1066,8 @@ app.post("/api/verify-reset-code", async (req, res) => {
   try {
     const { email, code } = req.body;
     const [[user]] = await db.query(
-      "SELECT reset_code, reset_code_expiry, email_verified FROM users WHERE email=?", [email]
+      "SELECT reset_code, reset_code_expiry, email_verified FROM users WHERE email=?",
+      [email]
     );
     if (
       user &&
@@ -911,7 +1090,8 @@ app.post("/api/reset-password", async (req, res) => {
   try {
     const { email, code, newPassword } = req.body;
     const [[user]] = await db.query(
-      "SELECT reset_code, reset_code_expiry, email_verified FROM users WHERE email=?", [email]
+      "SELECT reset_code, reset_code_expiry, email_verified FROM users WHERE email=?",
+      [email]
     );
     if (
       user &&
@@ -920,7 +1100,8 @@ app.post("/api/reset-password", async (req, res) => {
       user.email_verified // Ensure the user's email is verified
     ) {
       const pwdCheck = validatePassword(newPassword);
-      if (pwdCheck !== "strong") return res.status(400).json({ error: pwdCheck });
+      if (pwdCheck !== "strong")
+        return res.status(400).json({ error: pwdCheck });
       const hash = await bcrypt.hash(newPassword, 10);
       await db.query(
         "UPDATE users SET password=?, reset_code=NULL, reset_code_expiry=NULL WHERE email=?",
@@ -941,33 +1122,54 @@ app.post("/api/admin/update-role", async (req, res) => {
   const { requesterEmail, requesterRole, targetEmail, newRole } = req.body;
 
   const requesterRoleLower = requesterRole?.toLowerCase() || "";
-  
+
   // Only superadmin/system admin can update roles, and cannot update their own role
-  if ((requesterRoleLower !== "superadmin" && requesterRoleLower !== "system admin") || requesterEmail === targetEmail) {
-    return res.status(403).json({ error: "Forbidden: Only System Administrator can update roles" });
+  if (
+    (requesterRoleLower !== "superadmin" &&
+      requesterRoleLower !== "system admin") ||
+    requesterEmail === targetEmail
+  ) {
+    return res
+      .status(403)
+      .json({ error: "Forbidden: Only System Administrator can update roles" });
   }
 
   // Get target user's current role for logging
-  const [[targetUser]] = await db.query("SELECT fullName, role, email_verified FROM users WHERE email=?", [targetEmail]);
+  const [[targetUser]] = await db.query(
+    "SELECT fullName, role, email_verified FROM users WHERE email=?",
+    [targetEmail]
+  );
   if (!targetUser) {
     return res.status(404).json({ error: "User not found" });
   }
-  
+
   const oldRole = targetUser.role || "none";
-  
+
   // Prevent changing role of unverified users if necessary (optional, depending on requirements)
   if (!targetUser.email_verified && requesterRoleLower === "superadmin") {
-      // Example: Superadmin can still change role, but other admins might not be able to.
-      // Add specific logic here if needed.
+    // Example: Superadmin can still change role, but other admins might not be able to.
+    // Add specific logic here if needed.
   }
-  
+
   // Update the role in the database
-  await db.query("UPDATE users SET role=? WHERE email=?", [newRole, targetEmail]);
-  
+  await db.query("UPDATE users SET role=? WHERE email=?", [
+    newRole,
+    targetEmail,
+  ]);
+
   // Get requester's name for logging
-  const [[requester]] = await db.query("SELECT fullName FROM users WHERE email=?", [requesterEmail]);
-  await logAdminAction(requesterEmail, requester?.fullName || "System", `Updated role for ${targetUser.fullName || targetEmail} (${targetEmail}) from "${oldRole}" to "${newRole}"`);
-  
+  const [[requester]] = await db.query(
+    "SELECT fullName FROM users WHERE email=?",
+    [requesterEmail]
+  );
+  await logAdminAction(
+    requesterEmail,
+    requester?.fullName || "System",
+    `Updated role for ${
+      targetUser.fullName || targetEmail
+    } (${targetEmail}) from "${oldRole}" to "${newRole}"`
+  );
+
   res.json({ ok: true, message: `Role updated from ${oldRole} to ${newRole}` });
 });
 
@@ -1008,30 +1210,29 @@ app.get("/api/admin/stats", async (req, res) => {
       "SELECT COUNT(*) as count FROM users WHERE email_verified = FALSE AND password IS NOT NULL" // Exclude users who registered via Google
     );
 
-
     res.json({
       surveys: {
         active: 1,
         drafts: 0,
-        closed: 0
+        closed: 0,
       },
       responses: {
         total: totalResponses[0].count,
-        avgSatisfaction: avgSatisfaction[0].avg || 0
+        avgSatisfaction: avgSatisfaction[0].avg || 0,
       },
       profile: {
         activeUsers: recentAdmins[0].count,
         userCount: recentAdmins[0].count,
-        respondents: totalResponses[0].count
+        respondents: totalResponses[0].count,
       },
       reports: {
         submitted: totalResponses[0].count,
-        drafts: 0
+        drafts: 0,
       },
       users: {
         unverified: unverifiedUsers[0].count,
-        admins: recentAdmins[0].count
-      }
+        admins: recentAdmins[0].count,
+      },
     });
   } catch (err) {
     console.error(err);
@@ -1133,9 +1334,11 @@ app.put("/api/admin/help-feedback/:id", async (req, res) => {
 
 app.get("/api/settings", async (req, res) => {
   try {
-    const [rows] = await db.query("SELECT setting_key, setting_value FROM survey_settings");
+    const [rows] = await db.query(
+      "SELECT setting_key, setting_value FROM survey_settings"
+    );
     const settings = {};
-    rows.forEach(r => settings[r.setting_key] = r.setting_value);
+    rows.forEach((r) => (settings[r.setting_key] = r.setting_value));
     res.json(settings);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch settings" });
@@ -1146,7 +1349,8 @@ app.post("/api/admin/settings", async (req, res) => {
   try {
     const { key, value } = req.body;
     // Ensure empty strings are saved, not null
-    const settingValue = value !== null && value !== undefined ? String(value) : "";
+    const settingValue =
+      value !== null && value !== undefined ? String(value) : "";
     await db.query(
       "INSERT INTO survey_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value=?",
       [key, settingValue, settingValue]
@@ -1164,13 +1368,13 @@ app.post("/api/admin/log-activity", async (req, res) => {
     if (!admin_email || !action) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-    
+
     const fullAction = details ? `${action} - ${details}` : action;
     await db.query(
       "INSERT INTO admin_logs (admin_email, admin_name, action) VALUES (?, ?, ?)",
       [admin_email, admin_name || "System", fullAction]
     );
-    
+
     res.json({ ok: true });
   } catch (err) {
     console.error("Log activity error:", err);
@@ -1191,23 +1395,35 @@ app.get("/api/admin/survey-questions", async (req, res) => {
           ELSE 5
         END,
         id`);
-    const questions = rows.map(r => ({
+    const questions = rows.map((r) => ({
       ...r,
       options: r.options ? JSON.parse(r.options) : [],
       rows: r.rows ? JSON.parse(r.rows) : [],
-      columns: r.columns ? JSON.parse(r.columns) : []
+      columns: r.columns ? JSON.parse(r.columns) : [],
     }));
     res.json(questions);
   } catch (err) {
     console.error("Fetch questions error:", err);
-    res.status(500).json({ error: "Failed to fetch questions", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Failed to fetch questions", details: err.message });
   }
 });
 
 app.post("/api/admin/survey-questions", async (req, res) => {
   try {
-    const { field_name, section, question_text, field_type, is_required, options, rows, columns, instruction } = req.body;
-    
+    const {
+      field_name,
+      section,
+      question_text,
+      field_type,
+      is_required,
+      options,
+      rows,
+      columns,
+      instruction,
+    } = req.body;
+
     console.log("[v0] Received save request:", {
       field_name,
       section,
@@ -1218,11 +1434,14 @@ app.post("/api/admin/survey-questions", async (req, res) => {
       rowsType: typeof rows,
       columnsType: typeof columns,
     });
-    
-    const optionsStr = typeof options === 'string' ? options : JSON.stringify(options || []);
-    const rowsStr = typeof rows === 'string' ? rows : JSON.stringify(rows || []);
-    const columnsStr = typeof columns === 'string' ? columns : JSON.stringify(columns || []);
-    
+
+    const optionsStr =
+      typeof options === "string" ? options : JSON.stringify(options || []);
+    const rowsStr =
+      typeof rows === "string" ? rows : JSON.stringify(rows || []);
+    const columnsStr =
+      typeof columns === "string" ? columns : JSON.stringify(columns || []);
+
     console.log("[v0] Saving to database with stringified values:", {
       field_name,
       section,
@@ -1230,31 +1449,48 @@ app.post("/api/admin/survey-questions", async (req, res) => {
       rowsStrLength: rowsStr.length,
       columnsStrLength: columnsStr.length,
     });
-    
+
     await db.query(
       `INSERT INTO survey_questions (field_name, section, question_text, field_type, is_required, options, \`rows\`, \`columns\`, instruction)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE
        section=?, question_text=?, field_type=?, is_required=?, options=?, \`rows\`=?, \`columns\`=?, instruction=?`,
       [
-        field_name, section, question_text, field_type, is_required,
-        optionsStr, rowsStr, columnsStr, instruction,
-        section, question_text, field_type, is_required,
-        optionsStr, rowsStr, columnsStr, instruction
+        field_name,
+        section,
+        question_text,
+        field_type,
+        is_required,
+        optionsStr,
+        rowsStr,
+        columnsStr,
+        instruction,
+        section,
+        question_text,
+        field_type,
+        is_required,
+        optionsStr,
+        rowsStr,
+        columnsStr,
+        instruction,
       ]
     );
-    
+
     console.log("[v0] Question saved successfully to database:", field_name);
     res.json({ ok: true, savedField: field_name });
   } catch (err) {
     console.error("[v0] Save question error:", err);
-    res.status(500).json({ error: "Failed to save question", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Failed to save question", details: err.message });
   }
 });
 
 app.delete("/api/admin/survey-questions/:field_name", async (req, res) => {
   try {
-    await db.query("DELETE FROM survey_questions WHERE field_name = ?", [req.params.field_name]);
+    await db.query("DELETE FROM survey_questions WHERE field_name = ?", [
+      req.params.field_name,
+    ]);
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: "Failed to delete question" });
@@ -1274,11 +1510,11 @@ app.get("/api/survey-questions", async (req, res) => {
           ELSE 5
         END,
         id`);
-    const questions = rows.map(r => ({
+    const questions = rows.map((r) => ({
       ...r,
       options: r.options ? JSON.parse(r.options) : [],
       rows: r.rows ? JSON.parse(r.rows) : [],
-      columns: r.columns ? JSON.parse(r.columns) : []
+      columns: r.columns ? JSON.parse(r.columns) : [],
     }));
     res.json(questions);
   } catch (err) {
@@ -1289,11 +1525,23 @@ app.get("/api/survey-questions", async (req, res) => {
 // --- Notifications API ---
 app.get("/api/admin/notifications", async (req, res) => {
   try {
-    const [rows] = await db.query(
-      "SELECT * FROM notifications ORDER BY created_at DESC LIMIT 100"
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 100;
+    const offset = (page - 1) * limit;
+
+    const [totalRows] = await db.query(
+      "SELECT COUNT(*) as count FROM notifications"
     );
-    res.json(rows);
+    const totalCount = totalRows && totalRows[0] ? totalRows[0].count : 0;
+
+    const [rows] = await db.query(
+      "SELECT * FROM notifications ORDER BY created_at DESC LIMIT ? OFFSET ?",
+      [limit, offset]
+    );
+
+    res.json({ data: rows, total: totalCount });
   } catch (err) {
+    console.error("Failed to fetch notifications:", err);
     res.status(500).json({ error: "Failed to fetch notifications" });
   }
 });
@@ -1311,6 +1559,18 @@ app.post("/api/admin/notifications", async (req, res) => {
   }
 });
 
+// Delete a notification by id (dismiss)
+app.delete("/api/admin/notifications/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    await db.query("DELETE FROM notifications WHERE id = ?", [id]);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Failed to delete notification:", err);
+    res.status(500).json({ error: "Failed to delete notification" });
+  }
+});
+
 // Create notification when survey is submitted
 app.post("/api/survey/submit", async (req, res) => {
   const { user_email, user_name, responses } = req.body;
@@ -1319,44 +1579,50 @@ app.post("/api/survey/submit", async (req, res) => {
     let avgSatisfaction = 0;
     if (responses.sqdRatings) {
       const ratings = Object.values(responses.sqdRatings)
-        .filter(r => r !== 'NA' && typeof r === 'number')
-        .map(r => r);
+        .filter((r) => r !== "NA" && typeof r === "number")
+        .map((r) => r);
       if (ratings.length > 0) {
-        avgSatisfaction = (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(2);
+        avgSatisfaction = (
+          ratings.reduce((a, b) => a + b, 0) / ratings.length
+        ).toFixed(2);
       }
     }
 
     await db.query(
-  `INSERT INTO survey_responses (
+      `INSERT INTO survey_responses (
     user_email, user_name, client_type, gender, age, region, service,
     cc_awareness, cc_visibility, cc_helpfulness, sqd_ratings, suggestions, 
     feedback_email, average_satisfaction, response_data, status
   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  [
-    user_email || null,
-    user_name || null,
-    responses.clientType || null,
-    responses.gender || null,
-    responses.age || null,
-    responses.region || null,
-    responses.service || null,
-    responses.ccAwareness || null,
-    responses.ccVisibility || null,
-    responses.ccHelpfulness || null,
-    JSON.stringify(responses.sqdRatings || {}),
-    responses.suggestions || null,
-    responses.email || null,
-    avgSatisfaction,
-    JSON.stringify(responses),
-    "Completed" // or whatever status you want
-  ]
-);
-
+      [
+        user_email || null,
+        user_name || null,
+        responses.clientType || null,
+        responses.gender || null,
+        responses.age || null,
+        responses.region || null,
+        responses.service || null,
+        responses.ccAwareness || null,
+        responses.ccVisibility || null,
+        responses.ccHelpfulness || null,
+        JSON.stringify(responses.sqdRatings || {}),
+        responses.suggestions || null,
+        responses.email || null,
+        avgSatisfaction,
+        JSON.stringify(responses),
+        "Completed", // or whatever status you want
+      ]
+    );
 
     // Create notification
     await db.query(
       "INSERT INTO notifications (notification_type, message, user_email, user_name) VALUES (?, ?, ?, ?)",
-      ["survey_submitted", `New survey submission from ${user_name || "Guest"}`, user_email, user_name || "Guest"]
+      [
+        "survey_submitted",
+        `New survey submission from ${user_name || "Guest"}`,
+        user_email,
+        user_name || "Guest",
+      ]
     );
 
     // Store suggestions as help feedback so Support/Feedback admins can see them
@@ -1367,7 +1633,7 @@ app.post("/api/survey/submit", async (req, res) => {
           user_email || responses.email || null,
           user_name || responses.fullName || null,
           "survey_feedback",
-          responses.suggestions.trim()
+          responses.suggestions.trim(),
         ]
       );
     }
@@ -1399,9 +1665,18 @@ app.get("/api/admin/analytics", async (req, res) => {
       params.push(dateFilter);
     }
 
-    const [allResponses] = await db.query(`SELECT * FROM survey_responses ${whereClause}`, params);
-    const [total] = await db.query(`SELECT COUNT(*) as count FROM survey_responses ${whereClause}`, params);
-    const [avgSat] = await db.query(`SELECT AVG(average_satisfaction) as avg FROM survey_responses ${whereClause}`, params);
+    const [allResponses] = await db.query(
+      `SELECT * FROM survey_responses ${whereClause}`,
+      params
+    );
+    const [total] = await db.query(
+      `SELECT COUNT(*) as count FROM survey_responses ${whereClause}`,
+      params
+    );
+    const [avgSat] = await db.query(
+      `SELECT AVG(average_satisfaction) as avg FROM survey_responses ${whereClause}`,
+      params
+    );
 
     // Calculate distributions
     const byRegion = {};
@@ -1409,13 +1684,17 @@ app.get("/api/admin/analytics", async (req, res) => {
     const byClientType = {};
     const sqdDistribution = {};
 
-    allResponses.forEach(r => {
+    allResponses.forEach((r) => {
       if (r.region) byRegion[r.region] = (byRegion[r.region] || 0) + 1;
       if (r.gender) byGender[r.gender] = (byGender[r.gender] || 0) + 1;
-      if (r.client_type) byClientType[r.client_type] = (byClientType[r.client_type] || 0) + 1;
+      if (r.client_type)
+        byClientType[r.client_type] = (byClientType[r.client_type] || 0) + 1;
 
       try {
-        const sqdRatings = typeof r.sqd_ratings === "string" ? JSON.parse(r.sqd_ratings) : r.sqd_ratings || {};
+        const sqdRatings =
+          typeof r.sqd_ratings === "string"
+            ? JSON.parse(r.sqd_ratings)
+            : r.sqd_ratings || {};
         Object.entries(sqdRatings).forEach(([key, val]) => {
           if (val !== "NA" && typeof val === "number") {
             sqdDistribution[key] = (sqdDistribution[key] || 0) + 1;
@@ -1427,10 +1706,21 @@ app.get("/api/admin/analytics", async (req, res) => {
     res.json({
       totalResponses: total[0].count,
       averageSatisfaction: avgSat[0].avg || 0,
-      byRegion: Object.entries(byRegion).map(([region, count]) => ({ region, count })),
-      byGender: Object.entries(byGender).map(([gender, count]) => ({ gender, count })),
-      byClientType: Object.entries(byClientType).map(([client_type, count]) => ({ client_type, count })),
-      sqdDistribution: Object.entries(sqdDistribution).map(([name, count]) => ({ name, count }))
+      byRegion: Object.entries(byRegion).map(([region, count]) => ({
+        region,
+        count,
+      })),
+      byGender: Object.entries(byGender).map(([gender, count]) => ({
+        gender,
+        count,
+      })),
+      byClientType: Object.entries(byClientType).map(
+        ([client_type, count]) => ({ client_type, count })
+      ),
+      sqdDistribution: Object.entries(sqdDistribution).map(([name, count]) => ({
+        name,
+        count,
+      })),
     });
   } catch (err) {
     console.error("Analytics error:", err);
@@ -1456,16 +1746,23 @@ app.post("/api/admin/delete-account", async (req, res) => {
 
     // Only superadmin can delete admin accounts
     if (!requesterRole || requesterRole.toLowerCase() !== "superadmin") {
-      return res.status(403).json({ error: "Only superadmins can delete admin accounts" });
+      return res
+        .status(403)
+        .json({ error: "Only superadmins can delete admin accounts" });
     }
 
     // Prevent self-deletion
     if (requesterEmail === targetEmail) {
-      return res.status(400).json({ error: "You cannot delete your own account" });
+      return res
+        .status(400)
+        .json({ error: "You cannot delete your own account" });
     }
 
     // Check if target admin exists
-    const [adminRows] = await db.query("SELECT id, fullName, email FROM users WHERE email = ? AND isAdmin = TRUE", [targetEmail]);
+    const [adminRows] = await db.query(
+      "SELECT id, fullName, email FROM users WHERE email = ? AND isAdmin = TRUE",
+      [targetEmail]
+    );
     if (!adminRows.length) {
       return res.status(404).json({ error: "Admin account not found" });
     }
@@ -1474,14 +1771,22 @@ app.post("/api/admin/delete-account", async (req, res) => {
     await db.query("DELETE FROM users WHERE email = ?", [targetEmail]);
 
     // Log the action
-    await logAdminAction(requesterEmail, "System", "DELETE_ADMIN", `Deleted admin account: ${targetEmail}`);
+    await logAdminAction(
+      requesterEmail,
+      "System",
+      "DELETE_ADMIN",
+      `Deleted admin account: ${targetEmail}`
+    );
 
-    res.status(200).json({ ok: true, message: "Admin account deleted successfully" });
+    res
+      .status(200)
+      .json({ ok: true, message: "Admin account deleted successfully" });
   } catch (err) {
     console.error("Delete admin error:", err);
     res.status(400).json({ error: "Failed to delete admin account" });
   }
 });
 
-
-app.listen(4000, () => console.log("Backend API running on http://localhost:4000"));
+app.listen(4000, () =>
+  console.log("Backend API running on http://localhost:4000")
+);
