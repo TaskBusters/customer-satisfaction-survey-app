@@ -4,11 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
-  },
+  "start": "node src/backend/server.cjs",
+  "dev": "nodemon server.cjs",
+  "build": "vite build",
+  "lint": "eslint .",
+  "preview": "vite preview"
+},
   "dependencies": {
     "@react-oauth/google": "^0.12.2",
     "bcryptjs": "^3.0.3",
