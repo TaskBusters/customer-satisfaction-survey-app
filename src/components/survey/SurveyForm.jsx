@@ -30,7 +30,7 @@ function TextField({ label, value, onChange, placeholder }) {
       {label && <div className="font-bold mb-2">{label}</div>}
       <input
         type="text"
-        className="border px-3 py-2 rounded w-full"
+        className="border px-3 py-2 rounded w-full placeholder-gray-400 placeholder-opacity-100"
         value={value || ""}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
@@ -44,7 +44,7 @@ function TextareaField({ label, value, onChange, placeholder }) {
     <div className="mb-6">
       {label && <div className="font-bold mb-2">{label}</div>}
       <textarea
-        className="border px-3 py-2 rounded w-full"
+        className="border px-3 py-2 rounded w-full placeholder-gray-400 placeholder-opacity-100"
         value={value || ""}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}

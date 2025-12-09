@@ -9,6 +9,10 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Customer Satisfaction Survey",
   description: "Survey application for customer satisfaction feedback",
+  icons: {
+    icon: '/src/assets/GoVoiceFaviconLight.png',
+    apple: '/src/assets/GoVoiceFaviconLight.png'
+  }
 }
 
 export default function RootLayout({

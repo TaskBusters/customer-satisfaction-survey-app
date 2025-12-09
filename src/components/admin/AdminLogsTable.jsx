@@ -1,4 +1,5 @@
 "use client";
+import Pagination from "../common/Pagination";
 
 const getActionFilterLabel = (actionString) => {
   if (!actionString) return "UNKNOWN";
@@ -78,11 +79,11 @@ export default function AdminLogsTable({
       ) : (
         <div className="overflow-x-auto">
           <div>
-            {/* ✅ FIX 1: Switched back to table-fixed for consistent column sizing */}
+            {/* Switched back to table-fixed for consistent column sizing */}
             <table className="w-full text-sm table-fixed">
               <thead className="bg-gray-50 border-b sticky top-0">
                 <tr>
-                  {/* ✅ FIX 2: Defined explicit percentage widths on <th>s */}
+                  {/* Defined explicit percentage widths on <th>s */}
                   <th className="px-6 py-3 text-left font-semibold w-[20%]">
                     Date & Time
                   </th>
@@ -137,26 +138,13 @@ export default function AdminLogsTable({
       )}
 
       {totalPages > 1 && (
-        <div className="flex justify-between items-center px-6 py-3 border-t">
-          <span className="text-sm text-gray-700">
-            Page {currentPage} of {totalPages}
-          </span>
-          <div className="flex space-x-2">
-            <button
-              onClick={() => paginate(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="px-3 py-1 text-sm border rounded text-gray-700 bg-gray-50 hover:bg-gray-100 disabled:opacity-50"
-            >
-              &larr; Previous
-            </button>
-            <button
-              onClick={() => paginate(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 text-sm border rounded text-gray-700 bg-gray-50 hover:bg-gray-100 disabled:opacity-50"
-            >
-              Next &rarr;
-            </button>
-          </div>
+        <div className="px-6 py-3 border-t">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={paginate}
+            showInfo={true}
+          />
         </div>
       )}
     </div>

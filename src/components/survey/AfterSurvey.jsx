@@ -44,7 +44,6 @@ export default function AfterSurvey() {
 
   return (
     <div className={commonContainerClasses} style={commonHeightStyle}>
-      {/* 🛑 FIX: Use flex-1, justify-center, and a negative top margin (-mt-10) to offset the content slightly upwards */}
       <div className="flex flex-col flex-1 items-center justify-center px-4 -mt-10">
         {/* ✅ Animated + Responsive Logo */}
         <Logo

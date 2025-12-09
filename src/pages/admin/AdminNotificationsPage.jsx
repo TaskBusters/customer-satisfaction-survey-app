@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import AdminSidebar from "../../components/admin/AdminSidebar.jsx";
 import NotificationBar from "../../components/admin/NotificationBar.jsx";
+import Pagination from "../../components/common/Pagination";
+import { MdDelete } from "react-icons/md";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { API_BASE_URL } from "../../utils/api.js";
 import { canViewNotifications } from "../../utils/roleUtils.js";
@@ -24,6 +26,7 @@ export default function AdminNotificationsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [deletingId, setDeletingId] = useState(null);
 
   // --- MODIFIED: Single function to fetch data for the given page ---
   const fetchData = async (page) => {
@@ -43,7 +46,32 @@ export default function AdminNotificationsPage() {
 
       const response = await notifRes.json();
       const notificationsData = response.data || response;
-      const totalItems = response.total || notificationsData.length;
+
+      let totalItems = response.total || null;
+
+      // If the API did not provide a total count, fetch a full list (fallback)
+      if (!totalItems) {
+        try {
+          const fullRes = await fetch(
+            `${API_BASE_URL}/api/admin/notifications?limit=100000`,
+            {
+              headers: { Authorization: `Bearer ${authToken}` },
+            }
+          );
+          if (fullRes.ok) {
+            const fullData = await fullRes.json();
+            const fullList = fullData.data || fullData;
+            totalItems = Array.isArray(fullList)
+              ? fullList.length
+              : notificationsData.length;
+          } else {
+            totalItems = notificationsData.length;
+          }
+        } catch (e) {
+          // fallback to current page length
+          totalItems = notificationsData.length;
+        }
+      }
 
       setNotifications(notificationsData || []);
       setTotalCount(totalItems);
@@ -55,6 +83,45 @@ export default function AdminNotificationsPage() {
       setMsgType("error");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const deleteNotification = async (id) => {
+    setDeletingId(id);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/notifications/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete notification");
+      }
+
+      // Remove locally and update counts/pages safely
+      setNotifications((prev) => {
+        const newList = prev.filter((n) => n.id !== id);
+        return newList;
+      });
+
+      setTotalCount((prevCount) => {
+        const newCount = Math.max(0, prevCount - 1);
+        setTotalPages(
+          Math.max(1, Math.ceil(newCount / NOTIFICATIONS_PER_PAGE))
+        );
+        return newCount;
+      });
+
+      setMessage("Notification dismissed");
+      setMsgType("success");
+      setTimeout(() => setMessage(""), 2000);
+    } catch (err) {
+      console.error("Delete notification error:", err);
+      setMessage("Failed to dismiss notification");
+      setMsgType("error");
+      setTimeout(() => setMessage(""), 3000);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -173,61 +240,63 @@ export default function AdminNotificationsPage() {
                 </p>
               ) : (
                 notifications.map((notif) => (
-                  <div key={notif.id} className="border rounded p-4 bg-gray-50">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <p className="font-semibold text-gray-900">
-                          {notif.message}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {notif.user_name && `User: ${notif.user_name}`}
-                          {notif.user_email && ` (${notif.user_email})`}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {new Date(notif.created_at).toLocaleString()}
-                        </p>
-                      </div>
+                  <div
+                    key={notif.id}
+                    className="w-full border rounded p-4 bg-gray-50 hover:bg-gray-100 flex items-start justify-between"
+                  >
+                    <div className="flex-1 mr-4">
+                      <p className="font-semibold text-gray-900">
+                        {notif.message}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {notif.user_name && `User: ${notif.user_name}`}
+                        {notif.user_email && ` (${notif.user_email})`}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {new Date(notif.created_at).toLocaleString()}
+                      </p>
+                    </div>
+
+                    <div className="flex-shrink-0 text-right flex flex-col items-end">
                       <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
                         {notif.notification_type}
                       </span>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!deletingId) deleteNotification(notif.id);
+                        }}
+                        disabled={deletingId === notif.id}
+                        className="mt-2 inline-flex items-center justify-center p-1 rounded hover:bg-red-50 disabled:opacity-50"
+                        aria-label={`Dismiss notification ${notif.id}`}
+                        title="Dismiss notification"
+                      >
+                        {deletingId === notif.id ? (
+                          <span className="text-xs text-gray-500">
+                            Dismissing...
+                          </span>
+                        ) : (
+                          <MdDelete size={18} className="text-red-600" />
+                        )}
+                      </button>
                     </div>
                   </div>
                 ))
               )}
             </div>
 
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex justify-between items-center mt-4 border-t pt-4">
-                {/* CORRECTED DISPLAY: Use <strong> tags for bolding instead of ** literals */}
-                <span className="text-sm text-gray-700">
-                  Showing page{" "}
-                  <strong className="font-semibold text-gray-900">
-                    {currentPage}
-                  </strong>{" "}
-                  of{" "}
-                  <strong className="font-semibold text-gray-900">
-                    {totalPages}
-                  </strong>{" "}
-                </span>
-                <div className="space-x-2">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1 || loading}
-                    className="px-3 py-1 text-sm rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages || loading}
-                    className="px-3 py-1 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
+            <div>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={(p) => {
+                  if (!loading) handlePageChange(p);
+                }}
+                showInfo={true}
+              />
+            </div>
             {/* End Pagination Controls */}
           </div>
         </div>

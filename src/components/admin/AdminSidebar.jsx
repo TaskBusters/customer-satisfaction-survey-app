@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import valenzuelaLogo from "../../assets/valenzuela-logo.png";
+import valenzuelaLogo from "../../assets/GoVoiceFaviconLight.png";
 import { useAuth } from "../../context/AuthContext";
 
 import {
@@ -164,7 +164,7 @@ function AdminSidebar() {
             <>
               <img
                 src={valenzuelaLogo}
-                alt="Logo"
+                alt="GoVoice Logo"
                 className="w-10 h-10 rounded-full border border-blue-300 shrink-0 mr-3"
               />
               <div className="overflow-hidden whitespace-nowrap flex-1">

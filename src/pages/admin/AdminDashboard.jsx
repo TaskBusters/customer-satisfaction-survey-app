@@ -12,6 +12,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
+import Pagination from "../../components/common/Pagination";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE_URL } from "../../utils/api.js";
 
@@ -191,63 +192,11 @@ function LogsModal({ open, onClose, logs }) {
           )}
         </ul>
 
-        {/* Centered Pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center mt-4 border-t pt-4">
-            <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm">
-              {/* Previous Button */}
-              <button
-                onClick={() => paginate(currentPage - 1)}
-                disabled={currentPage === 1}
-                className={`relative inline-flex items-center rounded-l-md px-3 py-2 text-sm font-medium ${
-                  currentPage === 1
-                    ? "text-gray-400 bg-gray-50 cursor-not-allowed"
-                    : "text-gray-700 bg-white hover:bg-gray-100"
-                } border border-gray-300`}
-              >
-                Previous
-              </button>
-
-              {/* Page Numbers with Ellipsis Logic */}
-              {getPageNumbers().map((page, index) =>
-                page === "..." ? (
-                  <span
-                    key={`ellipsis-${index}`}
-                    className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 bg-white"
-                  >
-                    ...
-                  </span>
-                ) : (
-                  <button
-                    key={page}
-                    onClick={() => paginate(page)}
-                    aria-current={currentPage === page ? "page" : undefined}
-                    className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border border-gray-300 ${
-                      currentPage === page
-                        ? "bg-blue-600 text-white z-10 hover:bg-blue-700"
-                        : "bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                )
-              )}
-
-              {/* Next Button */}
-              <button
-                onClick={() => paginate(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className={`relative inline-flex items-center rounded-r-md px-3 py-2 text-sm font-medium ${
-                  currentPage === totalPages
-                    ? "text-gray-400 bg-gray-50 cursor-not-allowed"
-                    : "text-gray-700 bg-white hover:bg-gray-100"
-                } border border-gray-300`}
-              >
-                Next
-              </button>
-            </nav>
-          </div>
-        )}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={paginate}
+        />
       </div>
     </div>
   );
