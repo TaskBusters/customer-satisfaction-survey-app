@@ -20,6 +20,9 @@ export default function ForgotPassForm() {
   const [toastColor, setToastColor] = useState("bg-green-500/90 text-white")
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [showCodePopup, setShowCodePopup] = useState(false)
+  const [popupCode, setPopupCode] = useState("")
+  const [isSendingEmail, setIsSendingEmail] = useState(false)
   const navigate = useNavigate()
 
   const checkPasswordStrength = (password) => {
@@ -80,19 +83,17 @@ export default function ForgotPassForm() {
     setError("")
     try {
       const res = await fetch(`${API_BASE_URL}/api/forgot-password`, {
-        // use API_BASE_URL constant
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       })
+      const data = await res.json()
+
       if (res.ok) {
+        setPopupCode(data.code)
+        setShowCodePopup(true)
         setStep("code")
-        setToastMessage("Reset code sent to your email!")
-        setToastColor("bg-green-500/90 text-white")
-        setShowToast(true)
-        setTimeout(() => setShowToast(false), 2000)
       } else {
-        const data = await res.json()
         setError(data?.error || "Something went wrong. Try again.")
       }
     } catch {
@@ -109,7 +110,6 @@ export default function ForgotPassForm() {
     setError("")
     try {
       const res = await fetch(`${API_BASE_URL}/api/verify-reset-code`, {
-        // use API_BASE_URL constant
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, code: resetCode }),
@@ -147,7 +147,6 @@ export default function ForgotPassForm() {
     setError("")
     try {
       const res = await fetch(`${API_BASE_URL}/api/reset-password`, {
-        // use API_BASE_URL constant
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, code: resetCode, newPassword }),
@@ -169,6 +168,35 @@ export default function ForgotPassForm() {
     }
   }
 
+  const handleSendEmailConfirm = async () => {
+    setIsSendingEmail(true)
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/send-reset-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code: popupCode }),
+      })
+      const data = await res.json()
+
+      if (res.ok) {
+        setToastMessage("Reset code sent to your email!")
+        setToastColor("bg-green-500/90 text-white")
+      } else {
+        setToastMessage("Email sending unavailable, but you can still use the code above")
+        setToastColor("bg-yellow-500/90 text-white")
+      }
+      setShowToast(true)
+      setTimeout(() => setShowToast(false), 3000)
+    } catch (err) {
+      setToastMessage("Email unavailable, use the code shown")
+      setToastColor("bg-yellow-500/90 text-white")
+      setShowToast(true)
+      setTimeout(() => setShowToast(false), 3000)
+    } finally {
+      setIsSendingEmail(false)
+    }
+  }
+
   const passwordStrength = checkPasswordStrength(newPassword)
 
   return (
@@ -183,6 +211,37 @@ export default function ForgotPassForm() {
           <Toast className={`${toastColor} shadow-xl`}>
             <span className="font-semibold">{toastMessage}</span>
           </Toast>
+        </div>
+      )}
+
+      {showCodePopup && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 shadow-2xl max-w-sm mx-4">
+            <h3 className="text-lg font-bold text-gray-800 mb-2 text-center">Your Reset Code</h3>
+            <p className="text-sm text-gray-600 text-center mb-4">
+              We found your account. Use this code to reset your password:
+            </p>
+            <div className="bg-gray-100 rounded-lg p-6 mb-6 text-center">
+              <p className="text-4xl font-bold tracking-widest text-blue-600">{popupCode}</p>
+            </div>
+            <p className="text-xs text-gray-500 text-center mb-6">Code expires in 15 minutes</p>
+
+            <div className="space-y-3">
+              <button
+                onClick={handleSendEmailConfirm}
+                disabled={isSendingEmail}
+                className="w-full bg-blue-700 hover:bg-blue-800 disabled:bg-gray-400 text-white font-medium py-2 rounded-lg transition"
+              >
+                {isSendingEmail ? "Sending..." : "Send Code to Email"}
+              </button>
+              <button
+                onClick={() => setShowCodePopup(false)}
+                className="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 rounded-lg transition"
+              >
+                Proceed with Code
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

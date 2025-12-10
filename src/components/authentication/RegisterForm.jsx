@@ -64,6 +64,9 @@ export default function RegisterForm() {
   const [registrationStep, setRegistrationStep] = useState("form") // "form" or "verify"
   const [verificationCode, setVerificationCode] = useState("")
   const [tempEmail, setTempEmail] = useState("")
+  const [showCodePopup, setShowCodePopup] = useState(false)
+  const [popupCode, setPopupCode] = useState("")
+  const [isSendingEmail, setIsSendingEmail] = useState(false)
 
   const { login } = useAuth()
   const navigate = useNavigate()
@@ -144,7 +147,6 @@ export default function RegisterForm() {
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/register`, {
-        // use API_BASE_URL constant
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -156,12 +158,15 @@ export default function RegisterForm() {
         }),
       })
 
+      const data = await res.json()
+
       if (res.ok) {
+        setPopupCode(data.code)
+        setShowCodePopup(true)
         setTempEmail(email)
         setRegistrationStep("verify")
-        showToastWithDelay("Registration successful! Please verify your email.", "bg-green-500/90 text-white")
+        showToastWithDelay("Registration successful! Your verification code is ready.", "bg-green-500/90 text-white")
       } else {
-        const data = await res.json()
         showToastWithDelay(data?.error || "Registration failed", "bg-red-600/90 text-white")
       }
     } catch (err) {
@@ -178,7 +183,6 @@ export default function RegisterForm() {
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/verify-email`, {
-        // use API_BASE_URL constant
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -196,6 +200,34 @@ export default function RegisterForm() {
       }
     } catch (err) {
       showToastWithDelay("Verification failed", "bg-red-600/90 text-white")
+    }
+  }
+
+  const handleSendEmailConfirm = async () => {
+    setIsSendingEmail(true)
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/send-verification-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: tempEmail, code: popupCode }),
+      })
+
+      if (res.ok) {
+        setToastMessage("Verification code sent to your email!")
+        setToastColor("bg-green-500/90 text-white")
+      } else {
+        setToastMessage("Email sending unavailable, but you can still use the code above")
+        setToastColor("bg-yellow-500/90 text-white")
+      }
+      setShowToast(true)
+      setTimeout(() => setShowToast(false), 3000)
+    } catch (err) {
+      setToastMessage("Email unavailable, use the code shown")
+      setToastColor("bg-yellow-500/90 text-white")
+      setShowToast(true)
+      setTimeout(() => setShowToast(false), 3000)
+    } finally {
+      setIsSendingEmail(false)
     }
   }
 
@@ -217,6 +249,37 @@ export default function RegisterForm() {
             <Toast className={`${toastColor} shadow-xl`}>
               <span className="font-semibold">{toastMessage}</span>
             </Toast>
+          </div>
+        )}
+
+        {showCodePopup && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-8 shadow-2xl max-w-sm mx-4">
+              <h3 className="text-lg font-bold text-gray-800 mb-2 text-center">Your Verification Code</h3>
+              <p className="text-sm text-gray-600 text-center mb-4">
+                Registration successful! Here's your verification code:
+              </p>
+              <div className="bg-gray-100 rounded-lg p-6 mb-6 text-center">
+                <p className="text-4xl font-bold tracking-widest text-blue-600">{popupCode}</p>
+              </div>
+              <p className="text-xs text-gray-500 text-center mb-6">Code expires in 24 hours</p>
+
+              <div className="space-y-3">
+                <button
+                  onClick={handleSendEmailConfirm}
+                  disabled={isSendingEmail}
+                  className="w-full bg-blue-700 hover:bg-blue-800 disabled:bg-gray-400 text-white font-medium py-2 rounded-lg transition"
+                >
+                  {isSendingEmail ? "Sending..." : "Send Code to Email"}
+                </button>
+                <button
+                  onClick={() => setShowCodePopup(false)}
+                  className="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 rounded-lg transition"
+                >
+                  Proceed with Code
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -388,7 +451,7 @@ export default function RegisterForm() {
             value={district}
             onChange={(e) => {
               setDistrict(e.target.value)
-              setBarangay("") // Reset barangay when district changes
+              setBarangay("")
             }}
             required
             className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
