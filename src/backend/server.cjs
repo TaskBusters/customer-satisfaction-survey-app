@@ -34,13 +34,15 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false,
   auth: {
-    user: process.env.EMAIL_USER, // reads EMAIL_USER from .env
-    pass: process.env.EMAIL_PASS  // reads EMAIL_PASS from .env
+    user: process.env.EMAIL_USER, // EMAIL_USER in Render env
+    pass: process.env.EMAIL_PASS, // EMAIL_PASS (app password)
   },
   tls: {
-    rejectUnauthorized: false
-  }
+    rejectUnauthorized: true,
+  },
+  connectionTimeout: 10000, // 10 seconds
 });
+
 
 
 function randomCode(length = 6) {
