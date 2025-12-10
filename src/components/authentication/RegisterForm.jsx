@@ -1,34 +1,37 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { HiEye, HiEyeOff } from "react-icons/hi";
-import Logo from "./Logo";
-import { useAuth } from "../../context/AuthContext";
-import { Toast } from "flowbite-react";
+"use client"
+
+import { useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
+import { HiEye, HiEyeOff } from "react-icons/hi"
+import Logo from "./Logo"
+import { useAuth } from "../../context/AuthContext"
+import { Toast } from "flowbite-react"
+import { API_BASE_URL } from "../../utils/api.js" // import API_BASE_URL
 
 function checkPasswordStrength(password) {
-  if (password.length < 8) return "too short";
-  if (!/[a-z]/.test(password)) return "no lowercase";
-  if (!/[A-Z]/.test(password)) return "no uppercase";
-  if (!/[0-9]/.test(password)) return "no number";
-  if (!/[^A-Za-z0-9]/.test(password)) return "no symbol";
-  return "strong";
+  if (password.length < 8) return "too short"
+  if (!/[a-z]/.test(password)) return "no lowercase"
+  if (!/[A-Z]/.test(password)) return "no uppercase"
+  if (!/[0-9]/.test(password)) return "no number"
+  if (!/[^A-Za-z0-9]/.test(password)) return "no symbol"
+  return "strong"
 }
 function getStrengthLabel(strength) {
   switch (strength) {
     case "too short":
-      return "Password must be at least 8 characters";
+      return "Password must be at least 8 characters"
     case "no lowercase":
-      return "Add a lowercase letter";
+      return "Add a lowercase letter"
     case "no uppercase":
-      return "Add an uppercase letter";
+      return "Add an uppercase letter"
     case "no number":
-      return "Add a number";
+      return "Add a number"
     case "no symbol":
-      return "Add a symbol";
+      return "Add a symbol"
     case "strong":
-      return "Strong password";
+      return "Strong password"
     default:
-      return "";
+      return ""
   }
 }
 function getStrengthColor(strength) {
@@ -38,42 +41,42 @@ function getStrengthColor(strength) {
     case "no uppercase":
     case "no number":
     case "no symbol":
-      return "text-red-600";
+      return "text-red-600"
     case "strong":
-      return "text-green-600";
+      return "text-green-600"
     default:
-      return "";
+      return ""
   }
 }
 
 export default function RegisterForm() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [district, setDistrict] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [barangay, setBarangay] = useState("");
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastColor, setToastColor] = useState("bg-green-500/90 text-white");
-  const [registrationStep, setRegistrationStep] = useState("form"); // "form" or "verify"
-  const [verificationCode, setVerificationCode] = useState("");
-  const [tempEmail, setTempEmail] = useState("");
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [district, setDistrict] = useState("")
+  const [fullName, setFullName] = useState("")
+  const [barangay, setBarangay] = useState("")
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState("")
+  const [toastColor, setToastColor] = useState("bg-green-500/90 text-white")
+  const [registrationStep, setRegistrationStep] = useState("form") // "form" or "verify"
+  const [verificationCode, setVerificationCode] = useState("")
+  const [tempEmail, setTempEmail] = useState("")
 
-  const { login } = useAuth();
-  const navigate = useNavigate();
+  const { login } = useAuth()
+  const navigate = useNavigate()
 
   const showToastWithDelay = (message, color, callback) => {
-    setToastMessage(message);
-    setToastColor(color);
-    setShowToast(true);
+    setToastMessage(message)
+    setToastColor(color)
+    setShowToast(true)
     setTimeout(() => {
-      setShowToast(false);
-      if (callback) callback();
-    }, 2000);
-  };
+      setShowToast(false)
+      if (callback) callback()
+    }, 2000)
+  }
 
   const districts = [
     {
@@ -121,39 +124,27 @@ export default function RegisterForm() {
         { value: "ugong", label: "Ugong" },
       ],
     },
-  ];
+  ]
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (
-      !email ||
-      !password ||
-      !confirmPassword ||
-      !district ||
-      !barangay ||
-      !fullName
-    ) {
-      showToastWithDelay(
-        "Please fill out all fields.",
-        "bg-red-600/90 text-white"
-      );
-      return;
+    e.preventDefault()
+    if (!email || !password || !confirmPassword || !district || !barangay || !fullName) {
+      showToastWithDelay("Please fill out all fields.", "bg-red-600/90 text-white")
+      return
     }
-    const passStrength = checkPasswordStrength(password);
+    const passStrength = checkPasswordStrength(password)
     if (passStrength !== "strong") {
-      showToastWithDelay(
-        "Password is not strong: " + getStrengthLabel(passStrength),
-        "bg-red-600/90 text-white"
-      );
-      return;
+      showToastWithDelay("Password is not strong: " + getStrengthLabel(passStrength), "bg-red-600/90 text-white")
+      return
     }
     if (password !== confirmPassword) {
-      showToastWithDelay("Passwords do not match.", "bg-red-600/90 text-white");
-      return;
+      showToastWithDelay("Passwords do not match.", "bg-red-600/90 text-white")
+      return
     }
 
     try {
-      const res = await fetch("http://localhost:4000/api/register", {
+      const res = await fetch(`${API_BASE_URL}/api/register`, {
+        // use API_BASE_URL constant
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -163,67 +154,52 @@ export default function RegisterForm() {
           district,
           barangay,
         }),
-      });
+      })
 
       if (res.ok) {
-        setTempEmail(email);
-        setRegistrationStep("verify");
-        showToastWithDelay(
-          "Registration successful! Please verify your email.",
-          "bg-green-500/90 text-white"
-        );
+        setTempEmail(email)
+        setRegistrationStep("verify")
+        showToastWithDelay("Registration successful! Please verify your email.", "bg-green-500/90 text-white")
       } else {
-        const data = await res.json();
-        showToastWithDelay(
-          data?.error || "Registration failed",
-          "bg-red-600/90 text-white"
-        );
+        const data = await res.json()
+        showToastWithDelay(data?.error || "Registration failed", "bg-red-600/90 text-white")
       }
     } catch (err) {
-      showToastWithDelay("Registration failed", "bg-red-600/90 text-white");
+      showToastWithDelay("Registration failed", "bg-red-600/90 text-white")
     }
-  };
+  }
 
   const handleVerifyEmail = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
     if (!verificationCode) {
-      showToastWithDelay(
-        "Please enter the verification code.",
-        "bg-red-600/90 text-white"
-      );
-      return;
+      showToastWithDelay("Please enter the verification code.", "bg-red-600/90 text-white")
+      return
     }
 
     try {
-      const res = await fetch("http://localhost:4000/api/verify-email", {
+      const res = await fetch(`${API_BASE_URL}/api/verify-email`, {
+        // use API_BASE_URL constant
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: tempEmail,
           code: verificationCode,
         }),
-      });
+      })
 
       if (res.ok) {
-        login({ email: tempEmail, fullName, district, barangay });
-        showToastWithDelay(
-          "Email verified! Welcome aboard!",
-          "bg-green-500/90 text-white",
-          () => navigate("/")
-        );
+        login({ email: tempEmail, fullName, district, barangay })
+        showToastWithDelay("Email verified! Welcome aboard!", "bg-green-500/90 text-white", () => navigate("/"))
       } else {
-        const data = await res.json();
-        showToastWithDelay(
-          data?.error || "Verification failed",
-          "bg-red-600/90 text-white"
-        );
+        const data = await res.json()
+        showToastWithDelay(data?.error || "Verification failed", "bg-red-600/90 text-white")
       }
     } catch (err) {
-      showToastWithDelay("Verification failed", "bg-red-600/90 text-white");
+      showToastWithDelay("Verification failed", "bg-red-600/90 text-white")
     }
-  };
+  }
 
-  const passwordStrength = checkPasswordStrength(password);
+  const passwordStrength = checkPasswordStrength(password)
 
   if (registrationStep === "verify") {
     return (
@@ -245,31 +221,21 @@ export default function RegisterForm() {
         )}
 
         <Logo />
-        <h2 className="text-xl text-center font-bold text-gray-800 mb-4">
-          Verify Your Email
-        </h2>
+        <h2 className="text-xl text-center font-bold text-gray-800 mb-4">Verify Your Email</h2>
         <p className="text-center text-gray-600 mb-6">
           We sent a 6-digit verification code to <strong>{tempEmail}</strong>
         </p>
 
-        <form
-          className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto"
-          onSubmit={handleVerifyEmail}
-        >
+        <form className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto" onSubmit={handleVerifyEmail}>
           <div className="mb-5">
-            <label
-              htmlFor="code"
-              className="block mb-2 text-sm font-medium text-gray-900"
-            >
+            <label htmlFor="code" className="block mb-2 text-sm font-medium text-gray-900">
               Verification Code
             </label>
             <input
               type="text"
               id="code"
               value={verificationCode}
-              onChange={(e) =>
-                setVerificationCode(e.target.value.toUpperCase())
-              }
+              onChange={(e) => setVerificationCode(e.target.value.toUpperCase())}
               placeholder="000000"
               maxLength="6"
               required
@@ -291,7 +257,7 @@ export default function RegisterForm() {
           </div>
         </form>
       </div>
-    );
+    )
   }
 
   return (
@@ -313,20 +279,12 @@ export default function RegisterForm() {
       )}
 
       <Logo />
-      <h2 className="text-xl text-center font-bold text-gray-800">
-        Register a New Account
-      </h2>
+      <h2 className="text-xl text-center font-bold text-gray-800">Register a New Account</h2>
 
-      <form
-        className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto"
-        onSubmit={handleSubmit}
-      >
+      <form className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto" onSubmit={handleSubmit}>
         {/* Full Name */}
         <div className="mb-5">
-          <label
-            htmlFor="fullName"
-            className="block mb-2 text-sm font-medium text-gray-900"
-          >
+          <label htmlFor="fullName" className="block mb-2 text-sm font-medium text-gray-900">
             Full Name
           </label>
           <input
@@ -341,10 +299,7 @@ export default function RegisterForm() {
         </div>
         {/* Email */}
         <div className="mb-5">
-          <label
-            htmlFor="email"
-            className="block mb-2 text-sm font-medium text-gray-900"
-          >
+          <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-900">
             Email
           </label>
           <input
@@ -359,10 +314,7 @@ export default function RegisterForm() {
         </div>
         {/* Password */}
         <div className="mb-1 relative">
-          <label
-            htmlFor="password"
-            className="block mb-2 text-sm font-medium text-gray-900"
-          >
+          <label htmlFor="password" className="block mb-2 text-sm font-medium text-gray-900">
             Password
           </label>
           <input
@@ -385,20 +337,13 @@ export default function RegisterForm() {
         </div>
         {/* Password strength checker */}
         <div className="mb-4">
-          <span
-            className={`block text-xs mt-1 ${getStrengthColor(
-              passwordStrength
-            )}`}
-          >
+          <span className={`block text-xs mt-1 ${getStrengthColor(passwordStrength)}`}>
             {password ? getStrengthLabel(passwordStrength) : ""}
           </span>
         </div>
         {/* Confirm Password */}
         <div className="mb-5">
-          <label
-            htmlFor="confirmPassword"
-            className="block mb-2 text-sm font-medium text-gray-900"
-          >
+          <label htmlFor="confirmPassword" className="block mb-2 text-sm font-medium text-gray-900">
             Confirm Password
           </label>
           <div className="relative">
@@ -415,52 +360,35 @@ export default function RegisterForm() {
             {/* Eye icon toggle */}
             <button
               type="button"
-              aria-label={
-                showConfirmPassword ? "Hide password" : "Show password"
-              }
+              aria-label={showConfirmPassword ? "Hide password" : "Show password"}
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               tabIndex={0}
               className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 focus:outline-none"
               style={{ top: 0, bottom: 0, height: "100%" }}
             >
-              {showConfirmPassword ? (
-                <HiEye size={20} />
-              ) : (
-                <HiEyeOff size={20} />
-              )}
+              {showConfirmPassword ? <HiEye size={20} /> : <HiEyeOff size={20} />}
             </button>
           </div>
           {/* Password match checker */}
           <div className="mt-2 h-4">
             {confirmPassword && (
-              <span
-                className={`text-xs ${
-                  password === confirmPassword
-                    ? "text-green-600"
-                    : "text-red-600"
-                }`}
-              >
-                {password === confirmPassword
-                  ? "Passwords match"
-                  : "Passwords do not match"}
+              <span className={`text-xs ${password === confirmPassword ? "text-green-600" : "text-red-600"}`}>
+                {password === confirmPassword ? "Passwords match" : "Passwords do not match"}
               </span>
             )}
           </div>
         </div>
         {/* District dropdown */}
         <div className="mb-5">
-          <label
-            htmlFor="district"
-            className="block mb-2 text-sm font-medium text-gray-900"
-          >
+          <label htmlFor="district" className="block mb-2 text-sm font-medium text-gray-900">
             District
           </label>
           <select
             id="district"
             value={district}
             onChange={(e) => {
-              setDistrict(e.target.value);
-              setBarangay(""); // Reset barangay when district changes
+              setDistrict(e.target.value)
+              setBarangay("") // Reset barangay when district changes
             }}
             required
             className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
@@ -475,10 +403,7 @@ export default function RegisterForm() {
         </div>
         {/* Barangay dropdown */}
         <div className="mb-5">
-          <label
-            htmlFor="barangay"
-            className="block mb-2 text-sm font-medium text-gray-900"
-          >
+          <label htmlFor="barangay" className="block mb-2 text-sm font-medium text-gray-900">
             Barangay
           </label>
           <select
@@ -489,9 +414,7 @@ export default function RegisterForm() {
             disabled={!district}
             className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
           >
-            <option value="">
-              {district ? "Select your Barangay" : "Select a District first"}
-            </option>
+            <option value="">{district ? "Select your Barangay" : "Select a District first"}</option>
             {district &&
               districts
                 .find((d) => d.value === district)
@@ -519,5 +442,5 @@ export default function RegisterForm() {
         </button>
       </form>
     </div>
-  );
+  )
 }

@@ -1,37 +1,31 @@
-"use client";
+"use client"
 
-import { useEffect, useRef, useState } from "react";
-import {
-  HiX,
-  HiUser,
-  HiGlobe,
-  HiOutlineAdjustments,
-  HiArrowLeft,
-} from "react-icons/hi";
-import { useAuth } from "../../context/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { API_BASE_URL } from "../../utils/api.js";
+import { useEffect, useRef, useState } from "react"
+import { HiX, HiUser, HiGlobe, HiOutlineAdjustments, HiArrowLeft } from "react-icons/hi"
+import { useAuth } from "../../context/AuthContext"
+import { useNavigate } from "react-router-dom"
+import { useTranslation } from "react-i18next"
+import { API_BASE_URL } from "../../utils/api.js"
 
 function AboutContent() {
-  const [aboutText, setAboutText] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [aboutText, setAboutText] = useState("")
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setLoading(true);
+    setLoading(true)
     fetch(`${API_BASE_URL}/api/settings`)
       .then((res) => res.json())
       .then((data) => {
-        setAboutText(data.about || "Customer Satisfaction Survey System");
-        setLoading(false);
+        setAboutText(data.about || "Customer Satisfaction Survey System")
+        setLoading(false)
       })
       .catch(() => {
-        setAboutText("Customer Satisfaction Survey System");
-        setLoading(false);
-      });
-  }, []);
+        setAboutText("Customer Satisfaction Survey System")
+        setLoading(false)
+      })
+  }, [])
 
-  if (loading) return <p className="text-gray-700 text-sm">Loading...</p>;
+  if (loading) return <p className="text-gray-700 text-sm">Loading...</p>
 
   return (
     <div className="text-gray-700 text-sm whitespace-pre-line">
@@ -41,56 +35,69 @@ function AboutContent() {
         </p>
       ))}
     </div>
-  );
+  )
 }
 
 export default function UserSettingsModal({ open, onClose }) {
-  const { user, isGuest } = useAuth();
-  const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
-  const cardRef = useRef();
-  const [activeSub, setActiveSub] = useState(null);
-  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
-  const [textSize, setTextSize] = useState("normal");
+  const { user, isGuest, logout } = useAuth()
+  const navigate = useNavigate()
+  const { t, i18n } = useTranslation()
+  const cardRef = useRef()
+  const [activeSub, setActiveSub] = useState(null)
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
+  const [textSize, setTextSize] = useState("normal")
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deletingAccount, setDeletingAccount] = useState(false)
 
   useEffect(() => {
-    if (!open) return;
-    const savedTextSize = localStorage.getItem("textSize") || "normal";
-    setTextSize(savedTextSize);
-    applyTextSize(savedTextSize);
-    const savedLang = localStorage.getItem("i18nextLng") || "en";
-    i18n.changeLanguage(savedLang);
-  }, [open, i18n]);
+    if (!open) return
+    const savedTextSize = localStorage.getItem("textSize") || "normal"
+    setTextSize(savedTextSize)
+    applyTextSize(savedTextSize)
+    const savedLang = localStorage.getItem("i18nextLng") || "en"
+    i18n.changeLanguage(savedLang)
+  }, [open, i18n])
 
   const applyTextSize = (size) => {
-    const root = document.documentElement;
+    const root = document.documentElement
     if (size === "small") {
-      root.style.fontSize = "14px";
+      root.style.fontSize = "14px"
     } else if (size === "large") {
-      root.style.fontSize = "18px";
+      root.style.fontSize = "18px"
     } else {
-      root.style.fontSize = "16px";
+      root.style.fontSize = "16px"
     }
-    localStorage.setItem("textSize", size);
-    setTextSize(size);
-  };
+    localStorage.setItem("textSize", size)
+    setTextSize(size)
+  }
 
   useEffect(() => {
     if (open) {
-      document.body.classList.add("overflow-hidden");
+      document.body.classList.add("overflow-hidden")
     } else {
-      document.body.classList.remove("overflow-hidden");
+      document.body.classList.remove("overflow-hidden")
     }
-    return () => document.body.classList.remove("overflow-hidden");
-  }, [open]);
+    return () => document.body.classList.remove("overflow-hidden")
+  }, [open])
+
+  useEffect(() => {
+    if (!open) {
+      setShowDeleteConfirm(false)
+      setShowLogoutConfirm(false)
+      setActiveSub(null)
+      setDeletingAccount(false)
+      setShowLoginPrompt(false)
+    }
+  }, [open])
 
   function handleBackdropClick(e) {
     if (cardRef.current && !cardRef.current.contains(e.target)) {
-      onClose();
+      onClose()
     }
   }
 
-  if (!open) return null;
+  if (!open) return null
 
   const settingsItems = [
     {
@@ -115,20 +122,90 @@ export default function UserSettingsModal({ open, onClose }) {
             requiresLogin: false,
           },
         ]),
-  ];
+  ]
 
-  console.log(
-    "[v0] UserSettingsModal - isGuest:",
-    isGuest,
-    "settingsItems length:",
-    settingsItems.length
-  );
+  console.log("[v0] UserSettingsModal - isGuest:", isGuest, "settingsItems length:", settingsItems.length)
 
   const handleProfileClick = () => {
     if (isGuest) {
-      setShowLoginPrompt(true);
+      setShowLoginPrompt(true)
     }
-  };
+  }
+
+  const handleLogoutClick = () => {
+    setShowLogoutConfirm(true)
+  }
+
+  const confirmLogout = () => {
+    setShowLogoutConfirm(false)
+    setShowDeleteConfirm(false)
+    logout()
+    onClose()
+  }
+
+  const handleDeleteAccount = async () => {
+    if (!user?.email) {
+      console.log("[v0] Delete account - no email found:", user)
+      alert("Error: No email found for user")
+      return
+    }
+
+    console.log("[v0] Starting delete account for:", user.email)
+    setDeletingAccount(true)
+
+    try {
+      console.log("[v0] Sending DELETE request to:", `${API_BASE_URL}/api/auth/delete-account`)
+      const response = await fetch(`${API_BASE_URL}/api/auth/delete-account`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ email: user.email }),
+        credentials: "include",
+      })
+
+      console.log("[v0] Delete account response status:", response.status)
+      console.log("[v0] Response headers:", response.headers)
+
+      let data
+      const contentType = response.headers.get("content-type")
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json()
+        console.log("[v0] Delete account response data:", data)
+      } else {
+        const text = await response.text()
+        console.log("[v0] Delete account response text:", text)
+        data = { message: text }
+      }
+
+      if (!response.ok) {
+        console.error("[v0] Delete failed - status not ok:", response.status, data)
+        alert("Failed to delete account: " + (data.error || data.message || "Unknown error"))
+        setDeletingAccount(false)
+        return
+      }
+
+      console.log("[v0] Account deleted successfully, proceeding with logout")
+      setShowDeleteConfirm(false)
+      setShowLogoutConfirm(false)
+      setActiveSub(null)
+      setDeletingAccount(false)
+
+      alert("Account deleted successfully")
+      logout()
+      onClose()
+      setTimeout(() => navigate("/login"), 100)
+    } catch (error) {
+      console.error("[v0] Error deleting account - caught exception:", error)
+      console.error("[v0] Error stack:", error.stack)
+      setShowDeleteConfirm(false)
+      setShowLogoutConfirm(false)
+      setActiveSub(null)
+      setDeletingAccount(false)
+      alert("Failed to delete account: " + error.message)
+    }
+  }
 
   return (
     <>
@@ -146,9 +223,7 @@ export default function UserSettingsModal({ open, onClose }) {
           }}
         >
           <div className="flex items-center px-4 py-4 border-b bg-blue-50 rounded-t-2xl">
-            <span className="mx-auto text-lg font-bold text-blue-700 tracking-wide">
-              {t("common.settings")}
-            </span>
+            <span className="mx-auto text-lg font-bold text-blue-700 tracking-wide">{t("common.settings")}</span>
             <button
               onClick={onClose}
               className="absolute top-3 right-4 text-blue-700 hover:bg-blue-100 rounded-full p-2 transition"
@@ -160,7 +235,7 @@ export default function UserSettingsModal({ open, onClose }) {
           {!activeSub ? (
             <ul className="flex flex-col gap-1 my-4 px-3">
               {settingsItems.map((item) => {
-                const isDisabled = item.requiresLogin && isGuest;
+                const isDisabled = item.requiresLogin && isGuest
                 return (
                   <li key={item.value}>
                     <button
@@ -175,14 +250,10 @@ export default function UserSettingsModal({ open, onClose }) {
                     >
                       {item.icon}
                       <span className="flex-grow text-left">{item.label}</span>
-                      {isDisabled && (
-                        <span className="text-xs text-gray-500">
-                          ({t("common.login")})
-                        </span>
-                      )}
+                      {isDisabled && <span className="text-xs text-gray-500">({t("common.login")})</span>}
                     </button>
                   </li>
-                );
+                )
               })}
             </ul>
           ) : (
@@ -197,14 +268,12 @@ export default function UserSettingsModal({ open, onClose }) {
 
               {activeSub === "language" && (
                 <>
-                  <h2 className="text-blue-700 text-lg font-bold">
-                    {t("common.language")}
-                  </h2>
+                  <h2 className="text-blue-700 text-lg font-bold">{t("common.language")}</h2>
                   <select
                     value={i18n.language}
                     onChange={(e) => {
-                      i18n.changeLanguage(e.target.value);
-                      localStorage.setItem("i18nextLng", e.target.value);
+                      i18n.changeLanguage(e.target.value)
+                      localStorage.setItem("i18nextLng", e.target.value)
                     }}
                     className="w-full border border-gray-300 rounded px-3 py-2"
                   >
@@ -216,9 +285,7 @@ export default function UserSettingsModal({ open, onClose }) {
 
               {activeSub === "textSize" && (
                 <>
-                  <h2 className="text-blue-700 text-lg font-bold">
-                    {t("common.textSize")}
-                  </h2>
+                  <h2 className="text-blue-700 text-lg font-bold">{t("common.textSize")}</h2>
                   <div className="space-y-2">
                     {["small", "normal", "large"].map((size) => (
                       <label key={size} className="flex items-center">
@@ -231,13 +298,7 @@ export default function UserSettingsModal({ open, onClose }) {
                           className="mr-2"
                         />
                         <span
-                          className={`capitalize ${
-                            size === "small"
-                              ? "text-sm"
-                              : size === "large"
-                              ? "text-lg"
-                              : ""
-                          }`}
+                          className={`capitalize ${size === "small" ? "text-sm" : size === "large" ? "text-lg" : ""}`}
                         >
                           {t(`textSize.${size}`)}
                         </span>
@@ -246,8 +307,8 @@ export default function UserSettingsModal({ open, onClose }) {
                   </div>
                   <button
                     onClick={() => {
-                      localStorage.setItem("textSize", textSize);
-                      setActiveSub(null);
+                      localStorage.setItem("textSize", textSize)
+                      setActiveSub(null)
                     }}
                     className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
                   >
@@ -258,9 +319,7 @@ export default function UserSettingsModal({ open, onClose }) {
 
               {activeSub === "profile" && (
                 <>
-                  <h2 className="text-blue-700 text-lg font-bold">
-                    {t("common.profile")}
-                  </h2>
+                  <h2 className="text-blue-700 text-lg font-bold">{t("common.profile")}</h2>
                   <div className="space-y-3">
                     <div>
                       <p className="text-sm text-gray-600">Name</p>
@@ -271,6 +330,14 @@ export default function UserSettingsModal({ open, onClose }) {
                       <p className="font-semibold">{user?.email || "—"}</p>
                     </div>
                   </div>
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      onClick={() => setShowDeleteConfirm(true)}
+                      className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold"
+                    >
+                      Delete Account
+                    </button>
+                  </div>
                 </>
               )}
             </div>
@@ -280,12 +347,8 @@ export default function UserSettingsModal({ open, onClose }) {
         {showLoginPrompt && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
             <div className="bg-white rounded-xl shadow-lg w-full max-w-sm p-6">
-              <h2 className="text-2xl font-bold mb-4 text-blue-700">
-                {t("common.profile")}
-              </h2>
-              <p className="text-gray-600 mb-6">
-                {t("common.login")} to access your profile settings.
-              </p>
+              <h2 className="text-2xl font-bold mb-4 text-blue-700">{t("common.profile")}</h2>
+              <p className="text-gray-600 mb-6">{t("common.login")} to access your profile settings.</p>
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={() => setShowLoginPrompt(false)}
@@ -295,13 +358,70 @@ export default function UserSettingsModal({ open, onClose }) {
                 </button>
                 <button
                   onClick={() => {
-                    setShowLoginPrompt(false);
-                    onClose();
-                    navigate("/login");
+                    setShowLoginPrompt(false)
+                    onClose()
+                    navigate("/login")
                   }}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
                 >
                   {t("common.login")}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showLogoutConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl shadow-lg w-full max-w-sm p-6">
+              <h2 className="text-2xl font-bold mb-4 text-blue-700">Confirm Logout</h2>
+              <p className="text-gray-600 mb-6">Are you sure you want to logout?</p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => {
+                    setShowLogoutConfirm(false)
+                    setActiveSub(null)
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmLogout}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl shadow-lg w-full max-w-sm p-6">
+              <h2 className="text-2xl font-bold mb-4 text-red-700">Delete Account</h2>
+              <p className="text-gray-600 mb-2">Are you sure you want to delete your account?</p>
+              <p className="text-gray-500 text-sm mb-6">
+                This action cannot be undone. All your data will be permanently deleted.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => {
+                    setShowDeleteConfirm(false)
+                    setActiveSub(null)
+                  }}
+                  disabled={deletingAccount}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-semibold disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={deletingAccount}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold disabled:opacity-50"
+                >
+                  {deletingAccount ? "Deleting..." : "Delete Account"}
                 </button>
               </div>
             </div>
@@ -316,5 +436,5 @@ export default function UserSettingsModal({ open, onClose }) {
         }
       `}</style>
     </>
-  );
+  )
 }

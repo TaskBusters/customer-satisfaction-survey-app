@@ -277,7 +277,7 @@ export default function SurveyFormPage() {
         setTimeout(() => {
           setShowToast(false)
           setSubmitting(false)
-          navigate(isEditMode ? "/submissions" : "/aftersurvey")
+          navigate("/aftersurvey")
         }, 1800)
       } else {
         setToastMsg(isEditMode ? t("survey.updateFailed") : t("survey.submissionFailed"))
