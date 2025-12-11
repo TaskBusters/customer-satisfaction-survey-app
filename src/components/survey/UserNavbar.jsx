@@ -1,50 +1,52 @@
-import React, { useState, useRef, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import {
-  HiCog,
-  HiOutlineUserCircle,
-  HiChevronUp,
-  HiHome,
-} from "react-icons/hi";
-import UserSettingsModal from "./UserSettingsModal";
-import { useAuth } from "../../context/AuthContext";
-import GoVoiceLogo from "../../assets/GoVoiceFaviconLight.png";
+"use client"
+
+import { useState, useRef, useEffect } from "react"
+import { useNavigate, useLocation } from "react-router-dom"
+import { HiCog, HiOutlineUserCircle, HiChevronUp, HiHome } from "react-icons/hi"
+import UserSettingsModal from "./UserSettingsModal"
+import { useAuth } from "../../context/AuthContext"
+import GoVoiceLogo from "../../assets/GoVoiceFaviconLight.png"
 
 const Navbar = ({ onClickHome, onClickLogin, onClickRegister }) => {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuth()
 
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const dropdownTimeout = useRef();
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const dropdownTimeout = useRef()
 
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigate = useNavigate()
+  const location = useLocation()
 
-  const isSurveyHomePage = location.pathname === "/";
-  const hideLogo =
-    location.pathname.startsWith("/surveyform") ||
-    location.pathname === "/aftersurvey";
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const isSurveyHomePage = location.pathname === "/"
+  const hideLogo = location.pathname.startsWith("/surveyform") || location.pathname === "/aftersurvey"
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 10)
+    window.addEventListener("scroll", handleScroll)
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
 
   const handleMouseEnter = () => {
-    clearTimeout(dropdownTimeout.current);
-    setDropdownOpen(true);
-  };
+    clearTimeout(dropdownTimeout.current)
+    setDropdownOpen(true)
+  }
 
   const handleMouseLeave = () => {
-    dropdownTimeout.current = setTimeout(() => setDropdownOpen(false), 120);
-  };
+    dropdownTimeout.current = setTimeout(() => setDropdownOpen(false), 120)
+  }
+
+  const handleConfirmLogout = () => {
+    setShowLogoutConfirm(false)
+    logout()
+    navigate("/login")
+  }
 
   return (
     <nav
@@ -65,13 +67,11 @@ const Navbar = ({ onClickHome, onClickLogin, onClickRegister }) => {
             title="GoVoice Home"
           >
             <img
-              src={GoVoiceLogo}
+              src={GoVoiceLogo || "/placeholder.svg"}
               alt="GoVoice Valenzuela"
               className="w-8 h-8 sm:w-9 sm:h-9 object-contain"
             />
-            <span className="text-white font-bold text-lg sm:text-xl tracking-wide">
-              GoVoice
-            </span>
+            <span className="text-white font-bold text-lg sm:text-xl tracking-wide">GoVoice</span>
           </button>
         )}
 
@@ -101,11 +101,7 @@ const Navbar = ({ onClickHome, onClickLogin, onClickRegister }) => {
       </div>
 
       <div className="flex items-center gap-4">
-        <div
-          className="relative"
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-        >
+        <div className="relative" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
           <div className="flex items-center gap-1 cursor-pointer select-none">
             <span
               className="text-white font-semibold text-base sm:text-lg max-w-[5.5rem] sm:max-w-xs truncate block"
@@ -116,7 +112,7 @@ const Navbar = ({ onClickHome, onClickLogin, onClickRegister }) => {
 
             {user?.avatarUrl ? (
               <img
-                src={user.avatarUrl}
+                src={user.avatarUrl || "/placeholder.svg"}
                 alt={user.name || "avatar"}
                 className="w-7 h-7 rounded-full border"
               />
@@ -127,9 +123,7 @@ const Navbar = ({ onClickHome, onClickLogin, onClickRegister }) => {
             )}
 
             <HiChevronUp
-              className={`text-white text-xl transition-transform duration-200 ${
-                dropdownOpen ? "rotate-180" : ""
-              }`}
+              className={`text-white text-xl transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`}
             />
           </div>
 
@@ -139,19 +133,13 @@ const Navbar = ({ onClickHome, onClickLogin, onClickRegister }) => {
                 <>
                   <button
                     className="block w-full text-left px-4 py-2 hover:bg-blue-100 font-medium text-blue-700"
-                    onClick={
-                      onClickLogin ? onClickLogin : () => navigate("/login")
-                    }
+                    onClick={onClickLogin ? onClickLogin : () => navigate("/login")}
                   >
                     Login
                   </button>
                   <button
                     className="block w-full text-left px-4 py-2 hover:bg-blue-100 font-medium text-blue-700"
-                    onClick={
-                      onClickRegister
-                        ? onClickRegister
-                        : () => navigate("/register")
-                    }
+                    onClick={onClickRegister ? onClickRegister : () => navigate("/register")}
                   >
                     Register
                   </button>
@@ -160,10 +148,7 @@ const Navbar = ({ onClickHome, onClickLogin, onClickRegister }) => {
                 <>
                   <button
                     className="block w-full text-left px-4 py-2 hover:bg-blue-100 font-medium text-blue-700"
-                    onClick={() => {
-                      logout();
-                      navigate("/login");
-                    }}
+                    onClick={() => setShowLogoutConfirm(true)}
                   >
                     Logout
                   </button>
@@ -173,19 +158,35 @@ const Navbar = ({ onClickHome, onClickLogin, onClickRegister }) => {
           )}
         </div>
 
-        <HiCog
-          className="text-white text-2xl cursor-pointer"
-          title="Settings"
-          onClick={() => setShowSettings(true)}
-        />
+        <HiCog className="text-white text-2xl cursor-pointer" title="Settings" onClick={() => setShowSettings(true)} />
 
-        <UserSettingsModal
-          open={showSettings}
-          onClose={() => setShowSettings(false)}
-        />
+        <UserSettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
+
+        {showLogoutConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl shadow-lg w-full max-w-sm p-6">
+              <h2 className="text-2xl font-bold mb-4 text-blue-700">Confirm Logout</h2>
+              <p className="text-gray-600 mb-6">Are you sure you want to logout?</p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmLogout}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </nav>
-  );
-};
+  )
+}
 
-export default Navbar;
+export default Navbar

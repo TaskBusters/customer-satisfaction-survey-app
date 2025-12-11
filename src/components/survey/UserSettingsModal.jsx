@@ -46,7 +46,6 @@ export default function UserSettingsModal({ open, onClose }) {
   const [activeSub, setActiveSub] = useState(null)
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
   const [textSize, setTextSize] = useState("normal")
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deletingAccount, setDeletingAccount] = useState(false)
 
@@ -84,7 +83,6 @@ export default function UserSettingsModal({ open, onClose }) {
   useEffect(() => {
     if (!open) {
       setShowDeleteConfirm(false)
-      setShowLogoutConfirm(false)
       setActiveSub(null)
       setDeletingAccount(false)
       setShowLoginPrompt(false)
@@ -124,37 +122,21 @@ export default function UserSettingsModal({ open, onClose }) {
         ]),
   ]
 
-  console.log("[v0] UserSettingsModal - isGuest:", isGuest, "settingsItems length:", settingsItems.length)
-
   const handleProfileClick = () => {
     if (isGuest) {
       setShowLoginPrompt(true)
     }
   }
 
-  const handleLogoutClick = () => {
-    setShowLogoutConfirm(true)
-  }
-
-  const confirmLogout = () => {
-    setShowLogoutConfirm(false)
-    setShowDeleteConfirm(false)
-    logout()
-    onClose()
-  }
-
   const handleDeleteAccount = async () => {
     if (!user?.email) {
-      console.log("[v0] Delete account - no email found:", user)
       alert("Error: No email found for user")
       return
     }
 
-    console.log("[v0] Starting delete account for:", user.email)
     setDeletingAccount(true)
 
     try {
-      console.log("[v0] Sending DELETE request to:", `${API_BASE_URL}/api/auth/delete-account`)
       const response = await fetch(`${API_BASE_URL}/api/auth/delete-account`, {
         method: "POST",
         headers: {
@@ -165,30 +147,22 @@ export default function UserSettingsModal({ open, onClose }) {
         credentials: "include",
       })
 
-      console.log("[v0] Delete account response status:", response.status)
-      console.log("[v0] Response headers:", response.headers)
-
       let data
       const contentType = response.headers.get("content-type")
       if (contentType && contentType.includes("application/json")) {
         data = await response.json()
-        console.log("[v0] Delete account response data:", data)
       } else {
         const text = await response.text()
-        console.log("[v0] Delete account response text:", text)
         data = { message: text }
       }
 
       if (!response.ok) {
-        console.error("[v0] Delete failed - status not ok:", response.status, data)
         alert("Failed to delete account: " + (data.error || data.message || "Unknown error"))
         setDeletingAccount(false)
         return
       }
 
-      console.log("[v0] Account deleted successfully, proceeding with logout")
       setShowDeleteConfirm(false)
-      setShowLogoutConfirm(false)
       setActiveSub(null)
       setDeletingAccount(false)
 
@@ -197,10 +171,7 @@ export default function UserSettingsModal({ open, onClose }) {
       onClose()
       setTimeout(() => navigate("/login"), 100)
     } catch (error) {
-      console.error("[v0] Error deleting account - caught exception:", error)
-      console.error("[v0] Error stack:", error.stack)
       setShowDeleteConfirm(false)
-      setShowLogoutConfirm(false)
       setActiveSub(null)
       setDeletingAccount(false)
       alert("Failed to delete account: " + error.message)
@@ -330,7 +301,7 @@ export default function UserSettingsModal({ open, onClose }) {
                       <p className="font-semibold">{user?.email || "—"}</p>
                     </div>
                   </div>
-                  <div className="flex gap-2 mt-4">
+                  <div className="flex gap-2 mt-4 flex-col">
                     <button
                       onClick={() => setShowDeleteConfirm(true)}
                       className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold"
@@ -365,32 +336,6 @@ export default function UserSettingsModal({ open, onClose }) {
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
                 >
                   {t("common.login")}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {showLogoutConfirm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-lg w-full max-w-sm p-6">
-              <h2 className="text-2xl font-bold mb-4 text-blue-700">Confirm Logout</h2>
-              <p className="text-gray-600 mb-6">Are you sure you want to logout?</p>
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={() => {
-                    setShowLogoutConfirm(false)
-                    setActiveSub(null)
-                  }}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmLogout}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
-                >
-                  Logout
                 </button>
               </div>
             </div>

@@ -19,6 +19,8 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
   const [errors, setErrors] = useState({})
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false)
+  const [popupMessage, setPopupMessage] = useState("")
 
   const validateForm = () => {
     const newErrors = {}
@@ -93,33 +95,35 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
     setErrors(newErrors)
     if (Object.keys(newErrors).length > 0) return
 
-    try {
-      const code = Math.floor(100000 + Math.random() * 900000).toString()
+    // Generate code first
+    const generatedCode = Math.floor(100000 + Math.random() * 900000).toString()
+    setSentCode(generatedCode)
+    setPopupMessage(`Verification Code: ${generatedCode}\n\nSend to email or proceed with code`)
+    setShowSuccessPopup(true)
 
+    // Attempt to send email in background
+    try {
       const emailRes = await fetch(`${API_BASE_URL}/api/auth/send-verification-code`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: formData.email,
           fullName: formData.fullName,
-          code,
+          code: generatedCode,
         }),
       })
 
-      const emailData = await emailRes.json()
-
-      if (!emailRes.ok) {
-        setErrors({
-          email: emailData.error || "Failed to send verification email",
-        })
-        return
+      if (emailRes.ok) {
+        setPopupMessage(
+          `Verification code sent to ${formData.email}!\n\nCheck your email or use the code below: ${generatedCode}`,
+        )
       }
-
-      setSentCode(code)
-      setStep(2)
-    } catch {
-      setErrors({ email: "Failed to send verification email" })
+    } catch (err) {
+      console.error("Email send error:", err)
     }
+
+    setStep(2)
+    setTimeout(() => setShowSuccessPopup(false), 4000)
   }
 
   const handleVerifyEmail = () => {
@@ -168,6 +172,56 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
 
   return (
     <div className="fixed z-50 inset-0 bg-black/30 flex items-center justify-center p-4">
+      {showSuccessPopup && step === 2 && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-lg p-8 shadow-2xl max-w-sm mx-4">
+            <h3 className="text-lg font-bold text-gray-800 mb-2 text-center">Your Verification Code</h3>
+            <p className="text-sm text-gray-600 text-center mb-4">Email verification required. Here's your code:</p>
+            <div className="bg-gray-100 rounded-lg p-6 mb-6 text-center">
+              <p className="text-4xl font-bold tracking-widest text-blue-600">{sentCode}</p>
+            </div>
+            <p className="text-xs text-gray-500 text-center mb-6">Code expires in 24 hours</p>
+
+            <div className="space-y-3">
+              <button
+                onClick={async () => {
+                  try {
+                    const emailRes = await fetch(`${API_BASE_URL}/api/auth/send-verification-code`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        email: formData.email,
+                        fullName: formData.fullName,
+                        code: sentCode,
+                      }),
+                    })
+
+                    if (emailRes.ok) {
+                      setPopupMessage("Verification code sent to " + formData.email)
+                    } else {
+                      setPopupMessage("Could not send email, but you can still use the code")
+                    }
+                    setShowSuccessPopup(false)
+                  } catch (err) {
+                    setPopupMessage("Email unavailable, use the code shown above")
+                    setShowSuccessPopup(false)
+                  }
+                }}
+                className="w-full bg-blue-700 hover:bg-blue-800 text-white font-medium py-2 rounded-lg transition"
+              >
+                Send Code to Email
+              </button>
+              <button
+                onClick={() => setShowSuccessPopup(false)}
+                className="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 rounded-lg transition"
+              >
+                Proceed with Code
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl max-h-screen overflow-y-auto">
         <h2 className="font-bold mb-4 text-lg">Create New Admin Account</h2>
 

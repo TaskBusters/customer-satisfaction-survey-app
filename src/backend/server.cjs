@@ -147,6 +147,8 @@ async function initializeDatabase() {
       user_email VARCHAR(255),
       user_name VARCHAR(100),
       is_read BOOLEAN DEFAULT FALSE,
+      is_deleted BOOLEAN DEFAULT FALSE, 
+      deleted_at TIMESTAMP,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at)`);
@@ -214,7 +216,7 @@ async function initializeDatabase() {
       }
     }
 
-    console.log('[DB] Admin accounts initialized');
+    console.log("[DB] Admin accounts initialized");
 
     console.log("Database tables initialized successfully");
   } catch (err) {
@@ -506,7 +508,7 @@ app.put("/api/submissions/:id", async (req, res) => {
     let avgSatisfaction = 0;
     if (responses.sqdRatings) {
       const ratings = Object.values(responses.sqdRatings)
-        .filter(r => r !== 'NA' && typeof r === 'number')
+        .filter(r => r !== 'N/A' && typeof r === 'number')
         .map(r => r);
       if (ratings.length > 0) {
         avgSatisfaction = (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(2);
@@ -599,7 +601,7 @@ app.get("/api/admin/analytics", async (req, res) => {
       params.push(regionFilter);
     }
     if (dateFilter) {
-      whereClause += ` AND DATE(submitted_at) = $${paramIndex++}`;
+      whereClause += ` AND DATE(submitted_at AT TIME ZONE 'UTC') = $${paramIndex++}`;
       params.push(dateFilter);
     }
 
@@ -621,7 +623,7 @@ app.get("/api/admin/analytics", async (req, res) => {
       try {
         const sqdRatings = typeof r.sqd_ratings === "string" ? JSON.parse(r.sqd_ratings) : r.sqd_ratings || {};
         Object.entries(sqdRatings).forEach(([key, val]) => {
-          if (val !== "NA" && typeof val === "number") {
+          if (val !== "N/A" && typeof val === "number") {
             sqdDistribution[key] = (sqdDistribution[key] || 0) + 1;
           }
         });
@@ -1270,11 +1272,12 @@ app.get("/api/admin/survey-questions", async (req, res) => {
       ORDER BY
         CASE section
           WHEN 'Personal Info' THEN 1
-          WHEN 'Citizen\\'s Charter Awareness' THEN 2
+          WHEN 'Citizen''s Charter Awareness' THEN 2
           WHEN 'Service Satisfaction' THEN 3
           WHEN 'Feedback' THEN 4
           ELSE 5
         END,
+        section,
         id`);
     const questions = rows.map(r => ({
       ...r,
@@ -1362,12 +1365,28 @@ app.get("/api/survey-questions", async (req, res) => {
 // --- Notifications API ---
 app.get("/api/admin/notifications", async (req, res) => {
   try {
+    const { page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
+
+    // Only fetch non-deleted notifications
     const { rows } = await pool.query(
-      "SELECT * FROM notifications ORDER BY created_at DESC LIMIT 100"
+      `SELECT * FROM notifications 
+       ORDER BY created_at DESC 
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
     );
-    res.json(rows);
+
+    const countResult = await pool.query(
+      `SELECT COUNT(*) as total FROM notifications`
+    );
+
+    res.json({
+      data: rows,
+      total: parseInt(countResult.rows[0].total, 10),
+    });
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch notifications" });
+    console.error("Fetch notifications error:", err);
+    res.status(500).json({ error: "Failed to fetch notifications", details: err.message });
   }
 });
 
@@ -1387,16 +1406,18 @@ app.post("/api/admin/notifications", async (req, res) => {
 // ADDED DELETE endpoint for notifications
 app.delete("/api/admin/notifications/:id", async (req, res) => {
   try {
-    const { rows: notification } = await pool.query(
-      "SELECT id FROM notifications WHERE id = $1",
-      [req.params.id]
-    );
+    const { softDelete } = req.body || {};
     
-    if (!notification.length) {
-      return res.status(404).json({ error: "Notification not found" });
+    if (softDelete) {
+      await pool.query(
+        "UPDATE notifications SET is_deleted = true, deleted_at = CURRENT_TIMESTAMP WHERE id = $1",
+        [req.params.id]
+      );
+    } else {
+      // Hard delete if needed
+      await pool.query("DELETE FROM notifications WHERE id = $1", [req.params.id]);
     }
     
-    await pool.query("DELETE FROM notifications WHERE id = $1", [req.params.id]);
     res.json({ ok: true });
   } catch (err) {
     console.error("Delete notification error:", err);
@@ -1412,7 +1433,7 @@ app.post("/api/survey/submit", async (req, res) => {
     let avgSatisfaction = 0;
     if (responses.sqdRatings) {
       const ratings = Object.values(responses.sqdRatings)
-        .filter(r => r !== 'NA' && typeof r === 'number')
+        .filter(r => r !== 'N/A' && typeof r === 'number')
         .map(r => r);
       if (ratings.length > 0) {
         avgSatisfaction = (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(2);
@@ -1489,7 +1510,7 @@ app.get("/api/admin/analytics", async (req, res) => {
       params.push(regionFilter);
     }
     if (dateFilter) {
-      whereClause += ` AND DATE(submitted_at) = $${paramIndex++}`;
+      whereClause += ` AND DATE(submitted_at AT TIME ZONE 'UTC') = $${paramIndex++}`;
       params.push(dateFilter);
     }
 

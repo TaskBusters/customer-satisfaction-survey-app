@@ -19,6 +19,19 @@ export default function AdminReportsPage() {
   const [dateFilter, setDateFilter] = useState("")
   const [services, setServices] = useState([])
 
+  const canExport = () => {
+    if (!user) return false
+    const userRole = (user.role || "").toLowerCase().trim()
+    return (
+      userRole === "superadmin" ||
+      userRole === "system admin" ||
+      userRole === "surveyadmin" ||
+      userRole === "survey admin" ||
+      userRole === "analyst" ||
+      userRole === "report viewer"
+    )
+  }
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -61,8 +74,11 @@ export default function AdminReportsPage() {
     if (serviceFilter) filtered = filtered.filter((r) => r.service === serviceFilter)
     if (regionFilter) filtered = filtered.filter((r) => r.region === regionFilter)
     if (dateFilter) {
-      const filterDate = new Date(dateFilter)
-      filtered = filtered.filter((r) => new Date(r.submitted_at).toDateString() === filterDate.toDateString())
+      filtered = filtered.filter((r) => {
+        if (!r.submitted_at) return false
+        const submittedDate = r.submitted_at.split("T")[0] // Extract YYYY-MM-DD
+        return submittedDate === dateFilter
+      })
     }
     return filtered
   }
@@ -102,7 +118,10 @@ export default function AdminReportsPage() {
       }
     })
     return Object.entries(ratingCounts)
-      .map(([rating, count]) => ({ rating: rating === "NA" ? "N/A" : `Rating ${rating}`, count }))
+      .map(([rating, count]) => ({
+        rating: rating === "N/A" ? "N/A" : rating === "N/A" ? "N/A" : `Rating ${rating}`,
+        count,
+      }))
       .filter((item) => item.count > 0)
   }
 
@@ -283,6 +302,11 @@ export default function AdminReportsPage() {
   }
 
   const handleExportCSV = async () => {
+    if (!canExport()) {
+      alert("You don't have permission to export reports")
+      return
+    }
+
     const rows = buildExportRows()
     if (!rows.length) return
 
@@ -338,6 +362,11 @@ export default function AdminReportsPage() {
   }
 
   const handleExportExcel = async () => {
+    if (!canExport()) {
+      alert("You don't have permission to export reports")
+      return
+    }
+
     const rows = buildExportRows()
     if (!rows.length) return
 
@@ -407,6 +436,11 @@ export default function AdminReportsPage() {
   }
 
   const handleExportPDF = async () => {
+    if (!canExport()) {
+      alert("You don't have permission to export reports")
+      return
+    }
+
     const rows = buildExportRows()
     if (!rows.length) return
 
@@ -433,9 +467,11 @@ export default function AdminReportsPage() {
     const tableHeaders = [
       "Date",
       "Name",
+      "Email",
       "Service",
       "Region",
       "Client Type",
+      "Average Satisfaction",
       "CC Awareness",
       "CC Visibility",
       "CC Helpfulness",
@@ -556,6 +592,11 @@ export default function AdminReportsPage() {
   }
 
   const handleExportARTA = async () => {
+    if (!canExport()) {
+      alert("You don't have permission to export reports")
+      return
+    }
+
     const rows = buildExportRows()
     if (!rows.length) return
 
@@ -922,9 +963,9 @@ export default function AdminReportsPage() {
           <div className="flex flex-wrap gap-3 mt-6">
             <button
               onClick={handleExportCSV}
-              disabled={!filteredResponses.length}
+              disabled={!filteredResponses.length || !canExport()}
               className={`px-5 py-2 rounded font-semibold transition ${
-                filteredResponses.length
+                filteredResponses.length && canExport()
                   ? "bg-green-600 text-white hover:bg-green-700"
                   : "bg-gray-200 text-gray-500 cursor-not-allowed"
               }`}
@@ -933,9 +974,9 @@ export default function AdminReportsPage() {
             </button>
             <button
               onClick={handleExportPDF}
-              disabled={!filteredResponses.length}
+              disabled={!filteredResponses.length || !canExport()}
               className={`px-5 py-2 rounded font-semibold transition ${
-                filteredResponses.length
+                filteredResponses.length && canExport()
                   ? "bg-blue-600 text-white hover:bg-blue-700"
                   : "bg-gray-200 text-gray-500 cursor-not-allowed"
               }`}
@@ -944,9 +985,9 @@ export default function AdminReportsPage() {
             </button>
             <button
               onClick={handleExportARTA}
-              disabled={!filteredResponses.length}
+              disabled={!filteredResponses.length || !canExport()}
               className={`px-5 py-2 rounded font-semibold transition ${
-                filteredResponses.length
+                filteredResponses.length && canExport()
                   ? "bg-purple-600 text-white hover:bg-purple-700"
                   : "bg-gray-200 text-gray-500 cursor-not-allowed"
               }`}
@@ -978,12 +1019,17 @@ export default function AdminReportsPage() {
             </div>
           )}
 
-          {/* Gender Distribution */}
+          {/* Gender Distribution - Replace "na" with "N/A" */}
           {analytics?.byGender && analytics.byGender.length > 0 && (
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="font-bold text-lg mb-4">Gender Distribution</h3>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={analytics.byGender}>
+                <BarChart
+                  data={analytics.byGender.map((item) => ({
+                    ...item,
+                    gender: item.gender === "na" ? "N/A" : item.gender,
+                  }))}
+                >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="gender" />
                   <YAxis />

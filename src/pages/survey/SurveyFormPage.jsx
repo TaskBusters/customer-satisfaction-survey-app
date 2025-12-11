@@ -120,7 +120,7 @@ export default function SurveyFormPage() {
               name: q.field_name,
               type: q.field_type,
               label: q.question_text,
-              required: q.is_required !== 0,
+              required: q.is_required !== 0, // Use actual is_required from database instead of hardcoded false
               options: options || [],
               rows: rows || [],
               columns: restoredColumns,
@@ -128,9 +128,36 @@ export default function SurveyFormPage() {
               dataType: q.field_type === "number" ? "number" : "string",
             }
           })
-          cachedFields = convertedFields
+
+          const sectionOrder = {
+            "Personal Info": 1,
+            "Citizen's Charter Awareness": 2,
+            "Service Satisfaction": 3,
+            Feedback: 4,
+          }
+          const fieldOrderMap = {
+            "Personal Info": { clientType: 1, service: 2, gender: 3, age: 4, region: 5 },
+          }
+          const sortedFields = convertedFields.sort((a, b) => {
+            const orderA = sectionOrder[a.section] || 99
+            const orderB = sectionOrder[b.section] || 99
+
+            if (orderA !== orderB) return orderA - orderB
+
+            const order = fieldOrderMap[a.section]
+            if (order) {
+              const orderA = order[a.name] || 99
+              const orderB = order[b.name] || 99
+              if (orderA !== orderB) return orderA - orderB
+            }
+
+            // Within same section, sort by name for consistent order
+            return (a.name || "").localeCompare(b.name || "")
+          })
+
+          cachedFields = sortedFields
           cacheTimestamp = Date.now()
-          setSurveyFields(convertedFields)
+          setSurveyFields(sortedFields)
         } else {
           setSurveyFields(fields)
         }

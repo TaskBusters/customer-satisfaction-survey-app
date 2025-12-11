@@ -206,7 +206,7 @@ export default function AdminDashboard() {
           totalResponses: statsData?.totalResponses || 0,
           avgSatisfaction: statsData?.avgSatisfaction || 0,
           activeAdmins: statsData?.activeAdmins || 0,
-          totalRespondents: statsData?.totalRespondents || 0,
+          totalRespondents: statsData?.totalRespondents || responsesData.length, // Fixed totalRespondents calculation
         })
         setAnalytics(analyticsData)
         setAllResponses(responsesData || [])
@@ -311,7 +311,12 @@ export default function AdminDashboard() {
                 <div className="bg-white rounded-lg shadow p-6">
                   <h3 className="font-bold text-lg mb-4">Gender Distribution</h3>
                   <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={analytics.byGender}>
+                    <BarChart
+                      data={analytics.byGender.map((item) => ({
+                        ...item,
+                        gender: item.gender === "na" ? "N/A" : item.gender, // Replace "na" with "N/A"
+                      }))}
+                    >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="gender" />
                       <YAxis />

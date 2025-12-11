@@ -105,7 +105,72 @@ function AdminSidebar() {
 
     const role = user.role.toLowerCase()
 
-    return true
+    const roleAccessMap = {
+      "/admin/overview": [
+        "superadmin",
+        "system admin",
+        "surveyadmin",
+        "survey admin",
+        "analyst",
+        "report viewer",
+        "support",
+        "feedback manager",
+      ],
+      "/admin/surveys": [
+        "superadmin",
+        "system admin",
+        "surveyadmin",
+        "survey admin",
+        "analyst",
+        "report viewer",
+        "support",
+        "feedback manager",
+      ],
+      "/admin/responses": [
+        "superadmin",
+        "system admin",
+        "surveyadmin",
+        "survey admin",
+        "analyst",
+        "report viewer",
+        "support",
+        "feedback manager",
+      ],
+      "/admin/reports": [
+        "superadmin",
+        "system admin",
+        "surveyadmin",
+        "survey admin",
+        "analyst",
+        "report viewer",
+        "support",
+        "feedback manager",
+      ],
+      "/admin/profile": [
+        "superadmin",
+        "system admin",
+        "surveyadmin",
+        "survey admin",
+        "analyst",
+        "report viewer",
+        "support",
+        "feedback manager",
+      ],
+      "/admin/help": ["superadmin", "system admin", "surveyadmin", "survey admin", "support", "feedback manager"],
+      "/admin/notifications": [
+        "superadmin",
+        "system admin",
+        "surveyadmin",
+        "survey admin",
+        "analyst",
+        "report viewer",
+        "support",
+        "feedback manager",
+      ],
+    }
+
+    const allowedRoles = roleAccessMap[route] || []
+    return allowedRoles.includes(role)
   }
 
   const linksWithAccess = sidebarLinks.map((link) => ({
@@ -172,24 +237,27 @@ function AdminSidebar() {
         {/* SCROLL AREA */}
         <nav className="flex-1 overflow-y-auto mt-2 no-scrollbar">
           <ul>
-            {linksWithAccess.map((item) => (
-              <li key={item.label}>
-                <Link
-                  to={item.route}
-                  onClick={() => mobileMenuOpen && setMobileMenuOpen(false)}
-                  className={`flex items-center py-2 transition rounded-lg mx-3 ${
-                    pathname === item.route
-                      ? "bg-blue-800 bg-opacity-90 border-l-4 border-white font-semibold"
-                      : "hover:bg-blue-600 bg-opacity-70"
-                  } text-white ${isDesktopCollapsed ? "justify-center px-0" : "px-4"}`}
-                  title={isDesktopCollapsed ? item.label : undefined}
-                >
-                  <span className={`text-white shrink-0 ${isDesktopCollapsed ? "" : "mr-3"}`}>{item.icon}</span>
+            {linksWithAccess.map(
+              (item) =>
+                item.hasAccess && (
+                  <li key={item.label}>
+                    <Link
+                      to={item.route}
+                      onClick={() => mobileMenuOpen && setMobileMenuOpen(false)}
+                      className={`flex items-center py-2 transition rounded-lg mx-3 ${
+                        pathname === item.route
+                          ? "bg-blue-800 bg-opacity-90 border-l-4 border-white font-semibold"
+                          : "hover:bg-blue-600 bg-opacity-70"
+                      } text-white ${isDesktopCollapsed ? "justify-center px-0" : "px-4"}`}
+                      title={isDesktopCollapsed ? item.label : undefined}
+                    >
+                      <span className={`text-white shrink-0 ${isDesktopCollapsed ? "" : "mr-3"}`}>{item.icon}</span>
 
-                  <span className={`whitespace-nowrap ${contentHiddenClass}`}>{item.label}</span>
-                </Link>
-              </li>
-            ))}
+                      <span className={`whitespace-nowrap ${contentHiddenClass}`}>{item.label}</span>
+                    </Link>
+                  </li>
+                ),
+            )}
           </ul>
         </nav>
 

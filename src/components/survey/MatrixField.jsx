@@ -1,7 +1,7 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { isFieldRequired } from "../../survey/surveyUtils";
+import { useState } from "react"
+import { isFieldRequired } from "../../survey/surveyUtils"
 
 export default function MatrixField({
   label,
@@ -13,49 +13,41 @@ export default function MatrixField({
   field = {},
   answers = {},
 }) {
-  const [touched, setTouched] = useState(false);
+  const [touched, setTouched] = useState(false)
 
-  const effectiveRequired = field.conditionalRequired
-    ? isFieldRequired(field, answers)
-    : required;
+  const effectiveRequired = field.conditionalRequired ? isFieldRequired(field, answers) : required
 
   const missingRows = effectiveRequired
-    ? rows.filter(
-        (row) =>
-          !value[row.name] && value[row.name] !== 0 && value[row.name] !== "NA"
-      )
-    : [];
+    ? rows.filter((row) => !value[row.name] && value[row.name] !== 0 && value[row.name] !== "NA")
+    : []
 
-  const hasError = effectiveRequired && touched && missingRows.length > 0;
+  const hasError = effectiveRequired && touched && missingRows.length > 0
 
   const handleAnswer = (rowName, colValue) => {
-    setTouched(true);
-    onChange({ ...value, [rowName]: colValue });
-  };
+    setTouched(true)
+    onChange({ ...value, [rowName]: colValue })
+  }
 
   return (
     <div className="mb-12 px-2 w-full">
-      {label && (
-        <div className="font-bold mb-4 text-lg text-gray-800">{label}</div>
-      )}
+      {label && <div className="font-bold mb-4 text-lg text-gray-800">{label}</div>}
 
       {rows.map((row, rowIdx) => (
-        <div
-          key={rowIdx}
-          className="bg-white shadow rounded-xl mb-8 p-4 sm:p-6 lg:p-8 w-full max-w-full"
-        >
+        <div key={rowIdx} className="bg-white shadow rounded-xl mb-8 p-4 sm:p-6 lg:p-8 w-full max-w-full">
           <div className="font-bold text-lg sm:text-xl mb-3">{row.label}</div>
 
           <div
             className={`
               grid w-full gap-4 sm:gap-6 
-              grid-cols-3 
-              md:grid-cols-4 
-              lg:grid-cols-5 
+              grid-cols-2
+              sm:grid-cols-3
+              md:grid-cols-4
+              lg:grid-cols-5
+              xl:grid-cols-6
             `}
           >
             {columns.map((col, colIdx) => {
-              const isSelected = String(value[row.name]) === String(col.value);
+              const isSelected = String(value[row.name]) === String(col.value)
 
               return (
                 <div
@@ -78,15 +70,13 @@ export default function MatrixField({
                   tabIndex={0}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      handleAnswer(row.name, col.value);
+                      e.preventDefault()
+                      handleAnswer(row.name, col.value)
                     }
                   }}
                 >
                   {col.emoji && (
-                    <span className="text-5xl mb-1 h-16 flex items-center justify-center">
-                      {col.emoji}
-                    </span>
+                    <span className="text-5xl mb-1 h-16 flex items-center justify-center">{col.emoji}</span>
                   )}
 
                   {/* Option label */}
@@ -117,31 +107,23 @@ export default function MatrixField({
                     className={`
                       h-7 w-7 rounded-full border-2 
                       flex items-center justify-center flex-shrink-0
-                      ${
-                        isSelected
-                          ? "border-blue-600 bg-blue-600"
-                          : "border-gray-400 bg-white"
-                      }
+                      ${isSelected ? "border-blue-600 bg-blue-600" : "border-gray-400 bg-white"}
                     `}
                   ></div>
                 </div>
-              );
+              )
             })}
           </div>
 
           {hasError && !value[row.name] && (
-            <span className="text-xs text-red-500 mt-2 block">
-              Please select an option.
-            </span>
+            <span className="text-xs text-red-500 mt-2 block">Please select an option.</span>
           )}
         </div>
       ))}
 
       {hasError && (
-        <div className="text-red-600 mt-2 text-sm font-semibold">
-          Please answer all required questions above.
-        </div>
+        <div className="text-red-600 mt-2 text-sm font-semibold">Please answer all required questions above.</div>
       )}
     </div>
-  );
+  )
 }

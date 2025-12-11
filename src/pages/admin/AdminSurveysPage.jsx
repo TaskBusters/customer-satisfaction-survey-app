@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from "react"
 import AdminSidebar from "../../components/admin/AdminSidebar"
+import AddSurveyQuestionModal from "../../components/admin/AddSurveyQuestionModal"
+import EditSurveyQuestionModal from "../../components/admin/EditSurveyQuestionModal"
+import ManageInstructionsModal from "../../components/admin/ManageInstructionsModal"
 import { useAuth } from "../../context/AuthContext"
 import { logAdminAction } from "../../utils/adminLogger"
 import fields from "../../survey/surveyFields"
@@ -20,7 +23,6 @@ const ensureEmojis = (columns) => {
     NA: "➖",
   }
   return columns.map((col) => {
-    // If emoji is missing, add it based on value
     if (!col.emoji && emojiMap[col.value]) {
       return {
         ...col,
@@ -39,8 +41,13 @@ export default function AdminSurveysPage() {
   const canEdit = canEditSurvey(user?.role)
   const [loading, setLoading] = useState(true)
   const [published, setPublished] = useState(false)
+  const [instructions, setInstructions] = useState({})
+
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showInstructionsModal, setShowInstructionsModal] = useState(false)
+
   const [editingField, setEditingField] = useState(null)
-  const [showModal, setShowModal] = useState(false)
   const [surveys, setSurveys] = useState(fields)
   const [saveMessage, setSaveMessage] = useState("")
 
@@ -171,32 +178,31 @@ export default function AdminSurveysPage() {
 
   const handleEditField = (field) => {
     setEditingField({ ...field })
-    setShowModal(true)
+    setShowEditModal(true)
   }
 
-  const handleSaveField = async () => {
-    if (!editingField) return
+  const handleSaveField = async (fieldData = null) => {
+    const dataToSave = fieldData || editingField
+    if (!dataToSave) return
 
-    console.log("[v0] handleSaveField called with:", editingField)
+    console.log("[v0] handleSaveField called with:", dataToSave)
 
     try {
-      // Ensure emojis are present in columns
-      const columnsWithEmojis = ensureEmojis(editingField.columns || [])
+      const columnsWithEmojis = ensureEmojis(dataToSave.columns || [])
 
-      // Save to database - stringify arrays for storage
       const response = await fetch(`${API_BASE_URL}/api/admin/survey-questions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          field_name: editingField.name,
-          section: editingField.section,
-          question_text: editingField.label,
-          field_type: editingField.type,
-          is_required: editingField.required !== false,
-          options: JSON.stringify(editingField.options || []),
-          rows: JSON.stringify(editingField.rows || []),
+          field_name: dataToSave.name,
+          section: dataToSave.section,
+          question_text: dataToSave.label,
+          field_type: dataToSave.type,
+          is_required: dataToSave.required !== false,
+          options: JSON.stringify(dataToSave.options || []),
+          rows: JSON.stringify(dataToSave.rows || []),
           columns: JSON.stringify(columnsWithEmojis),
-          instruction: editingField.instruction || "",
+          instruction: dataToSave.instruction || "",
         }),
       })
 
@@ -208,11 +214,9 @@ export default function AdminSurveysPage() {
 
       console.log("[v0] Question saved successfully, reloading data...")
 
-      // Clear cache after saving to force refresh
       cachedFields = null
       cacheTimestamp = null
 
-      // Reload questions from database to get the latest data
       const res = await fetch(`${API_BASE_URL}/api/admin/survey-questions`)
       const data = await res.json()
 
@@ -258,20 +262,18 @@ export default function AdminSurveysPage() {
         cacheTimestamp = Date.now()
       }
 
-      // Check if this is a new question or an edit
-      const isNewQuestion = editingField.name.startsWith("newField_")
+      const isNewQuestion = dataToSave.name.startsWith("newField_")
       const actionText = isNewQuestion ? "Added new survey question" : "Edited survey question"
-      await logAdminAction(user.email, user.fullName, `${actionText}: ${editingField.label}`)
+      await logAdminAction(user.email, user.fullName, `${actionText}: ${dataToSave.label}`)
 
       setSaveMessage("Question saved successfully!")
       setTimeout(() => setSaveMessage(""), 3000)
 
       setEditingField(null)
-      setShowModal(false)
+      setShowAddModal(false)
+      setShowEditModal(false)
 
-      // Reload logs in dashboard if it's open
       window.dispatchEvent(new CustomEvent("reloadLogs"))
-      // Dispatch event to reload survey in user panel
       window.dispatchEvent(new CustomEvent("surveyUpdated"))
     } catch (err) {
       console.error("[v0] Save error:", err)
@@ -281,18 +283,7 @@ export default function AdminSurveysPage() {
   }
 
   const handleAddField = () => {
-    setEditingField({
-      section: "Personal Info",
-      name: "newField_" + Date.now(),
-      type: "text",
-      label: "New Question",
-      required: false,
-      options: [],
-      rows: [],
-      columns: [],
-      instruction: "",
-    })
-    setShowModal(true)
+    setShowAddModal(true)
   }
 
   const handlePublish = async () => {
@@ -308,9 +299,7 @@ export default function AdminSurveysPage() {
         setSaveMessage("Survey published successfully!")
         setTimeout(() => setSaveMessage(""), 3000)
 
-        // Reload logs in dashboard if it's open
         window.dispatchEvent(new CustomEvent("reloadLogs"))
-        // Dispatch event to update publish status in user panel
         window.dispatchEvent(new CustomEvent("publishStatusChanged"))
       } catch (err) {
         setSaveMessage("Failed to publish survey!")
@@ -332,9 +321,7 @@ export default function AdminSurveysPage() {
         setSaveMessage("Survey unpublished.")
         setTimeout(() => setSaveMessage(""), 3000)
 
-        // Reload logs in dashboard if it's open
         window.dispatchEvent(new CustomEvent("reloadLogs"))
-        // Dispatch event to update publish status in user panel
         window.dispatchEvent(new CustomEvent("publishStatusChanged"))
       } catch (err) {
         setSaveMessage("Failed to unpublish survey!")
@@ -351,16 +338,13 @@ export default function AdminSurveysPage() {
           method: "DELETE",
         })
         setSurveys(surveys.filter((f) => f.name !== fieldName))
-        // Clear cache after deletion
         cachedFields = null
         cacheTimestamp = null
         await logAdminAction(user.email, user.fullName, `Deleted survey question: ${fieldName}`)
         setSaveMessage("Question deleted successfully!")
         setTimeout(() => setSaveMessage(""), 3000)
 
-        // Reload logs in dashboard if it's open
         window.dispatchEvent(new CustomEvent("reloadLogs"))
-        // Dispatch event to reload survey in user panel
         window.dispatchEvent(new CustomEvent("surveyUpdated"))
       } catch (err) {
         console.error("[v0] Delete error:", err)
@@ -372,10 +356,11 @@ export default function AdminSurveysPage() {
 
   const fieldsBySection = {}
   surveys.forEach((field) => {
-    if (!fieldsBySection[field.section]) {
-      fieldsBySection[field.section] = []
+    const section = field.section || "Other"
+    if (!fieldsBySection[section]) {
+      fieldsBySection[section] = []
     }
-    fieldsBySection[field.section].push(field)
+    fieldsBySection[section].push(field)
   })
 
   if (loading) {
@@ -494,7 +479,7 @@ export default function AdminSurveysPage() {
                                   onClick={() => {
                                     // When editing a row, set the field for editing
                                     setEditingField({ ...field, editingRowIndex: rowIdx })
-                                    setShowModal(true)
+                                    setShowEditModal(true)
                                   }}
                                   disabled={!canEdit}
                                   className={`px-4 py-2 border rounded font-semibold transition text-sm ${
@@ -585,233 +570,45 @@ export default function AdminSurveysPage() {
           </div>
         </div>
 
+        {/* Add Modal */}
+        {showAddModal && (
+          <AddSurveyQuestionModal
+            open={showAddModal}
+            onSave={handleSaveField}
+            onCancel={() => setShowAddModal(false)}
+          />
+        )}
+
         {/* Edit Modal */}
-        {showModal && (
-          <FieldEditModal
+        {showEditModal && (
+          <EditSurveyQuestionModal
+            open={showEditModal}
             field={editingField}
             onSave={handleSaveField}
             onCancel={() => {
-              setShowModal(false)
+              setShowEditModal(false)
               setEditingField(null)
             }}
             onChange={setEditingField}
           />
         )}
+
+        {/* Instructions Modal */}
+        {showInstructionsModal && (
+          <ManageInstructionsModal
+            open={showInstructionsModal}
+            existingInstructions={instructions}
+            onSave={(category, instruction) => {
+              handleSaveField({
+                ...editingField,
+                section: category,
+                instruction: instruction,
+              })
+            }}
+            onCancel={() => setShowInstructionsModal(false)}
+          />
+        )}
       </main>
-    </div>
-  )
-}
-
-function FieldEditModal({ field, onSave, onCancel, onChange }) {
-  const [optionInput, setOptionInput] = useState("")
-
-  if (!field) return null
-
-  const addOption = () => {
-    if (optionInput.trim()) {
-      const newOptions = [...(field.options || []), { value: optionInput.toLowerCase(), label: optionInput }]
-      onChange({ ...field, options: newOptions })
-      setOptionInput("")
-    }
-  }
-
-  const removeOption = (index) => {
-    const newOptions = field.options.filter((_, i) => i !== index)
-    onChange({ ...field, options: newOptions })
-  }
-
-  const handleRowLabelChange = (index, newLabel) => {
-    const updatedRows = (field.rows || []).map((row, idx) => (idx === index ? { ...row, label: newLabel } : row))
-    onChange({ ...field, rows: updatedRows })
-  }
-
-  const handleBackdropClick = (e) => {
-    if (e.target === e.currentTarget) {
-      onCancel()
-    }
-  }
-
-  const rowToEdit = field.editingRowIndex !== undefined ? field.editingRowIndex : null
-
-  return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
-      onClick={handleBackdropClick}
-    >
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto relative">
-        <button
-          onClick={onCancel}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl font-bold leading-none"
-          aria-label="Close"
-        >
-          ×
-        </button>
-        <h2 className="text-2xl font-bold mb-4 text-blue-700 pr-8">
-          {field.type === "matrix" && rowToEdit !== null ? "Edit SQD Question" : "Edit Question"}
-        </h2>
-
-        <div className="space-y-4">
-          {field.type === "matrix" && rowToEdit !== null ? (
-            <>
-              <div>
-                <label className="block font-semibold mb-2">SQD Question</label>
-                <p className="text-sm text-gray-600 mb-3">Edit the question text for {field.rows[rowToEdit].name}</p>
-                <input
-                  type="text"
-                  value={field.rows[rowToEdit].label || ""}
-                  onChange={(e) => handleRowLabelChange(rowToEdit, e.target.value)}
-                  className="w-full border border-gray-300 rounded px-3 py-2"
-                  placeholder="Enter question text"
-                />
-              </div>
-            </>
-          ) : (
-            <>
-              <div>
-                <label className="block font-semibold mb-2">Section</label>
-                <select
-                  value={field.section}
-                  onChange={(e) => onChange({ ...field, section: e.target.value })}
-                  className="w-full border border-gray-300 rounded px-3 py-2"
-                >
-                  <option>Personal Info</option>
-                  <option>Citizen's Charter Awareness</option>
-                  <option>Service Satisfaction</option>
-                  <option>Feedback</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-semibold mb-2">Question Label</label>
-                <input
-                  type="text"
-                  value={field.label}
-                  onChange={(e) => onChange({ ...field, label: e.target.value })}
-                  className="w-full border border-gray-300 rounded px-3 py-2"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold mb-2">Field Type</label>
-                <select
-                  value={field.type}
-                  onChange={(e) => onChange({ ...field, type: e.target.value, options: [] })}
-                  className="w-full border border-gray-300 rounded px-3 py-2"
-                >
-                  <option value="text">Text</option>
-                  <option value="select">Dropdown</option>
-                  <option value="radio">Radio Button</option>
-                  <option value="textarea">Text Area</option>
-                  <option value="matrix">Matrix</option>
-                </select>
-              </div>
-
-              {(field.type === "select" || field.type === "radio") && (
-                <div>
-                  <label className="block font-semibold mb-2">Options</label>
-                  <div className="space-y-2 mb-3">
-                    {field.options && field.options.length > 0 ? (
-                      field.options.map((opt, idx) => (
-                        <div key={idx} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                          <span>{opt.label}</span>
-                          <button
-                            type="button"
-                            onClick={() => removeOption(idx)}
-                            className="text-red-600 hover:text-red-800 font-bold"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-gray-500">No options added yet</p>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={optionInput}
-                      onChange={(e) => setOptionInput(e.target.value)}
-                      onKeyPress={(e) => e.key === "Enter" && addOption()}
-                      placeholder="Enter option"
-                      className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm"
-                    />
-                    <button
-                      type="button"
-                      onClick={addOption}
-                      className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-semibold text-sm"
-                    >
-                      Add
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {field.type === "matrix" && (
-                <div>
-                  <label className="block font-semibold mb-2">SQD Questions (Rows)</label>
-                  <p className="text-xs text-gray-500 mb-3">
-                    Update each SQD 0-8 question text below. Names stay the same to keep analytics accurate.
-                  </p>
-                  <div className="space-y-3">
-                    {(field.rows || []).map((row, idx) => (
-                      <div key={row.name || idx} className="bg-gray-50 border border-gray-200 rounded p-3">
-                        <div className="text-xs text-gray-500 mb-1 uppercase font-semibold">
-                          {row.name || `Row ${idx + 1}`}
-                        </div>
-                        <input
-                          type="text"
-                          value={row.label || ""}
-                          onChange={(e) => handleRowLabelChange(idx, e.target.value)}
-                          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-                          placeholder="Enter question text"
-                        />
-                      </div>
-                    ))}
-                    {(field.rows || []).length === 0 && (
-                      <p className="text-sm text-gray-500">No rows defined for this matrix question.</p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <label className="block font-semibold mb-2">Required</label>
-                <input
-                  type="checkbox"
-                  checked={field.required !== false}
-                  onChange={(e) => onChange({ ...field, required: e.target.checked })}
-                  className="w-4 h-4"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold mb-2">
-                  Instruction <span className="text-gray-600 text-sm">(Optional)</span>
-                </label>
-                <textarea
-                  value={field.instruction || ""}
-                  onChange={(e) => onChange({ ...field, instruction: e.target.value })}
-                  className="w-full border border-gray-300 rounded px-3 py-2 h-20"
-                  placeholder="Add instruction text..."
-                />
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className="flex gap-3 justify-end mt-6">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 font-semibold"
-          >
-            Cancel
-          </button>
-          <button onClick={onSave} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold">
-            Save Changes
-          </button>
-        </div>
-      </div>
     </div>
   )
 }
