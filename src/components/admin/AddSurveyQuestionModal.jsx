@@ -12,7 +12,6 @@ export default function AddSurveyQuestionModal({ open, onSave, onCancel }) {
     options: [],
     rows: [],
     columns: [],
-    instruction: "",
   })
 
   const [optionInput, setOptionInput] = useState("")
@@ -142,12 +141,12 @@ export default function AddSurveyQuestionModal({ open, onSave, onCancel }) {
 
           {/* Question Label */}
           <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">Question Label *</label>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">Question *</label>
             <input
               type="text"
               value={field.label}
               onChange={(e) => setField({ ...field, label: e.target.value })}
-              placeholder="Type your question here..."
+              placeholder="Type Question Here"
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
@@ -292,24 +291,15 @@ export default function AddSurveyQuestionModal({ open, onSave, onCancel }) {
             </div>
           )}
 
-          {/* Instructions */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">Instructions (Optional)</label>
-            <textarea
-              value={field.instruction || ""}
-              onChange={(e) => setField({ ...field, instruction: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Add instruction text..."
-              rows={3}
-            />
-          </div>
-
           {/* Required */}
           <div className="flex items-center">
             <input
               type="checkbox"
               checked={field.required}
-              onChange={(e) => setField({ ...field, required: e.target.checked })}
+              onChange={(e) => {
+                console.log("[v0] Required checkbox changed to:", e.target.checked)
+                setField({ ...field, required: e.target.checked })
+              }}
               className="w-4 h-4 rounded border-gray-300"
               id="required"
             />

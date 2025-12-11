@@ -10,7 +10,7 @@ import MatrixField from "./MatrixField"
 import { isFieldRequired } from "../../survey/surveyUtils"
 import { useTranslation } from "react-i18next"
 
-export default function SurveyRenderer({ fields, answers, setAnswers, disabled }) {
+export default function SurveyRenderer({ fields, answers, setAnswers, disabled, fieldErrors = {} }) {
   const { t } = useTranslation()
   let prevSection = null
 
@@ -132,6 +132,7 @@ export default function SurveyRenderer({ fields, answers, setAnswers, disabled }
                 <RadioField
                   key={field.name}
                   label={fieldLabel}
+                  showRequired={isFieldRequired(field, answers)}
                   options={translatedOptions}
                   value={answers[field.name]}
                   onChange={(val) => setAnswers((a) => ({ ...a, clientType: val }))}
@@ -140,6 +141,7 @@ export default function SurveyRenderer({ fields, answers, setAnswers, disabled }
                   otherValue={answers.clientType_other || ""}
                   onOtherChange={(val) => setAnswers((a) => ({ ...a, clientType_other: val }))}
                   disabled={disabled}
+                  error={fieldErrors[field.name]}
                 />,
               )
             } else {
@@ -147,12 +149,14 @@ export default function SurveyRenderer({ fields, answers, setAnswers, disabled }
                 <RadioField
                   key={field.name}
                   label={fieldLabel}
+                  showRequired={isFieldRequired(field, answers)}
                   options={translatedOptions}
                   value={answers[field.name]}
                   onChange={(val) => setAnswers((a) => ({ ...a, [field.name]: val }))}
                   required={isFieldRequired(field, answers)}
                   name={field.name}
                   disabled={disabled}
+                  error={fieldErrors[field.name]}
                 />,
               )
             }
@@ -162,12 +166,15 @@ export default function SurveyRenderer({ fields, answers, setAnswers, disabled }
               <TextField
                 key={field.name}
                 label={fieldLabel}
+                showRequired={isFieldRequired(field, answers)}
                 value={answers[field.name]}
                 placeholder={field.placeholder}
                 onChange={(val) => setAnswers((a) => ({ ...a, [field.name]: val }))}
                 required={isFieldRequired(field, answers)}
                 name={field.name}
                 disabled={disabled}
+                error={fieldErrors[field.name]}
+                maxLength={field.name === "age" ? 3 : 255}
               />,
             )
             break
@@ -176,36 +183,48 @@ export default function SurveyRenderer({ fields, answers, setAnswers, disabled }
               <SelectField
                 key={field.name}
                 label={fieldLabel}
+                showRequired={isFieldRequired(field, answers)}
                 options={field.options}
                 value={answers[field.name]}
                 onChange={(val) => setAnswers((a) => ({ ...a, [field.name]: val }))}
                 required={isFieldRequired(field, answers)}
                 disabled={disabled}
+                error={fieldErrors[field.name]}
               />,
             )
             break
           case "textarea":
+            const fieldRequired =
+              field.required &&
+              (!field.conditionalRequired ||
+                !field.conditionalRequired.skipValues?.includes(answers[field.conditionalRequired.dependsOn]))
+
+            let labelText = fieldLabel
+            let placeholderText = field.placeholder
+            let maxChars = 500
+
+            if (field.name === "suggestions") {
+              labelText = t("survey.suggestionsLabel")
+              placeholderText = t("survey.suggestionsPlaceholder")
+              maxChars = 500
+            } else if (field.name === "email") {
+              labelText = t("survey.emailAddressLabel")
+              placeholderText = t("survey.emailPlaceholder")
+              maxChars = 255
+            }
+
             content.push(
               <TextAreaField
                 key={field.name}
-                label={
-                  field.name === "suggestions"
-                    ? t("survey.suggestionsLabel")
-                    : field.name === "email"
-                      ? t("survey.emailAddressLabel")
-                      : fieldLabel
-                }
+                label={labelText}
+                showRequired={fieldRequired}
                 value={answers[field.name]}
-                placeholder={
-                  field.name === "suggestions"
-                    ? t("survey.suggestionsPlaceholder")
-                    : field.name === "email"
-                      ? t("survey.emailPlaceholder")
-                      : field.placeholder
-                }
+                placeholder={placeholderText}
                 onChange={(val) => setAnswers((a) => ({ ...a, [field.name]: val }))}
-                required={isFieldRequired(field, answers)}
+                required={fieldRequired}
                 disabled={disabled}
+                error={fieldErrors[field.name]}
+                maxLength={maxChars}
               />,
             )
             break
@@ -230,12 +249,16 @@ export default function SurveyRenderer({ fields, answers, setAnswers, disabled }
               <MatrixField
                 key={field.name}
                 label={fieldLabel}
+                showRequired={isFieldRequired(field, answers)}
                 rows={translatedRows}
                 columns={translatedColumns}
                 value={answers[field.name] || {}}
                 onChange={(matrixVal) => setAnswers((a) => ({ ...a, [field.name]: matrixVal }))}
                 required={isFieldRequired(field, answers)}
                 disabled={disabled}
+                fieldErrors={fieldErrors}
+                field={field}
+                answers={answers}
               />,
             )
             break

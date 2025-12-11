@@ -1,25 +1,24 @@
-import "./App.css";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import SurveyPage from "./pages/survey/SurveyPage";
-import RootLanding from "./pages/RootLanding";
-import SurveyFormPage from "./pages/survey/SurveyFormPage";
-import AfterSurveyPage from "./pages/survey/AfterSurveyPage";
-import SubmissionsPage from "./pages/survey/SubmissionsPage";
-import LoginPage from "./pages/authentication/LoginPage";
-import RegisterPage from "./pages/authentication/RegisterPage";
-import ForgotPassPage from "./pages/authentication/ForgotPassPage";
-import ProtectedAdminRoute from "./pages/ProtectedAdminRoute";
-import ProtectedRoute from "./pages/ProtectedRoute";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminSurveysPage from "./pages/admin/AdminSurveysPage";
-import AdminSurveyResponsesPage from "./pages/admin/AdminSurveyResponsesPage";
-import AdminReportsPage from "./pages/admin/AdminReportsPage";
-import AdminProfileSecurityPage from "./pages/admin/AdminProfileSecurityPage";
-import AdminHelpFeedbackPage from "./pages/admin/AdminHelpFeedbackPage";
-import AdminNotificationsPage from "./pages/admin/AdminNotificationsPage";
-import { AuthProvider } from "./context/AuthContext";
-import ScrollToTop from "./components/ScrollToTop";
-import TitleManager from "./components/TitleManager";
+import "./App.css"
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom"
+import RootLanding from "./pages/RootLanding"
+import SurveyFormPage from "./pages/survey/SurveyFormPage"
+import AfterSurveyPage from "./pages/survey/AfterSurveyPage"
+import SubmissionsPage from "./pages/survey/SubmissionsPage"
+import LoginPage from "./pages/authentication/LoginPage"
+import RegisterPage from "./pages/authentication/RegisterPage"
+import ForgotPassPage from "./pages/authentication/ForgotPassPage"
+import ProtectedAdminRoute from "./pages/ProtectedAdminRoute"
+import ProtectedRoute from "./pages/ProtectedRoute"
+import AdminDashboard from "./pages/admin/AdminDashboard"
+import AdminSurveysPage from "./pages/admin/AdminSurveysPage"
+import AdminSurveyResponsesPage from "./pages/admin/AdminSurveyResponsesPage"
+import AdminReportsPage from "./pages/admin/AdminReportsPage"
+import AdminProfileSecurityPage from "./pages/admin/AdminProfileSecurityPage"
+import AdminHelpFeedbackPage from "./pages/admin/AdminHelpFeedbackPage"
+import AdminNotificationsPage from "./pages/admin/AdminNotificationsPage"
+import { AuthProvider } from "./context/AuthContext"
+import ScrollToTop from "./components/ScrollToTop"
+import TitleManager from "./components/TitleManager"
 
 function App() {
   return (
@@ -32,14 +31,7 @@ function App() {
           <Route path="/" element={<RootLanding />} />
           <Route path="/surveyform" element={<SurveyFormPage />} />
           <Route path="/survey/edit/:id" element={<SurveyFormPage />} />
-          <Route
-            path="/aftersurvey"
-            element={
-              <ProtectedRoute>
-                <AfterSurveyPage />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/aftersurvey" element={<AfterSurveyPage />} />
           <Route
             path="/submissions"
             element={
@@ -66,7 +58,7 @@ function App() {
         </Routes>
       </Router>
     </AuthProvider>
-  );
+  )
 }
 
-export default App;
+export default App

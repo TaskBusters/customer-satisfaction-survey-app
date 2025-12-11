@@ -96,11 +96,13 @@ export default function AdminSurveyResponsesPage() {
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
               >
                 <option value="">All Regions</option>
-                {regions.map((region) => (
-                  <option key={region} value={region}>
-                    {region}
-                  </option>
-                ))}
+                {regions
+                  .sort((a, b) => a.localeCompare(b))
+                  .map((region) => (
+                    <option key={region} value={region}>
+                      {region}
+                    </option>
+                  ))}
               </select>
             </div>
 

@@ -157,12 +157,12 @@ export default function EditSurveyQuestionModal({ open, field, onSave, onCancel,
 
           {/* Question Label */}
           <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">Question Label *</label>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">Question</label>
             <input
               type="text"
               value={field.label}
               onChange={(e) => onChange({ ...field, label: e.target.value })}
-              placeholder="Type your question here..."
+              placeholder="Type Question Here"
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -308,33 +308,24 @@ export default function EditSurveyQuestionModal({ open, field, onSave, onCancel,
             </div>
           )}
 
-          {!isMatrixQuestion && (
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">Instructions (Optional)</label>
-              <textarea
-                value={field.instruction || ""}
-                onChange={(e) => onChange({ ...field, instruction: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Add instruction text..."
-                rows={3}
-              />
-            </div>
-          )}
-
-          {!isMatrixQuestion && (
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                checked={field.required}
-                onChange={(e) => onChange({ ...field, required: e.target.checked })}
-                className="w-4 h-4 rounded border-gray-300"
-                id="required"
-              />
-              <label htmlFor="required" className="ml-3 text-sm font-semibold text-gray-900">
-                This question is required
-              </label>
-            </div>
-          )}
+          {/* Required Checkbox */}
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              checked={field.is_required || false}
+              onChange={(e) => {
+                onChange({ ...field, is_required: e.target.checked })
+              }}
+              className="w-4 h-4 rounded border-gray-300"
+              id={isMatrixQuestion ? "required-matrix" : "required"}
+            />
+            <label
+              htmlFor={isMatrixQuestion ? "required-matrix" : "required"}
+              className="ml-3 text-sm font-semibold text-gray-900"
+            >
+              This question is required
+            </label>
+          </div>
         </div>
 
         {/* Footer */}

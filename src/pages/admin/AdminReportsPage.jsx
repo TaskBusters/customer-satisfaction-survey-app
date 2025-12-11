@@ -943,11 +943,14 @@ export default function AdminReportsPage() {
                 className="w-full border rounded px-3 py-2"
               >
                 <option value="">All Regions</option>
-                {analytics?.byRegion?.map((r) => (
-                  <option key={r.region} value={r.region}>
-                    {r.region}
-                  </option>
-                ))}
+                {analytics?.byRegion
+                  ?.map((r) => r.region)
+                  .sort((a, b) => a.localeCompare(b))
+                  .map((region) => (
+                    <option key={region} value={region}>
+                      {region}
+                    </option>
+                  ))}
               </select>
             </div>
             <div>

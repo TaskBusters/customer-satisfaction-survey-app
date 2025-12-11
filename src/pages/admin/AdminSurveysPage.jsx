@@ -49,7 +49,9 @@ export default function AdminSurveysPage() {
 
   const [editingField, setEditingField] = useState(null)
   const [surveys, setSurveys] = useState(fields)
-  const [saveMessage, setSaveMessage] = useState("")
+  const [toastMsg, setToastMsg] = useState("")
+  const [toastColor, setToastColor] = useState("")
+  const [showToast, setShowToast] = useState(false)
 
   useEffect(() => {
     // Load questions from database
@@ -95,7 +97,7 @@ export default function AdminSurveysPage() {
                 name: q.field_name,
                 type: q.field_type,
                 label: q.question_text,
-                required: q.is_required !== 0,
+                is_required: q.is_required === true || q.is_required === 1 || q.is_required === "true",
                 options: options || [],
                 rows: rows || [],
                 columns: restoredColumns,
@@ -163,7 +165,7 @@ export default function AdminSurveysPage() {
             section: field.section,
             question_text: field.label,
             field_type: field.type,
-            is_required: field.required !== false,
+            is_required: field.is_required, // removed !== false conversion, pass value directly
             options: JSON.stringify(field.options || []),
             rows: JSON.stringify(field.rows || []),
             columns: JSON.stringify(columnsWithEmojis),
@@ -177,45 +179,153 @@ export default function AdminSurveysPage() {
   }
 
   const handleEditField = (field) => {
-    setEditingField({ ...field })
+    setEditingField({
+      ...field,
+      is_required: field.is_required !== false,
+    })
     setShowEditModal(true)
   }
 
-  const handleSaveField = async (fieldData = null) => {
-    const dataToSave = fieldData || editingField
-    if (!dataToSave) return
+  const handleSaveField = async (fieldToSave) => {
+    const field = fieldToSave || editingField
 
-    console.log("[v0] handleSaveField called with:", dataToSave)
+    // If no field available, show error
+    if (!field || !field.name) {
+      console.error("[v0] No field provided to handleSaveField")
+      setToastMsg("Error: No field data")
+      setToastColor("bg-red-600/90 text-white")
+      setShowToast(true)
+      return
+    }
 
     try {
-      const columnsWithEmojis = ensureEmojis(dataToSave.columns || [])
+      const payload = {
+        field_name: field.name,
+        section: field.section,
+        question_text: field.label,
+        field_type: field.type,
+        is_required: field.is_required,
+        options: field.options || [],
+        rows: field.rows || [],
+        columns: field.columns || [],
+        instruction: field.instruction || "",
+      }
+
+      console.log("[v0] handleSaveField payload:", payload)
+
+      const response = await fetch(`${API_BASE_URL}/api/admin/survey-questions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+
+      if (response.ok) {
+        console.log("[v0] Question saved successfully, reloading data...")
+        const freshData = await fetch(`${API_BASE_URL}/api/admin/survey-questions`)
+          .then((res) => res.json())
+          .then((data) => {
+            return data.map((q) => {
+              let options = []
+              let rows = []
+              let columns = []
+
+              try {
+                if (q.options) {
+                  options = typeof q.options === "string" ? JSON.parse(q.options) : q.options
+                }
+                if (q.rows) {
+                  rows = typeof q.rows === "string" ? JSON.parse(q.rows) : q.rows
+                }
+                if (q.columns) {
+                  columns = typeof q.columns === "string" ? JSON.parse(q.columns) : q.columns
+                }
+              } catch (e) {
+                console.error("Error parsing field data:", e)
+              }
+
+              let restoredColumns = columns || []
+              if (q.field_type === "matrix" && restoredColumns.length > 0) {
+                const emojiMap = {
+                  1: "😡",
+                  2: "😞",
+                  3: "😐",
+                  4: "😊",
+                  5: "😄",
+                  NA: "➖",
+                }
+                restoredColumns = restoredColumns.map((col) => {
+                  if (!col.emoji && emojiMap[col.value]) {
+                    return { ...col, emoji: emojiMap[col.value] }
+                  }
+                  return col
+                })
+              }
+
+              return {
+                section: q.section,
+                name: q.field_name,
+                type: q.field_type,
+                label: q.question_text,
+                is_required: q.is_required === true || q.is_required === 1 || q.is_required === "true",
+                options: options || [],
+                rows: rows || [],
+                columns: restoredColumns,
+                instruction: q.instruction || "",
+              }
+            })
+          })
+
+        setSurveys(freshData)
+        cachedFields = freshData
+        cacheTimestamp = Date.now()
+        setEditingField(null)
+        setShowEditModal(false)
+
+        // Dispatch event so SurveyFormPage refetches
+        window.dispatchEvent(new Event("surveyUpdated"))
+
+        await logAdminAction(user.email, user.fullName, `Edited survey question: ${field.label}`)
+
+        setToastMsg("Question saved successfully")
+        setToastColor("bg-green-600/90 text-white")
+        setShowToast(true)
+        setTimeout(() => setShowToast(false), 1800)
+      } else {
+        setToastMsg("Failed to save question")
+        setToastColor("bg-red-600/90 text-white")
+        setShowToast(true)
+      }
+    } catch (error) {
+      console.error("[v0] Error saving field:", error)
+      setToastMsg("Error saving question")
+      setToastColor("bg-red-600/90 text-white")
+      setShowToast(true)
+    }
+  }
+
+  const handleAddField = async (field) => {
+    try {
+      const columnsWithEmojis =
+        field.columns?.map((col) => ({
+          ...col,
+          emoji: col.emoji || "",
+        })) || []
 
       const response = await fetch(`${API_BASE_URL}/api/admin/survey-questions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          field_name: dataToSave.name,
-          section: dataToSave.section,
-          question_text: dataToSave.label,
-          field_type: dataToSave.type,
-          is_required: dataToSave.required !== false,
-          options: JSON.stringify(dataToSave.options || []),
-          rows: JSON.stringify(dataToSave.rows || []),
+          field_name: field.name,
+          section: field.section,
+          question_text: field.label,
+          field_type: field.type,
+          is_required: field.required, // map required checkbox to is_required
+          options: JSON.stringify(field.options || []),
+          rows: JSON.stringify(field.rows || []),
           columns: JSON.stringify(columnsWithEmojis),
-          instruction: dataToSave.instruction || "",
+          instruction: field.instruction || "",
         }),
       })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.log("[v0] Save failed with status:", response.status, "error:", errorText)
-        throw new Error("Failed to save question")
-      }
-
-      console.log("[v0] Question saved successfully, reloading data...")
-
-      cachedFields = null
-      cacheTimestamp = null
 
       const res = await fetch(`${API_BASE_URL}/api/admin/survey-questions`)
       const data = await res.json()
@@ -250,7 +360,7 @@ export default function AdminSurveysPage() {
             name: q.field_name,
             type: q.field_type,
             label: q.question_text,
-            required: q.is_required !== 0,
+            is_required: q.is_required === true || q.is_required === 1 || q.is_required === "true",
             options: options || [],
             rows: rows || [],
             columns: restoredColumns,
@@ -262,28 +372,23 @@ export default function AdminSurveysPage() {
         cacheTimestamp = Date.now()
       }
 
-      const isNewQuestion = dataToSave.name.startsWith("newField_")
-      const actionText = isNewQuestion ? "Added new survey question" : "Edited survey question"
-      await logAdminAction(user.email, user.fullName, `${actionText}: ${dataToSave.label}`)
-
-      setSaveMessage("Question saved successfully!")
-      setTimeout(() => setSaveMessage(""), 3000)
-
-      setEditingField(null)
       setShowAddModal(false)
-      setShowEditModal(false)
 
-      window.dispatchEvent(new CustomEvent("reloadLogs"))
-      window.dispatchEvent(new CustomEvent("surveyUpdated"))
+      await logAdminAction(user.email, user.fullName, `Added survey question: ${field.label}`)
+
+      setToastMsg("Question added successfully!")
+      setToastColor("bg-green-500/90 text-white")
+      setShowToast(true)
+      setTimeout(() => setShowToast(false), 2000)
+
+      window.dispatchEvent(new Event("surveyUpdated"))
     } catch (err) {
-      console.error("[v0] Save error:", err)
-      setSaveMessage("Failed to save question!")
-      setTimeout(() => setSaveMessage(""), 3000)
+      console.error("Failed to add question:", err)
+      setToastMsg("Failed to add question")
+      setToastColor("bg-red-600/90 text-white")
+      setShowToast(true)
+      setTimeout(() => setShowToast(false), 2000)
     }
-  }
-
-  const handleAddField = () => {
-    setShowAddModal(true)
   }
 
   const handlePublish = async () => {
@@ -296,14 +401,18 @@ export default function AdminSurveysPage() {
         })
         setPublished(true)
         await logAdminAction(user.email, user.fullName, "Published survey - Now live on website")
-        setSaveMessage("Survey published successfully!")
-        setTimeout(() => setSaveMessage(""), 3000)
+        setToastMsg("Survey published successfully!")
+        setToastColor("bg-green-500/90 text-white")
+        setShowToast(true)
+        setTimeout(() => setShowToast(false), 2000)
 
         window.dispatchEvent(new CustomEvent("reloadLogs"))
         window.dispatchEvent(new CustomEvent("publishStatusChanged"))
       } catch (err) {
-        setSaveMessage("Failed to publish survey!")
-        setTimeout(() => setSaveMessage(""), 3000)
+        setToastMsg("Failed to publish survey!")
+        setToastColor("bg-red-600/90 text-white")
+        setShowToast(true)
+        setTimeout(() => setShowToast(false), 2000)
       }
     }
   }
@@ -318,14 +427,18 @@ export default function AdminSurveysPage() {
         })
         setPublished(false)
         await logAdminAction(user.email, user.fullName, "Unpublished survey - Removed from website")
-        setSaveMessage("Survey unpublished.")
-        setTimeout(() => setSaveMessage(""), 3000)
+        setToastMsg("Survey unpublished.")
+        setToastColor("bg-green-500/90 text-white")
+        setShowToast(true)
+        setTimeout(() => setShowToast(false), 2000)
 
         window.dispatchEvent(new CustomEvent("reloadLogs"))
-        window.dispatchEvent(new CustomEvent("publishStatusChanged"))
+        window.dispatchEvent(new CustomEvent("surveyUpdated"))
       } catch (err) {
-        setSaveMessage("Failed to unpublish survey!")
-        setTimeout(() => setSaveMessage(""), 3000)
+        setToastMsg("Failed to unpublish survey!")
+        setToastColor("bg-red-600/90 text-white")
+        setShowToast(true)
+        setTimeout(() => setShowToast(false), 2000)
       }
     }
   }
@@ -341,15 +454,19 @@ export default function AdminSurveysPage() {
         cachedFields = null
         cacheTimestamp = null
         await logAdminAction(user.email, user.fullName, `Deleted survey question: ${fieldName}`)
-        setSaveMessage("Question deleted successfully!")
-        setTimeout(() => setSaveMessage(""), 3000)
+        setToastMsg("Question deleted successfully!")
+        setToastColor("bg-green-500/90 text-white")
+        setShowToast(true)
+        setTimeout(() => setShowToast(false), 2000)
 
         window.dispatchEvent(new CustomEvent("reloadLogs"))
         window.dispatchEvent(new CustomEvent("surveyUpdated"))
       } catch (err) {
         console.error("[v0] Delete error:", err)
-        setSaveMessage("Failed to delete question!")
-        setTimeout(() => setSaveMessage(""), 3000)
+        setToastMsg("Failed to delete question!")
+        setToastColor("bg-red-600/90 text-white")
+        setShowToast(true)
+        setTimeout(() => setShowToast(false), 2000)
       }
     }
   }
@@ -385,7 +502,7 @@ export default function AdminSurveysPage() {
             </div>
             <div className="flex gap-3">
               <button
-                onClick={handleAddField}
+                onClick={() => setShowAddModal(true)}
                 disabled={!canEdit}
                 className={`px-5 py-2 bg-green-600 text-white rounded font-semibold transition ${
                   canEdit ? "hover:bg-green-700" : "opacity-50 cursor-not-allowed"
@@ -417,11 +534,9 @@ export default function AdminSurveysPage() {
             </div>
           </div>
 
-          {/* Save Message */}
-          {saveMessage && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-800 rounded-lg text-sm font-semibold">
-              {saveMessage}
-            </div>
+          {/* Toast Message */}
+          {showToast && (
+            <div className={`mb-4 p-3 ${toastColor} border rounded-lg text-sm font-semibold`}>{toastMsg}</div>
           )}
 
           {/* Status Badge */}
@@ -453,7 +568,7 @@ export default function AdminSurveysPage() {
                             <h3 className="font-semibold text-gray-900">{field.label}</h3>
                             <p className="text-sm text-gray-600 mt-1">
                               Type: <span className="font-medium">Matrix</span>
-                              {field.required && <span className="text-red-600 ml-2">*Required</span>}
+                              {field.is_required && <span className="text-red-600 ml-2">*Required</span>}
                             </p>
                             {field.instruction && (
                               <p className="text-sm text-gray-600 mt-2 italic">{field.instruction}</p>
@@ -471,7 +586,7 @@ export default function AdminSurveysPage() {
                                 {/* Show field type and required indicator for consistency with other questions */}
                                 <p className="text-sm text-gray-600 mt-1">
                                   Type: <span className="font-medium">Matrix</span>
-                                  {field.required && <span className="text-red-600 ml-2">*Required</span>}
+                                  {field.is_required && <span className="text-red-600 ml-2">*Required</span>}
                                 </p>
                               </div>
                               <div className="flex gap-2">
@@ -525,7 +640,7 @@ export default function AdminSurveysPage() {
                             <h3 className="font-semibold text-gray-900">{field.label}</h3>
                             <p className="text-sm text-gray-600 mt-1">
                               Type: <span className="font-medium">{field.type}</span>
-                              {field.required && <span className="text-red-600 ml-2">*Required</span>}
+                              {field.is_required && <span className="text-red-600 ml-2">*Required</span>}
                             </p>
                             {field.instruction && (
                               <p className="text-sm text-gray-600 mt-2 italic">{field.instruction}</p>
@@ -572,11 +687,7 @@ export default function AdminSurveysPage() {
 
         {/* Add Modal */}
         {showAddModal && (
-          <AddSurveyQuestionModal
-            open={showAddModal}
-            onSave={handleSaveField}
-            onCancel={() => setShowAddModal(false)}
-          />
+          <AddSurveyQuestionModal open={showAddModal} onSave={handleAddField} onCancel={() => setShowAddModal(false)} />
         )}
 
         {/* Edit Modal */}

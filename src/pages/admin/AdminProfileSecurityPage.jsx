@@ -341,7 +341,10 @@ export default function AdminProfileSecurityPage() {
         <DeleteAdminModal
           open={deleteModalOpen}
           admin={deleteTarget}
-          onClose={() => setDeleteModalOpen(false)}
+          onClose={() => {
+            setDeleteModalOpen(false)
+            setDeleteTarget(null)
+          }}
           onConfirm={handleDeleteAdmin}
           loading={deleteLoading}
         />

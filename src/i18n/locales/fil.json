@@ -28,6 +28,7 @@
     "region": "Rehiyon",
     "satisfaction": "Kasiyahan",
     "feedback": "Komento",
+    "pleaseSpecify": "Pakilagay ang detalye",
     "suggestionsLabel": "Mga mungkahi para sa pagpapabuti ng sarbey (opsyonal)",
     "suggestionsPlaceholder": "Mga mungkahi",
     "emailAddressLabel": "Email address (opsyonal)",
@@ -74,14 +75,14 @@
     "sqd2": "Sinunod ng opisina ang tamang requirements at proseso ng transaksyon.",
     "sqd3": "Ang mga kailangang hakbang sa transaksyon ay malinaw at madaling sundan.",
     "sqd4": "Madali kong nahanap ang impormasyon tungkol sa transaksyon mula sa opisina o website.",
-    "sqd5": "Makatwiran ang halagang kailangan kong bayaran para sa transaksyon. (Kung libre, markahan ang ‘N/A’)",
+    "sqd5": "Makatwiran ang halagang kailangan kong bayaran para sa transaksyon. (Kung libre, markahan ang 'N/A')",
     "sqd6": "Pakiramdam ko ay patas ang pakikitungo ng opisina sa lahat ng kliyente habang isinasagawa ang transaksyon.",
     "sqd7": "Magalang at matulungin ang staff, lalo na kapag tinanong.",
     "sqd8": "Nakuha ko ang dokumento/serbisyong kailangan ko o (kung hindi) ang dahilan ng pagkakadenay ay maayos na naipaliwanag.",
-    "ccAwarenessLabel": "Alin sa mga sumusunod ang pinakamainam na naglalarawan sa iyong kaalaman tungkol sa Citizen’s Charter?",
-    "ccVisibilityLabel": "Kung alam mo ang Citizen’s Charter, masasabi mo bang madali itong makita?",
-    "ccHelpfulnessLabel": "Kung alam mo ang Citizen’s Charter, gaano kalaki ang tulong nito sa transaksyon?",
-    "cc1Question": "Alin sa mga sumusunod ang pinakamainam na naglalarawan sa iyong kaalaman tungkol sa Citizen’s Charter?",
+    "ccAwarenessLabel": "Alin sa mga sumusunod ang pinakamainam na naglalarawan sa iyong kaalaman tungkol sa Citizen's Charter?",
+    "ccVisibilityLabel": "Kung alam mo ang Citizen's Charter, masasabi mo bang madali itong makita?",
+    "ccHelpfulnessLabel": "Kung alam mo ang Citizen's Charter, gaano kalaki ang tulong nito sa transaksyon?",
+    "cc1Question": "Alin sa mga sumusunod ang pinakamainam na naglalarawan sa iyong kaalaman tungkol sa Citizen's Charter?",
     "cc1Option1": "Alam ko kung ano ang CC at nakita ko ang CC ng opisina.",
     "cc1Option2": "Alam ko kung ano ang CC pero hindi ko nakita ang CC ng opisina.",
     "cc1Option3": "Nalaman ko lang ang tungkol sa CC nang makita ko ito sa opisina.",
@@ -118,63 +119,45 @@
     "content": "Ang sistemang ito ay isang centralized survey management platform na idinisenyo upang suportahan ang isang pangunahing at lubos na naaangkop na sarbey. Nagbibigay ito sa mga administrator ng isang integrated na kapaligiran para sa pag-configure ng survey content, pag-manage ng responses, paglikha ng analytics, at pag-review ng user feedback. Gamit ang role-based access control, tinitiyak ng sistema ang secure, maayos, at episyenteng paghawak ng survey data.\n\nLayunin ng platform na gawing simple ang buong survey workflow—mula sa paglikha at pangangalap ng responses hanggang sa reporting at analysis—habang pinapanatili ang data integrity at pagsunod sa privacy standards. Ang modular design nito ay sumusuporta sa mahahalagang administrative functions tulad ng profile management, analytics generation, feedback review, at system configuration.\n\nAng sistemang ito ay ginawa upang tulungan ang mga organisasyon at academic institutions na makakuha ng makabuluhang insights, masiguro ang pagiging kumpidensyal ng mga respondent, at itaguyod ang responsableng paggamit ng digital data."
   },
   "privacyPolicy": {
-  "section1Title": "1. Panimula",
-  "section1Body": "Ipinaliliwanag ng Privacy Policy na ito kung paano kinokolekta, ginagamit, at pinoprotektahan ang impormasyon sa loob ng survey system na ito.",
-
-  "section2Title": "2. Impormasyong Kinokolekta",
-  "section2Body": "Kinokolekta namin ang impormasyon ng respondent, data ng administrator, at impormasyon tungkol sa paggamit ng system. Lahat ng data ay kinokolekta lamang para sa layunin ng survey administration at analysis.",
-
-  "section3Title": "3. Layunin ng Pagkolekta",
-  "section3Body": "Ang nakolektang data ay ginagamit lamang para sa survey administration, paggawa ng analytics, at pagpapabuti ng system functionality. Hindi ginagamit ang anumang data para sa marketing o third-party purposes.",
-
-  "section4Title": "4. Pag-iimbak at Seguridad",
-  "section4Body": "Lahat ng data ay naka-encrypt at protektado gamit ang industry-standard security measures. Ang access ay limitado lamang sa mga awtorisadong administrator.",
-
-  "section5Title": "5. Paghawak at Pagpapanatili ng Data",
-  "section5Body": "Ang survey responses ay pinananatili lamang hangga't kinakailangan para sa analysis. Maaaring humiling ang mga user ng data deletion alinsunod sa umiiral na privacy laws.",
-
-  "section6Title": "6. Pagbabahagi ng Data",
-  "section6Body": "Ang impormasyon ay hindi ibinabahagi sa labas ng organisasyon nang walang tahasang pahintulot. Ang internal data sharing ay limitado lamang sa mga awtorisadong personnel.",
-
-  "section7Title": "7. Mga Karapatan ng User",
-  "section7Body": "Maaaring humiling ang mga user ng access sa kanilang data, humiling ng pagwawasto, o humiling ng pagbura ng personal information alinsunod sa naaangkop na regulasyon sa privacy.",
-
-  "section8Title": "8. Mga Pag-update sa Policy",
-  "section8Body": "Ang policy na ito ay maaaring i-update batay sa system improvements at legal requirements. Ang mga user ay bibigyan ng abiso para sa anumang mahahalagang pagbabago."
+    "section1Title": "1. Panimula",
+    "section1Body": "Ipinaliliwanag ng Privacy Policy na ito kung paano kinokolekta, ginagamit, at pinoprotektahan ang impormasyon sa loob ng survey system na ito.",
+    "section2Title": "2. Impormasyong Kinokolekta",
+    "section2Body": "Kinokolekta namin ang impormasyon ng respondent, data ng administrator, at impormasyon tungkol sa paggamit ng system. Lahat ng data ay kinokolekta lamang para sa layunin ng survey administration at analysis.",
+    "section3Title": "3. Layunin ng Pagkolekta",
+    "section3Body": "Ang nakolektang data ay ginagamit lamang para sa survey administration, paggawa ng analytics, at pagpapabuti ng system functionality. Hindi ginagamit ang anumang data para sa marketing o third-party purposes.",
+    "section4Title": "4. Pag-iimbak at Seguridad",
+    "section4Body": "Lahat ng data ay naka-encrypt at protektado gamit ang industry-standard security measures. Ang access ay limitado lamang sa mga awtorisadong administrator.",
+    "section5Title": "5. Paghawak at Pagpapanatili ng Data",
+    "section5Body": "Ang survey responses ay pinananatili lamang hangga't kinakailangan para sa analysis. Maaaring humiling ang mga user ng data deletion alinsunod sa umiiral na privacy laws.",
+    "section6Title": "6. Pagbabahagi ng Data",
+    "section6Body": "Ang impormasyon ay hindi ibinabahagi sa labas ng organisasyon nang walang tahasang pahintulot. Ang internal data sharing ay limitado lamang sa mga awtorisadong personnel.",
+    "section7Title": "7. Mga Karapatan ng User",
+    "section7Body": "Maaaring humiling ang mga user ng access sa kanilang data, humiling ng pagwawasto, o humiling ng pagbura ng personal information alinsunod sa naaangkop na regulasyon sa privacy.",
+    "section8Title": "8. Mga Pag-update sa Policy",
+    "section8Body": "Ang policy na ito ay maaaring i-update batay sa system improvements at legal requirements. Ang mga user ay bibigyan ng abiso para sa anumang mahahalagang pagbabago."
   },
-
-"termsAndConditions": {
-  "section1Title": "1. Pagtanggap ng Mga Tuntunin",
-  "section1Body": "Sa pamamagitan ng pag-access o paggamit ng sistemang ito, sumasang-ayon kang sundin ang mga Terms and Conditions na ito.",
-
-  "section2Title": "2. Mga Papel at Responsibilidad",
-  "section2Body": "Ang sistema ay gumagamit ng role-based access structure na kinabibilangan ng administrator, respondent, at system manager. Bawat papel ay may nakatakdang responsibilidad at permissions.",
-
-  "section3Title": "3. Tamang Paggamit",
-  "section3Body": "Sinasang-ayunan mong hindi magsagawa ng unauthorized access, hindi magpadala ng malware, at hindi isasagawa ang anumang aktibidad na maaaring makasira o makaapekto sa operasyon ng system.",
-
-  "section4Title": "4. Pahintulot sa Paggamit ng Data",
-  "section4Body": "Sa pagsusumite ng survey responses, sumasang-ayon kang ang iyong data ay maiproseso at ma-analyze alinsunod sa nakasaad sa Privacy Policy.",
-
-  "section5Title": "5. Mga Karapatan sa Intellectual Property",
-  "section5Body": "Lahat ng system content, design, at functionality ay pag-aari ng development team at protektado ng copyright laws.",
-
-  "section6Title": "6. Availability ng Sistema",
-  "section6Body": "Bagama’t nagsusumikap kaming panatilihin ang system uptime, hindi namin maipapangako ang tuloy-tuloy na access. Ang maintenance at updates ay maaaring magdulot ng pansamantalang downtime.",
-
-  "section7Title": "7. Limitasyon ng Pananagutan",
-  "section7Body": "Ang mga developer ay hindi mananagot para sa indirect, incidental, o consequential damages na maaaring lumitaw mula sa paggamit ng sistema.",
-
-  "section8Title": "8. Suspensyon o Pagtatapos ng Account",
-  "section8Body": "Maaaring ma-suspend o ma-terminate ang mga account dahil sa paglabag sa policy, tangkang unauthorized access, o maling paggamit ng system.",
-
-  "section9Title": "9. Mga Pagbabago sa Mga Tuntunin",
-  "section9Body": "Ang mga tuntuning ito ay maaaring baguhin anumang oras. Ang patuloy na paggamit ng sistema ay nangangahulugan ng pagtanggap sa anumang pagbabago.",
-
-  "section10Title": "10. Impormasyon sa Pakikipag-ugnayan",
-  "section10Body": "Para sa mga katanungan tungkol sa mga tuntuning ito, makipag-ugnayan sa inyong system administrator o support team."
+  "termsAndConditions": {
+    "section1Title": "1. Pagtanggap ng Mga Tuntunin",
+    "section1Body": "Sa pamamagitan ng pag-access o paggamit ng sistemang ito, sumasang-ayon kang sundin ang mga Terms and Conditions na ito.",
+    "section2Title": "2. Mga Papel at Responsibilidad",
+    "section2Body": "Ang sistema ay gumagamit ng role-based access structure na kinabibilangan ng administrator, respondent, at system manager. Bawat papel ay may nakatakdang responsibilidad at permissions.",
+    "section3Title": "3. Tamang Paggamit",
+    "section3Body": "Sinasang-ayunan mong hindi magsagawa ng unauthorized access, hindi magpadala ng malware, at hindi isasagawa ang anumang aktibidad na maaaring makasira o makaapekto sa operasyon ng system.",
+    "section4Title": "4. Pahintulot sa Paggamit ng Data",
+    "section4Body": "Sa pagsusumite ng survey responses, sumasang-ayon kang ang iyong data ay maiproseso at ma-analyze alinsunod sa nakasaad sa Privacy Policy.",
+    "section5Title": "5. Mga Karapatan sa Intellectual Property",
+    "section5Body": "Lahat ng system content, design, at functionality ay pag-aari ng development team at protektado ng copyright laws.",
+    "section6Title": "6. Availability ng Sistema",
+    "section6Body": "Bagama't nagsusumikap kaming panatilihin ang system uptime, hindi namin maipapangako ang tuloy-tuloy na access. Ang maintenance at updates ay maaaring magdulot ng pansamantalang downtime.",
+    "section7Title": "7. Limitasyon ng Pananagutan",
+    "section7Body": "Ang mga developer ay hindi mananagot para sa indirect, incidental, o consequential damages na maaaring lumitaw mula sa paggamit ng sistema.",
+    "section8Title": "8. Suspensyon o Pagtatapos ng Account",
+    "section8Body": "Maaaring ma-suspend o ma-terminate ang mga account dahil sa paglabag sa policy, tangkang unauthorized access, o maling paggamit ng system.",
+    "section9Title": "9. Mga Pagbabago sa Mga Tuntunin",
+    "section9Body": "Ang mga tuntuning ito ay maaaring baguhin anumang oras. Ang patuloy na paggamit ng sistema ay nangangahulugan ng pagtanggap sa anumang pagbabago.",
+    "section10Title": "10. Impormasyon sa Pakikipag-ugnayan",
+    "section10Body": "Para sa mga katanungan tungkol sa mga tuntuning ito, makipag-ugnayan sa inyong system administrator o support team."
   },
-
   "textSize": {
     "small": "Maliit",
     "normal": "Normal",

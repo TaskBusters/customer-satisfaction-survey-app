@@ -1,4 +1,7 @@
-import React, { useState } from "react";
+"use client"
+
+import { useState } from "react"
+import { useTranslation } from "react-i18next"
 
 export default function RadioField({
   label,
@@ -6,18 +9,23 @@ export default function RadioField({
   value,
   onChange,
   required = false,
+  showRequired = false,
   name,
-  otherValue, // <-- add these
-  onOtherChange, // <--
+  otherValue,
+  onOtherChange,
+  disabled = false,
+  error = null,
 }) {
-  const [touched, setTouched] = useState(false);
-  const hasError = required && touched && (value === undefined || value === "");
+  const [touched, setTouched] = useState(false)
+  const { t } = useTranslation()
+  const hasError = (required && touched && (value === undefined || value === "")) || !!error
 
   return (
     <div className="mb-6 w-full">
       {label && (
         <label className="block text-base font-bold mb-3 text-gray-800">
           {label}
+          {showRequired && <span className="text-red-600 ml-1">*</span>}
         </label>
       )}
       <div className="flex flex-col gap-3 w-full">
@@ -37,29 +45,28 @@ export default function RadioField({
               checked={String(value) === String(opt.value)}
               onBlur={() => setTouched(true)}
               onChange={() => {
-                setTouched(true);
-                onChange(opt.value);
+                setTouched(true)
+                onChange(opt.value)
               }}
+              disabled={disabled}
             />
             <span className="text-base text-gray-700">{opt.label}</span>
-            {/* Inline text input for "Others" */}
+            {/* Inline text input for "Others" - Translate placeholder to Tagalog */}
             {opt.value === "others" && value === "others" && (
               <input
-                type="text" 
+                type="text"
                 className="ml-2 border rounded px-2 py-1 w-[160px] focus:ring focus:ring-blue-200"
-                placeholder="Please specify"
+                placeholder={t("survey.pleaseSpecify")}
                 value={otherValue}
                 onChange={(e) => onOtherChange(e.target.value)}
+                maxLength={100}
+                disabled={disabled}
               />
             )}
           </label>
         ))}
       </div>
-      {hasError && (
-        <span className="text-xs text-red-500 mt-1 block">
-          Please select an option.
-        </span>
-      )}
+      {error && <span className="text-xs text-red-500 mt-1 block">{error}</span>}
     </div>
-  );
+  )
 }

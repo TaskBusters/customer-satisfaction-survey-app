@@ -1,31 +1,42 @@
-import React, { useState } from "react";
+"use client"
 
-export default function SelectField({ label, options, value, onChange, name }) {
-  const [touched, setTouched] = useState(false);
-  const hasError = touched && (!value || value === "");
+import { useState } from "react"
+
+export default function SelectField({
+  label,
+  options,
+  value,
+  onChange,
+  name,
+  required = false,
+  showRequired = false,
+  disabled = false,
+  error = null,
+}) {
+  const [touched, setTouched] = useState(false)
+  const hasError = (required && touched && (!value || value === "")) || !!error
 
   return (
     <div className="mb-6">
       {label && (
-        <label
-          htmlFor={name}
-          className="block mb-2 text-sm font-medium text-gray-900"
-        >
+        <label htmlFor={name} className="block mb-2 text-sm font-medium text-gray-900">
           {label}
+          {showRequired && <span className="text-red-600 ml-1">*</span>}
         </label>
       )}
       <select
         id={name}
         name={name}
-        required
+        required={required}
+        disabled={disabled}
         className={`bg-gray-50 border border-gray-300 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 ${
           hasError ? "border-red-500" : ""
         }`}
         value={value || ""}
         onBlur={() => setTouched(true)}
         onChange={(e) => {
-          setTouched(true);
-          onChange(e.target.value);
+          setTouched(true)
+          onChange(e.target.value)
         }}
       >
         <option value="" disabled hidden>
@@ -37,11 +48,8 @@ export default function SelectField({ label, options, value, onChange, name }) {
           </option>
         ))}
       </select>
-      {hasError && (
-        <span className="text-xs text-red-500 mt-1 block">
-          Please select an option.
-        </span>
-      )}
+      {error && <span className="text-xs text-red-500 mt-1 block">{error}</span>}
+      {!error && hasError && <span className="text-xs text-red-500 mt-1 block">Please select an option.</span>}
     </div>
-  );
+  )
 }

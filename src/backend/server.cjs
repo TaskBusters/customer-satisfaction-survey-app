@@ -1311,9 +1311,17 @@ app.post("/api/admin/survey-questions", async (req, res) => {
     const rowsStr = typeof rows === 'string' ? rows : JSON.stringify(rows || []);
     const columnsStr = typeof columns === 'string' ? columns : JSON.stringify(columns || []);
 
+    // Only force false for new Feedback questions during initial seeding, not on updates
+    let finalIsRequired = is_required;
+    if (section === 'Feedback' && !is_required) { // If is_required is explicitly false or not provided (and thus defaults to true for boolean types)
+      finalIsRequired = false;
+    }
+
+
     console.log("[v0] Saving to database with stringified values:", {
       field_name,
       section,
+      finalIsRequired,
       optionsStrLength: optionsStr.length,
       rowsStrLength: rowsStr.length,
       columnsStrLength: columnsStr.length,
@@ -1326,7 +1334,7 @@ app.post("/api/admin/survey-questions", async (req, res) => {
      DO UPDATE SET section = $2, question_text = $3, field_type = $4, is_required = $5, options = $6, rows = $7, columns = $8,
      instruction = $9`,
       [
-        field_name, section, question_text, field_type, is_required,
+        field_name, section, question_text, field_type, finalIsRequired,
         optionsStr, rowsStr, columnsStr, instruction
       ]
     );

@@ -8,7 +8,7 @@ import UserInfoModal from "../../components/survey/UserInfoModal.jsx"
 import ClearSurveyModal from "../../components/survey/ClearSurveyModal.jsx"
 import ArrowButtonGroup from "../../components/survey/ArrowButtonGroup.jsx"
 import fields from "../../survey/surveyFields.js"
-import { isAgeValid, hasAnyAnswer } from "../../survey/surveyUtils.js"
+import { isAgeValid } from "../../survey/surveyUtils.js"
 import { useAuth } from "../../context/AuthContext"
 import { API_BASE_URL } from "../../utils/api.js"
 import { useTranslation } from "react-i18next"
@@ -45,6 +45,7 @@ export default function SurveyFormPage() {
   const [userInfo, setUserInfo] = useState({ fullName: "", email: "" })
   const [showUserInfoModal, setShowUserInfoModal] = useState(false)
   const [showErrorModal, setShowErrorModal] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState({})
   const [showToast, setShowToast] = useState(false)
   const [showClearSurveyModal, setShowClearSurveyModal] = useState(false)
   const [toastMsg, setToastMsg] = useState("")
@@ -120,7 +121,7 @@ export default function SurveyFormPage() {
               name: q.field_name,
               type: q.field_type,
               label: q.question_text,
-              required: q.is_required !== 0, // Use actual is_required from database instead of hardcoded false
+              required: q.is_required === true || q.is_required === 1 || q.is_required === "true",
               options: options || [],
               rows: rows || [],
               columns: restoredColumns,
@@ -136,7 +137,7 @@ export default function SurveyFormPage() {
             Feedback: 4,
           }
           const fieldOrderMap = {
-            "Personal Info": { clientType: 1, service: 2, gender: 3, age: 4, region: 5 },
+            "Personal Info": { clientType: 1, gender: 2, age: 3, region: 4, service: 5 },
           }
           const sortedFields = convertedFields.sort((a, b) => {
             const orderA = sectionOrder[a.section] || 99
@@ -231,33 +232,48 @@ export default function SurveyFormPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    // Use surveyFields from state instead of hardcoded fields
-    const missingFields = surveyFields.filter((field) => {
-      const isRequired =
-        field.required &&
-        (!field.conditionalRequired ||
-          !field.conditionalRequired.skipValues?.includes(answers[field.conditionalRequired.dependsOn]))
+    const newFieldErrors = {}
 
-      if (!isRequired) return false
+    surveyFields.forEach((field) => {
+      // Skip if field is not required
+      if (!field.required) return
 
-      if (field.type === "matrix") {
-        return !answers[field.name] || Object.keys(answers[field.name] || {}).length !== field.rows.length
+      // Handle conditional required fields
+      if (
+        field.conditionalRequired &&
+        field.conditionalRequired.skipValues?.includes(answers[field.conditionalRequired.dependsOn])
+      ) {
+        return
       }
-      return !answers[field.name] || answers[field.name].toString().trim() === ""
+
+      let fieldError = null
+      if (field.type === "matrix") {
+        const missingRows = field.rows.filter((row) => !answers[field.name] || !answers[field.name][row.name])
+        if (missingRows.length > 0) {
+          fieldError = "Please select an option"
+        }
+      } else if (!answers[field.name] || answers[field.name].toString().trim() === "") {
+        fieldError = "Please select an option"
+      }
+
+      if (fieldError) {
+        newFieldErrors[field.name] = fieldError
+      }
     })
 
     // Check clientType_other if clientType is "others"
     if (answers.clientType === "others" && (!answers.clientType_other || answers.clientType_other.trim() === "")) {
-      missingFields.push({ name: "clientType_other" })
+      newFieldErrors["clientType_other"] = "Please specify"
     }
 
-    let ageError = false
-    if (!missingFields.find((f) => f.name === "age") && !isAgeValid(answers.age)) {
-      ageError = true
+    // Check age validity
+    if (!newFieldErrors.age && answers.age && !isAgeValid(answers.age)) {
+      newFieldErrors.age = "Please enter a valid age"
     }
 
-    if (missingFields.length > 0 || ageError) {
-      setShowErrorModal(true)
+    setFieldErrors(newFieldErrors)
+
+    if (Object.keys(newFieldErrors).length > 0) {
       setToastMsg(t("survey.submissionFailed"))
       setToastColor("bg-red-600/90 text-white")
       setShowToast(true)
@@ -323,6 +339,12 @@ export default function SurveyFormPage() {
     }
   }
 
+  const handleClearSurvey = () => {
+    setAnswers({})
+    setFieldErrors({})
+    setShowClearSurveyModal(false)
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 pb-12">
       <ToastNotif show={showToast} color={toastColor}>
@@ -337,24 +359,25 @@ export default function SurveyFormPage() {
         </h2>
         <ClearSurveyModal
           open={showClearSurveyModal}
-          onConfirm={() => {
-            setAnswers({})
-            setShowClearSurveyModal(false)
-          }}
+          onConfirm={handleClearSurvey}
           onCancel={() => setShowClearSurveyModal(false)}
         />
-        <SurveyRenderer fields={surveyFields} answers={answers} setAnswers={setAnswers} disabled={submitting} />
+        <SurveyRenderer
+          fields={surveyFields}
+          answers={answers}
+          setAnswers={setAnswers}
+          disabled={submitting}
+          fieldErrors={fieldErrors}
+        />
         <div className="flex flex-row justify-between gap-4 mt-8">
-          {hasAnyAnswer(answers) && (
-            <button
-              type="button"
-              className="bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 rounded px-5 py-2 transition"
-              onClick={() => setShowClearSurveyModal(true)}
-              disabled={submitting}
-            >
-              {t("survey.clear")}
-            </button>
-          )}
+          <button
+            type="button"
+            className="bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 rounded px-5 py-2 transition"
+            onClick={() => setShowClearSurveyModal(true)}
+            disabled={submitting}
+          >
+            {t("survey.clear")}
+          </button>
           <button
             type="submit"
             className={`bg-green-600 hover:bg-green-700 text-white rounded

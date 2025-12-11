@@ -181,7 +181,7 @@ export default function UserSettingsModal({ open, onClose }) {
   return (
     <>
       <div
-        className="fixed inset-0 z-50 flex justify-center items-start pt-24 md:pt-32"
+        className="fixed inset-0 z-50 flex justify-center items-center min-h-screen"
         onMouseDown={handleBackdropClick}
       >
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"></div>

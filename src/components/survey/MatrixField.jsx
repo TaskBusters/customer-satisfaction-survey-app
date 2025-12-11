@@ -10,8 +10,11 @@ export default function MatrixField({
   value = {},
   onChange,
   required = false,
+  showRequired = false,
   field = {},
   answers = {},
+  disabled = false,
+  fieldErrors = {},
 }) {
   const [touched, setTouched] = useState(false)
 
@@ -30,7 +33,12 @@ export default function MatrixField({
 
   return (
     <div className="mb-12 px-2 w-full">
-      {label && <div className="font-bold mb-4 text-lg text-gray-800">{label}</div>}
+      {label && (
+        <div className="font-bold mb-4 text-lg text-gray-800">
+          {label}
+          {showRequired && <span className="text-red-600 ml-1">*</span>}
+        </div>
+      )}
 
       {rows.map((row, rowIdx) => (
         <div key={rowIdx} className="bg-white shadow rounded-xl mb-8 p-4 sm:p-6 lg:p-8 w-full max-w-full">
@@ -64,12 +72,15 @@ export default function MatrixField({
                         : "hover:scale-105 hover:shadow-lg"
                     }
                   `}
-                  // fixed height removed to allow content to size naturally
-                  onClick={() => handleAnswer(row.name, col.value)}
+                  onClick={() => {
+                    if (!disabled) {
+                      handleAnswer(row.name, col.value)
+                    }
+                  }}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
+                    if (!disabled && (e.key === "Enter" || e.key === " ")) {
                       e.preventDefault()
                       handleAnswer(row.name, col.value)
                     }
@@ -115,7 +126,10 @@ export default function MatrixField({
             })}
           </div>
 
-          {hasError && !value[row.name] && (
+          {fieldErrors[field.name] && rowIdx === 0 && (
+            <span className="text-xs text-red-500 mt-2 block">{fieldErrors[field.name]}</span>
+          )}
+          {!fieldErrors[field.name] && hasError && !value[row.name] && (
             <span className="text-xs text-red-500 mt-2 block">Please select an option.</span>
           )}
         </div>

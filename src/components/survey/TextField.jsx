@@ -1,5 +1,7 @@
-import { useState } from "react";
-import { isAgeValid } from "../../survey/surveyUtils";
+"use client"
+
+import { useState } from "react"
+import { isAgeValid } from "../../survey/surveyUtils"
 
 export default function TextField({
   label,
@@ -8,22 +10,34 @@ export default function TextField({
   placeholder,
   name,
   required = false,
+  showRequired = false,
+  disabled = false,
+  error = null,
+  maxLength = 255,
 }) {
-  const [touched, setTouched] = useState(false);
-  const hasError = required && touched && !value;
+  const [touched, setTouched] = useState(false)
+  const hasError = (required && touched && !value) || !!error
 
-  // Add age-specific out-of-range check
-  const isAgeField = name === "age";
-  const outOfRangeError = isAgeField && touched && value && !isAgeValid(value);
+  // Add age-specific validation
+  const isAgeField = name === "age"
+  const isNumericField = isAgeField
+
+  // For age field, enforce numeric input only
+  const handleChange = (e) => {
+    let inputValue = e.target.value
+    if (isNumericField) {
+      inputValue = inputValue.replace(/[^0-9]/g, "")
+    }
+    setTouched(true)
+    onChange(inputValue)
+  }
 
   return (
     <div className="mb-6">
       {label && (
-        <label
-          htmlFor={name}
-          className="block mb-2 text-sm font-semibold text-black"
-        >
+        <label htmlFor={name} className="block mb-2 text-sm font-semibold text-black">
           {label}
+          {showRequired && <span className="text-red-600 ml-1">*</span>}
         </label>
       )}
       <input
@@ -32,27 +46,25 @@ export default function TextField({
         name={name}
         required={required}
         className={`bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 placeholder-gray-400 placeholder-opacity-100 ${
-          hasError || outOfRangeError ? "border-red-500" : ""
+          hasError ? "border-red-500" : ""
         }`}
         value={value || ""}
         onBlur={() => setTouched(true)}
-        onChange={(e) => {
-          setTouched(true);
-          onChange(e.target.value);
-        }}
+        onChange={handleChange}
         placeholder={placeholder}
         autoComplete="off"
+        maxLength={maxLength}
+        disabled={disabled}
       />
-      {hasError && (
-        <span className="text-xs text-red-500 mt-1 block">
-          This field is required.
-        </span>
+      {error && <span className="text-xs text-red-500 mt-1 block">{error}</span>}
+      {!error && isAgeField && touched && value && !isAgeValid(value) && (
+        <span className="text-xs text-red-500 mt-1 block">Please enter a valid age.</span>
       )}
-      {outOfRangeError && (
-        <span className="text-xs text-red-500 mt-1 block">
-          Please enter a valid age.
+      {isNumericField && maxLength && value && (
+        <span className="text-xs text-gray-500 mt-1 block">
+          {value.length}/{maxLength}
         </span>
       )}
     </div>
-  );
+  )
 }
