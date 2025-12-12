@@ -484,7 +484,7 @@ app.post("/api/auth/send-verification-code", async (req, res) => {
             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px; text-align: center; margin: 30px 0;">
               <h1 style="color: white; letter-spacing: 10px; font-size: 42px; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">${code}</h1>
             </div>
-            <p style="color: #dc2626; font-weight: bold;">⏰ This code expires in 24 hours</p>
+            <p style="color: #dc2626; font-weight: bold;">⏰ This code expires in 30 seconds.</p>
             <p style="color: #6b7280; font-size: 14px;">If you did not expect this invitation, please ignore this email.</p>
           </div>
         `
@@ -1003,8 +1003,15 @@ app.post("/api/forgot-password", async (req, res) => {
         });
       }
       
-      userExists = true;
       const user = rows[0];
+      if (!user.email_verified) {
+        console.log("❌ Account not verified for email:", email);
+        return res.status(404).json({ 
+          error: "Account not found. Please check your email or sign up for a new account." 
+        });
+      }
+      
+      userExists = true;
       fullName = user.fullName || "User";
       
     } catch (dbErr) {
@@ -1213,9 +1220,7 @@ app.get("/api/admin/stats", async (req, res) => {
 
 app.get("/api/faqs", async (req, res) => {
   try {
-    const { rows } = await pool.query(
-      "SELECT * FROM faqs WHERE is_published = TRUE ORDER BY category"
-    );
+    const { rows } = await pool.query("SELECT * FROM faqs WHERE is_published = TRUE ORDER BY category");
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch FAQs" });
@@ -1519,6 +1524,21 @@ app.delete("/api/admin/notifications/:id", async (req, res) => {
   }
 });
 
+// ADDED DELETE endpoint to delete all notifications (soft delete only)
+app.delete("/api/admin/notifications", async (req, res) => {
+  try {
+    // Soft delete all notifications by marking them as deleted
+    await pool.query(
+      "UPDATE notifications SET is_deleted = true, deleted_at = CURRENT_TIMESTAMP WHERE is_deleted = false"
+    );
+    
+    res.json({ ok: true, message: "All notifications dismissed" });
+  } catch (err) {
+    console.error("Delete all notifications error:", err);
+    res.status(500).json({ error: "Failed to delete all notifications" });
+  }
+});
+
 // Create notification when survey is submitted
 app.post("/api/survey/submit", async (req, res) => {
   const { user_email, user_name, responses } = req.body;
@@ -1771,7 +1791,7 @@ app.post("/api/send-reset-email", async (req, res) => {
               <h1 style="color: white; letter-spacing: 12px; font-size: 42px; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">${code}</h1>
             </div>
             <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; border-radius: 4px; margin: 20px 0;">
-              <p style="color: #dc2626; margin: 0; font-weight: bold;">⏰ This code expires in 15 minutes</p>
+              <p style="color: #dc2626; margin: 0; font-weight: bold;">⏰ This code expires in 30 seconds</p>
             </div>
             <p style="color: #6b7280; font-size: 14px;">If you didn't request this, please ignore this email.</p>
           </div>

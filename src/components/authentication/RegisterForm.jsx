@@ -262,7 +262,7 @@ export default function RegisterForm() {
               <div className="bg-gray-100 rounded-lg p-6 mb-6 text-center">
                 <p className="text-4xl font-bold tracking-widest text-blue-600">{popupCode}</p>
               </div>
-              <p className="text-xs text-gray-500 text-center mb-6">Code expires in 24 hours</p>
+              <p className="text-xs text-gray-500 text-center mb-6">Code expires in 30 seconds</p>
 
               <div className="space-y-3">
                 <button
@@ -314,9 +314,13 @@ export default function RegisterForm() {
           </button>
 
           <div className="flex justify-center mt-6">
-            <Link to="/login" className="text-blue-500 hover:underline text-sm">
-              Back to Login
-            </Link>
+            <button
+              type="button"
+              onClick={() => setRegistrationStep("form")}
+              className="text-blue-500 hover:underline text-sm"
+            >
+              Back to Register
+            </button>
           </div>
         </form>
       </div>

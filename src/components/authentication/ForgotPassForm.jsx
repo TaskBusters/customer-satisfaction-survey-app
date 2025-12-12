@@ -224,7 +224,7 @@ export default function ForgotPassForm() {
             <div className="bg-gray-100 rounded-lg p-6 mb-6 text-center">
               <p className="text-4xl font-bold tracking-widest text-blue-600">{popupCode}</p>
             </div>
-            <p className="text-xs text-gray-500 text-center mb-6">Code expires in 15 minutes</p>
+            <p className="text-xs text-gray-500 text-center mb-6">Code expires in 30 seconds</p>
 
             <div className="space-y-3">
               <button

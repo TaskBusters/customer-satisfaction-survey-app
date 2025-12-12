@@ -29,6 +29,8 @@ export default function AdminNotificationsPage() {
   const [deletingId, setDeletingId] = useState(null)
 
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false)
+  const [deletingAll, setDeletingAll] = useState(false)
 
   // --- MODIFIED: Single function to fetch data for the given page ---
   const fetchData = async (page) => {
@@ -138,6 +140,46 @@ export default function AdminNotificationsPage() {
     }
   }
 
+  const deleteAllNotifications = async () => {
+    if (!confirmDeleteAll) {
+      setConfirmDeleteAll(true)
+      return
+    }
+
+    setDeletingAll(true)
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/notifications`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+      })
+
+      if (!res.ok) {
+        throw new Error("Failed to delete all notifications")
+      }
+
+      // Clear all notifications locally
+      setNotifications([])
+      setTotalCount(0)
+      setTotalPages(1)
+      setCurrentPage(1)
+
+      setMessage("All notifications dismissed")
+      setMsgType("success")
+      setTimeout(() => setMessage(""), 2000)
+    } catch (err) {
+      console.error("Delete all notifications error:", err)
+      setMessage("Failed to dismiss all notifications")
+      setMsgType("error")
+      setTimeout(() => setMessage(""), 3000)
+    } finally {
+      setDeletingAll(false)
+      setConfirmDeleteAll(false)
+    }
+  }
+
   // --- CORRECTED useEffect for Pagination & Initial Load ---
   useEffect(() => {
     // This hook runs on mount and whenever currentPage changes.
@@ -217,10 +259,48 @@ export default function AdminNotificationsPage() {
 
         <div className="space-y-6 flex-1 flex flex-col">
           <div className="bg-white rounded-lg shadow p-6 flex-1 flex flex-col">
-            <h2 className="text-xl font-bold mb-4 text-gray-900">Recent Activities</h2>
-            <p className="text-sm text-gray-600 mb-4">
-              View recent notifications about user activities and survey submissions.
-            </p>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Recent Activities</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  View recent notifications about user activities and survey submissions.
+                </p>
+              </div>
+              {totalCount > 0 && (
+                <div className="flex gap-2">
+                  {confirmDeleteAll ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={deleteAllNotifications}
+                        disabled={deletingAll}
+                        className="px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {deletingAll ? "Dismissing..." : "Confirm Delete All"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteAll(false)}
+                        disabled={deletingAll}
+                        className="px-4 py-2 text-sm bg-gray-400 text-white rounded hover:bg-gray-500 disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={deleteAllNotifications}
+                      disabled={deletingAll || loading}
+                      className="px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      <MdDelete size={16} />
+                      Dismiss All
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Notification items container */}
             <div className="space-y-3 flex-1 overflow-y-auto pr-4">
@@ -279,7 +359,7 @@ export default function AdminNotificationsPage() {
                             e.stopPropagation()
                             deleteNotification(notif.id)
                           }}
-                          disabled={deletingId === notif.id || confirmDeleteId !== null}
+                          disabled={deletingId === notif.id || confirmDeleteAll !== null}
                           className="inline-flex items-center justify-center p-1 rounded hover:bg-red-50 disabled:opacity-50"
                           aria-label={`Dismiss notification ${notif.id}`}
                           title="Dismiss notification"
