@@ -12,11 +12,12 @@ import { jsPDF } from "jspdf"
 export default function AdminReportsPage() {
   const { user } = useAuth()
   const [analytics, setAnalytics] = useState(null)
-  const [allResponses, setAllResponses] = useState([])
   const [loading, setLoading] = useState(true)
+  const [allResponses, setAllResponses] = useState([])
   const [serviceFilter, setServiceFilter] = useState("")
   const [regionFilter, setRegionFilter] = useState("")
-  const [dateFilter, setDateFilter] = useState("")
+  const [dateFromFilter, setDateFromFilter] = useState("")
+  const [dateToFilter, setDateToFilter] = useState("")
   const [services, setServices] = useState([])
 
   const canExport = () => {
@@ -37,10 +38,13 @@ export default function AdminReportsPage() {
       try {
         const serviceParam = serviceFilter ? `&serviceFilter=${encodeURIComponent(serviceFilter)}` : ""
         const regionParam = regionFilter ? `&regionFilter=${encodeURIComponent(regionFilter)}` : ""
-        const dateParam = dateFilter ? `&dateFilter=${encodeURIComponent(dateFilter)}` : ""
+        const dateFromParam = dateFromFilter ? `&dateFromFilter=${encodeURIComponent(dateFromFilter)}` : ""
+        const dateToParam = dateToFilter ? `&dateToFilter=${encodeURIComponent(dateToFilter)}` : ""
 
         const [analyticsData, responsesData] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/admin/analytics?${serviceParam}${regionParam}${dateParam}`).then((r) => r.json()),
+          fetch(`${API_BASE_URL}/api/admin/analytics?${serviceParam}${regionParam}${dateFromParam}${dateToParam}`).then(
+            (r) => r.json(),
+          ),
           fetch(`${API_BASE_URL}/api/admin/submissions`).then((r) => r.json()),
         ])
 
@@ -67,17 +71,27 @@ export default function AdminReportsPage() {
       }
     }
     loadData()
-  }, [serviceFilter, regionFilter, dateFilter])
+  }, [serviceFilter, regionFilter, dateFromFilter, dateToFilter])
 
   const getFilteredAnalytics = () => {
     let filtered = allResponses
     if (serviceFilter) filtered = filtered.filter((r) => r.service === serviceFilter)
     if (regionFilter) filtered = filtered.filter((r) => r.region === regionFilter)
-    if (dateFilter) {
+    if (dateFromFilter || dateToFilter) {
       filtered = filtered.filter((r) => {
         if (!r.submitted_at) return false
-        const submittedDate = r.submitted_at.split("T")[0] // Extract YYYY-MM-DD
-        return submittedDate === dateFilter
+
+        // Convert timestamp to local date string (YYYY-MM-DD)
+        const submittedDate = new Date(r.submitted_at).toLocaleDateString("en-CA") // en-CA gives YYYY-MM-DD format
+
+        if (dateFromFilter && dateToFilter) {
+          return submittedDate >= dateFromFilter && submittedDate <= dateToFilter
+        } else if (dateFromFilter) {
+          return submittedDate >= dateFromFilter
+        } else if (dateToFilter) {
+          return submittedDate <= dateToFilter
+        }
+        return true
       })
     }
     return filtered
@@ -258,7 +272,7 @@ export default function AdminReportsPage() {
       }
 
       const row = {
-        date: r.submitted_at ? new Date(r.submitted_at).toLocaleString() : "—",
+        date: r.submitted_at || "—",
         name: r.user_name || "Guest",
         email: r.user_email || r.email || "",
         service: r.service || "",
@@ -270,6 +284,7 @@ export default function AdminReportsPage() {
         ccVisibility: ccAnswers.ccVisibility || "",
         ccHelpfulness: ccAnswers.ccHelpfulness || "",
         sqdRatings: sqdAnswers, // Add sqdRatings to the row for ARTA export
+        sex: r.sex || "", // Added for ARTA export
       }
 
       Object.keys(sqdLabels).forEach((key) => {
@@ -464,112 +479,125 @@ export default function AdminReportsPage() {
     doc.text(`Total Responses: ${rows.length}`, margin, yPosition)
     yPosition += 10
 
-    const tableHeaders = [
-      "Date",
-      "Name",
-      "Email",
-      "Service",
-      "Region",
-      "Client Type",
-      "Average Satisfaction",
-      "CC Awareness",
-      "CC Visibility",
-      "CC Helpfulness",
-    ]
-    const colWidths = {
-      date: 22,
-      name: 18,
-      service: 20,
-      region: 18,
-      clientType: 15,
-      ccAwareness: 18,
-      ccVisibility: 18,
-      ccHelpfulness: 18,
-    }
+    const tableHeaders = ["Date", "Name", "Service", "Region", "Client Type", "Satisfaction"]
+
+    const colWidth = (pageWidth - 2 * margin) / tableHeaders.length
 
     let xPosition = margin
     doc.setFillColor(41, 128, 185)
     doc.setTextColor(255, 255, 255)
     doc.setFont(undefined, "bold")
-    doc.setFontSize(9)
+    doc.setFontSize(8)
 
-    tableHeaders.forEach((header, i) => {
-      const headerKey = Object.keys(colWidths)[i]
-      const width = colWidths[headerKey]
-      doc.rect(xPosition, yPosition, width, 6, "F")
-      doc.text(header, xPosition + 1, yPosition + 3.5, { maxWidth: width - 2, align: "center" })
-      xPosition += width
+    // Table header
+    tableHeaders.forEach((header) => {
+      doc.rect(xPosition, yPosition, colWidth, 6, "F")
+      doc.text(header, xPosition + colWidth / 2, yPosition + 4, { align: "center" })
+      xPosition += colWidth
     })
 
     yPosition += 8
     doc.setTextColor(0, 0, 0)
     doc.setFont(undefined, "normal")
-    doc.setFontSize(8)
+    doc.setFontSize(7)
 
-    // Table rows
     rows.forEach((row) => {
       if (yPosition > pageHeight - 15) {
         doc.addPage()
         yPosition = margin
-        //Reprint headers on new page
+        // Reprint headers on new page
         let headerX = margin
         doc.setFillColor(41, 128, 185)
         doc.setTextColor(255, 255, 255)
         doc.setFont(undefined, "bold")
-        doc.setFontSize(9)
-        tableHeaders.forEach((header, i) => {
-          const headerKey = Object.keys(colWidths)[i]
-          const width = colWidths[headerKey]
-          doc.rect(headerX, yPosition, width, 6, "F")
-          doc.text(header, headerX + 1, yPosition + 3.5, { maxWidth: width - 2, align: "center" })
-          headerX += width
+        doc.setFontSize(8)
+        tableHeaders.forEach((header) => {
+          doc.rect(headerX, yPosition, colWidth, 6, "F")
+          doc.text(header, headerX + colWidth / 2, yPosition + 4, { align: "center" })
+          headerX += colWidth
         })
         yPosition += 8
         doc.setTextColor(0, 0, 0)
         doc.setFont(undefined, "normal")
-        doc.setFontSize(8)
+        doc.setFontSize(7)
       }
 
       xPosition = margin
       const rowData = [
-        row.date,
-        row.name,
-        row.service,
-        row.region,
-        row.clientType,
-        row.ccAwareness || "—",
-        row.ccVisibility || "—",
-        row.ccHelpfulness || "—",
+        row.date ? new Date(row.date).toLocaleDateString() : "—",
+        row.name || "—",
+        row.service || "—",
+        row.region || "—",
+        row.clientType || "—",
+        row.satisfaction || "—",
       ]
 
-      Object.keys(colWidths).forEach((key, i) => {
-        const width = colWidths[key]
-        const cellText = rowData[i]?.toString() || "—"
-        doc.text(cellText, xPosition + 1, yPosition + 3, { maxWidth: width - 2, align: "center" })
-        xPosition += width
+      rowData.forEach((cellText) => {
+        const text = cellText.toString().substring(0, 30)
+        doc.text(text, xPosition + colWidth / 2, yPosition + 4, {
+          maxWidth: colWidth - 2,
+          align: "center",
+        })
+        xPosition += colWidth
       })
 
-      yPosition += 5
+      yPosition += 7
     })
 
     yPosition += 10
+    if (yPosition > pageHeight - 20) {
+      doc.addPage()
+      yPosition = margin
+    }
+
     doc.setFontSize(12)
     doc.setFont(undefined, "bold")
-    doc.text("Detailed SQD Responses", margin, yPosition)
-    yPosition += 7
+    doc.text("Detailed Survey Responses", margin, yPosition)
+    yPosition += 8
 
     rows.forEach((row, idx) => {
-      if (yPosition > pageHeight - 20) {
+      if (yPosition > pageHeight - 30) {
         doc.addPage()
         yPosition = margin
       }
 
       doc.setFontSize(10)
       doc.setFont(undefined, "bold")
-      doc.text(`Response #${idx + 1} - ${row.name}`, margin, yPosition)
-      yPosition += 4
+      doc.text(`Response #${idx + 1}`, margin, yPosition)
+      yPosition += 5
+
       doc.setFont(undefined, "normal")
       doc.setFontSize(8)
+
+      // Personal info
+      doc.text(`Name: ${row.name || "Not provided"}`, margin + 2, yPosition)
+      yPosition += 4
+      doc.text(`Email: ${row.email || "Not provided"}`, margin + 2, yPosition)
+      yPosition += 4
+      doc.text(`Service: ${row.service || "Not provided"}`, margin + 2, yPosition)
+      yPosition += 4
+      doc.text(`Region: ${row.region || "Not provided"}`, margin + 2, yPosition)
+      yPosition += 4
+      doc.text(`Client Type: ${row.clientType || "Not provided"}`, margin + 2, yPosition)
+      yPosition += 5
+
+      // CC Questions
+      doc.setFont(undefined, "bold")
+      doc.text("Citizen's Charter Responses:", margin + 2, yPosition)
+      yPosition += 4
+      doc.setFont(undefined, "normal")
+      doc.text(`CC Awareness: ${row.ccAwareness || "Not answered"}`, margin + 4, yPosition)
+      yPosition += 4
+      doc.text(`CC Visibility: ${row.ccVisibility || "Not answered"}`, margin + 4, yPosition)
+      yPosition += 4
+      doc.text(`CC Helpfulness: ${row.ccHelpfulness || "Not answered"}`, margin + 4, yPosition)
+      yPosition += 5
+
+      // SQD Ratings
+      doc.setFont(undefined, "bold")
+      doc.text("Service Quality Ratings:", margin + 2, yPosition)
+      yPosition += 4
+      doc.setFont(undefined, "normal")
 
       Object.keys(sqdLabels).forEach((key) => {
         if (yPosition > pageHeight - 10) {
@@ -577,11 +605,37 @@ export default function AdminReportsPage() {
           yPosition = margin
         }
         const answer = row[key] || "Not Answered"
-        doc.text(`${key}: ${answer}`, margin + 3, yPosition)
-        yPosition += 3
+        const wrappedText = doc.splitTextToSize(`${key}: ${answer}`, pageWidth - margin * 2 - 6)
+        wrappedText.forEach((line) => {
+          doc.text(line, margin + 4, yPosition)
+          yPosition += 3.5
+        })
       })
 
-      yPosition += 2
+      yPosition += 3
+
+      // Suggestions
+      if (row.suggestion) {
+        if (yPosition > pageHeight - 15) {
+          doc.addPage()
+          yPosition = margin
+        }
+        doc.setFont(undefined, "bold")
+        doc.text("Suggestions:", margin + 2, yPosition)
+        yPosition += 4
+        doc.setFont(undefined, "normal")
+        const wrappedSuggestion = doc.splitTextToSize(row.suggestion, pageWidth - margin * 2 - 6)
+        wrappedSuggestion.forEach((line) => {
+          if (yPosition > pageHeight - 10) {
+            doc.addPage()
+            yPosition = margin
+          }
+          doc.text(line, margin + 4, yPosition)
+          yPosition += 3.5
+        })
+      }
+
+      yPosition += 5
     })
 
     doc.save(`survey-report-${Date.now()}.pdf`)
@@ -645,17 +699,24 @@ export default function AdminReportsPage() {
       // Row 1: Client Type and Sex
       doc.text("Client type:", margin, yPosition)
       doc.setFont(undefined, "normal")
-      const clientTypeCheckbox = (value) => (response.clientType === value ? "✓" : "☐")
-      doc.text(
-        `${clientTypeCheckbox("citizen")} Citizen     ${clientTypeCheckbox("business")} Business     ${clientTypeCheckbox("government")} Government (Employees)`,
-        margin + 20,
-        yPosition,
-      )
+      const clientTypeValue = response.clientType || ""
+      const clientTypeDisplay =
+        clientTypeValue === "citizen"
+          ? "Citizen"
+          : clientTypeValue === "business"
+            ? "Business"
+            : clientTypeValue === "government"
+              ? "Government (Employees)"
+              : "N/A"
+
+      doc.text(clientTypeDisplay, margin + 20, yPosition)
 
       doc.setFont(undefined, "bold")
       doc.text("Sex:", pageWidth / 2 + 30, yPosition)
       doc.setFont(undefined, "normal")
-      doc.text("☐ Male     ☐ Female", pageWidth / 2 + 38, yPosition)
+      const sexValue = response.sex || ""
+      const sexDisplay = sexValue === "male" ? "Male" : sexValue === "female" ? "Female" : "N/A"
+      doc.text(sexDisplay, pageWidth / 2 + 38, yPosition)
       yPosition += 5
 
       // Row 2: Date and Service
@@ -701,31 +762,19 @@ export default function AdminReportsPage() {
         { key: "ccHelpfulness", label: "CC3: If aware of CC, how much did the CC help you?" },
       ]
 
-      const ccAnswerLabels = {
-        1: "1. I know what a CC is and I saw this office's CC",
-        2: "2. I know what a CC is but I did NOT see this office's CC",
-        3: "3. I learned of the CC only when I saw this office's CC",
-        4: "4. I do not know what a CC is and I did not see one",
-        "Easy to see": "Easy to see",
-        "Somewhat easy to see": "Somewhat easy to see",
-        "Difficult to see": "Difficult to see",
-        "Not visible at all": "Not visible at all",
-        "Helped very much": "Helped very much",
-        "Somewhat helpful": "Somewhat helpful",
-        "Did not help": "Did not help",
-      }
-
       doc.setFontSize(7.5)
       ccQuestions.forEach((question) => {
         doc.setFont(undefined, "bold")
-        doc.text(question.label, margin, yPosition)
-        yPosition += 3
+        const wrappedQuestion = doc.splitTextToSize(question.label, pageWidth - 2 * margin - 5)
+        wrappedQuestion.forEach((line) => {
+          doc.text(line, margin, yPosition)
+          yPosition += 2.5
+        })
 
         doc.setFont(undefined, "normal")
-        const answer = response[question.key] || ""
-        const checkbox = answer ? "✓" : "☐"
-        doc.text(`${checkbox} ${answer || "Not answered"}`, margin + 5, yPosition)
-        yPosition += 3
+        const answer = response[question.key] || "Not answered"
+        doc.text(`Answer: ${answer}`, margin + 5, yPosition)
+        yPosition += 4
       })
 
       yPosition += 3
@@ -748,10 +797,10 @@ export default function AdminReportsPage() {
       doc.text("SERVICE QUALITY DIMENSIONS (SQD) RATINGS:", margin, yPosition)
       yPosition += 3
 
-      doc.setFontSize(7)
       doc.setFont(undefined, "normal")
+      doc.setFontSize(7)
       doc.text(
-        "Instructions: Please place a check mark (✓) in the column that best corresponds to your answer.",
+        "Instructions: Please place a check mark in the column that best corresponds to your answer.",
         margin,
         yPosition,
       )
@@ -759,7 +808,7 @@ export default function AdminReportsPage() {
 
       // Table header with clear labels
       const headerY = yPosition
-      const colWidth = 18
+      const colWidth = 16
       let colX = margin
 
       doc.setFont(undefined, "bold")
@@ -769,10 +818,9 @@ export default function AdminReportsPage() {
       doc.rect(margin, headerY - 2.5, pageWidth - 2 * margin, 4, "F")
 
       doc.text("Questions", colX, headerY)
-      colX += 85
+      colX += 90
 
       const ratingHeaders = ["SD", "D", "N", "A", "SA", "N/A"]
-      const fullLabels = ["Strongly Disagree", "Disagree", "Neither", "Agree", "Strongly Agree", "Not Applicable"]
 
       ratingHeaders.forEach((header) => {
         doc.text(header, colX + colWidth / 2 - 1, headerY, { align: "center" })
@@ -790,29 +838,28 @@ export default function AdminReportsPage() {
         // Alternating row background
         if (rowNum % 2 === 1) {
           doc.setFillColor(240, 248, 255)
-          doc.rect(margin, yPosition - 2.5, pageWidth - 2 * margin, 15, "F")
+          doc.rect(margin, yPosition - 2.5, pageWidth - 2 * margin, 4.5, "F")
         }
 
-        // Question text
+        // Question text (wrapped)
         const qText = question.label
-        const wrappedQ = doc.splitTextToSize(qText, 82)
-        const rowHeight = wrappedQ.length * 2.2 + 1
-
+        const wrappedQ = doc.splitTextToSize(qText, 87)
         wrappedQ.forEach((line, idx) => {
-          doc.text(line, margin + 1, yPosition + idx * 2.2)
+          doc.text(line, margin + 1, yPosition + idx * 2)
         })
+        const questionHeight = wrappedQ.length * 2
 
         // Rating boxes with checkmarks
-        let ratingX = margin + 85
+        let ratingX = margin + 90
         const answer = sqdData[question.key]
 
-        ratingHeaders.forEach((header, idx) => {
+        ratingHeaders.forEach((header) => {
           // Box border
           doc.setDrawColor(180, 180, 180)
-          doc.rect(ratingX, yPosition - 2, colWidth - 1, rowHeight)
+          doc.rect(ratingX, yPosition - 2, colWidth - 1, 4)
 
-          // Checkmark or empty
-          let displayChar = "☐"
+          // Display checkmark for selected rating
+          let displayChar = " "
           if (answer) {
             const answerMap = {
               1: "SD",
@@ -822,22 +869,23 @@ export default function AdminReportsPage() {
               5: "SA",
               NA: "N/A",
             }
-            const answerShort = answerMap[answer] || String(answer).substring(0, 2)
+            const answerShort = answerMap[answer] || String(answer)
             if (answerShort === header) {
-              displayChar = "✓"
+              displayChar = "/"
               doc.setFont(undefined, "bold")
+              doc.setFontSize(9)
             }
           }
 
-          doc.text(displayChar, ratingX + colWidth / 2 - 1, yPosition + rowHeight / 2 - 1, {
+          doc.text(displayChar, ratingX + colWidth / 2 - 1, yPosition + 1, {
             align: "center",
-            valign: "middle",
           })
           doc.setFont(undefined, "normal")
+          doc.setFontSize(7)
           ratingX += colWidth
         })
 
-        yPosition += rowHeight + 1
+        yPosition += Math.max(questionHeight, 4) + 0.5
         rowNum++
       })
 
@@ -852,7 +900,7 @@ export default function AdminReportsPage() {
       doc.text("Suggestions for improvement (optional):", margin, yPosition)
       yPosition += 2.5
 
-      const suggestionsText = response.suggestions || "[No suggestions provided]"
+      const suggestionsText = response.suggestion || "[No suggestions provided]"
       const wrappedSugg = doc.splitTextToSize(suggestionsText, pageWidth - 2 * margin - 3)
       wrappedSugg.slice(0, 3).forEach((line) => {
         doc.text(line, margin + 2, yPosition)
@@ -919,7 +967,7 @@ export default function AdminReportsPage() {
         {/* Filters */}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
           <h2 className="font-bold text-lg mb-4">Filters</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="block font-semibold mb-2 text-sm">Service Type</label>
               <select
@@ -954,11 +1002,20 @@ export default function AdminReportsPage() {
               </select>
             </div>
             <div>
-              <label className="block font-semibold mb-2 text-sm">Date</label>
+              <label className="block font-semibold mb-2 text-sm">Date From</label>
               <input
                 type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
+                value={dateFromFilter}
+                onChange={(e) => setDateFromFilter(e.target.value)}
+                className="w-full border rounded px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="block font-semibold mb-2 text-sm">Date To</label>
+              <input
+                type="date"
+                value={dateToFilter}
+                onChange={(e) => setDateToFilter(e.target.value)}
                 className="w-full border rounded px-3 py-2"
               />
             </div>
@@ -1001,7 +1058,7 @@ export default function AdminReportsPage() {
         </div>
 
         {/* Charts Grid */}
-        <div className="space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Total Satisfaction Distribution */}
           {calculateSatisfactionDistribution().length > 0 && (
             <div className="bg-white rounded-lg shadow p-6">
