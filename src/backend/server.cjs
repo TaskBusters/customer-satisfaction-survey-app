@@ -11,15 +11,31 @@ const nodemailer = require("nodemailer");
 const bcrypt = require("bcryptjs");
 const { OAuth2Client } = require("google-auth-library");
 
-// Replace MySQL with PostgreSQL pool connection
-// const { Pool } = require('pg'); // REMOVED: This was a duplicate declaration and re-initialization of the pool
-// const pool = new Pool({ // REMOVED: This was a duplicate declaration and re-initialization of the pool
-//   connectionString: process.env.DATABASE_URL, // REMOVED: This was a duplicate declaration and re-initialization of the pool
-//   ssl: { rejectUnauthorized: false }, // Important for Render // REMOVED: This was a duplicate declaration and re-initialization of the pool
-// }); // REMOVED: This was a duplicate declaration and re-initialization of the pool
+const codeSendCooldown = new Map(); // Tracks last code send time per email
+const CODE_COOLDOWN_MS = 30 * 1000; // 30 seconds cooldown
 
 const app = express();
-app.use(cors());
+// CONFIGURED CORS TO ALLOW CREDENTIALS WITH SPECIFIC ORIGIN
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    // Allow localhost origins for development
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return callback(null, true);
+    }
+    // Allow production origin if set
+    if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) {
+      return callback(null, true);
+    }
+    // Default allow for development
+    callback(null, true);
+  },
+  credentials: true, // Allow credentials (cookies, authorization headers)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 
 const GOOGLE_CLIENT_ID =
@@ -356,34 +372,85 @@ async function ensureSeedUsers() {
 
 app.post("/api/auth/admin/create-account", async (req, res) => {
   try {
-    const { fullName, email, password, role } = req.body;
+    const { fullName, email, password, role, createdBy, createdByRole } = req.body;
     if (!fullName || !email || !password || !role) {
       return res.status(400).json({ success: false, message: "All fields are required" });
     }
-    const { rows: existingUsers } = await pool.query("SELECT id FROM users WHERE email = $1", [email]);
+    
+    const { rows: existingUsers } = await pool.query(
+      "SELECT id, \"isAdmin\", email_verified FROM users WHERE email = $1", 
+      [email]
+    );
+    
     if (existingUsers.length > 0) {
-      return res.status(409).json({ success: false, message: "Email already registered" });
+      const existingUser = existingUsers[0];
+      
+      // If account is already activated (isAdmin = true OR email_verified = true), block creation
+      if (existingUser.isAdmin === true || existingUser.email_verified === true) {
+        return res.status(409).json({ 
+          success: false, 
+          message: "Email already registered with an active account" 
+        });
+      }
+      
+      // If account exists but was never activated (still pending or failed), delete it to allow re-creation
+      console.log(`♻️  Removing non-activated account for ${email} to allow re-creation`);
+      await pool.query("DELETE FROM users WHERE email = $1 AND \"isAdmin\" = FALSE AND email_verified = FALSE", [email]);
     }
-    const pwdCheck = validatePassword(password);
-    if (pwdCheck !== "strong") {
-      return res.status(400).json({ success: false, message: pwdCheck });
-    }
+    
     const hash = await bcrypt.hash(password, 10);
+    
+    const requiresApproval = createdByRole && createdByRole.toLowerCase() !== "superadmin";
+    const emailVerified = !requiresApproval; // Auto-verify if superadmin creates, else requires approval
+    const isAdminActive = !requiresApproval; // Only activate if superadmin creates
+    
     await pool.query(
       `INSERT INTO users (email, password, "fullName", role, "isAdmin", email_verified) VALUES ($1, $2, $3, $4, $5, $6)`,
-      [email, hash, fullName, role, true, true]
+      [email, hash, fullName, role, isAdminActive, emailVerified]
     );
-    await logAdminAction("system", "System", `Created new admin account for ${fullName} (${email}) with role: ${role}`);
-    res.status(200).json({ success: true, message: "Admin account created successfully" });
+    
+    if (requiresApproval) {
+      await logAdminAction(
+        createdBy || "admin", 
+        createdBy || "Admin", 
+        `Created new admin account for ${fullName} (${email}) with role: ${role} - Pending superadmin approval`
+      );
+      
+      res.status(200).json({ 
+        success: true, 
+        message: "Admin account created successfully. Waiting for superadmin approval.",
+        requiresApproval: true 
+      });
+    } else {
+      await logAdminAction(
+        createdBy || "admin", 
+        createdBy || "Admin", 
+        `Created new admin account for ${fullName} (${email}) with role: ${role}`
+      );
+      
+      res.status(200).json({ 
+        success: true, 
+        message: "Admin account created and activated successfully",
+        requiresApproval: false 
+      });
+    }
   } catch (err) {
-    console.error("Admin creation error:", err);
-    res.status(500).json({ success: false, message: "Failed to create admin account: " + err.message });
+    console.error("❌ Admin create error:", err);
+    res.status(500).json({ success: false, message: "Failed to create admin account" });
   }
 });
 
 app.post("/api/auth/send-verification-code", async (req, res) => {
   try {
-    const { email, fullName, code } = req.body;
+    const { email, code, fullName } = req.body;
+    
+    const lastSent = codeSendCooldown.get(email);
+    if (lastSent && (Date.now() - lastSent) < CODE_COOLDOWN_MS) {
+      const remainingTime = Math.ceil((CODE_COOLDOWN_MS - (Date.now() - lastSent)) / 1000);
+      return res.status(429).json({ 
+        error: `Please wait ${remainingTime} seconds before requesting another code.` 
+      });
+    }
 
     if (!email || !code) {
       return res.status(400).json({ error: "Email and code are required" });
@@ -623,7 +690,7 @@ app.get("/api/admin/analytics", async (req, res) => {
       try {
         const sqdRatings = typeof r.sqd_ratings === "string" ? JSON.parse(r.sqd_ratings) : r.sqd_ratings || {};
         Object.entries(sqdRatings).forEach(([key, val]) => {
-          if (val !== "N/A" && typeof val === "number") {
+          if (val !== "NA" && typeof val === "number") {
             sqdDistribution[key] = (sqdDistribution[key] || 0) + 1;
           }
         });
@@ -687,6 +754,14 @@ app.post("/api/register", async (req, res) => {
   try {
     console.log(`\n📝 Registration attempt for: ${email}`);
     
+    const lastSent = codeSendCooldown.get(email);
+    if (lastSent && (Date.now() - lastSent) < CODE_COOLDOWN_MS) {
+      const remainingTime = Math.ceil((CODE_COOLDOWN_MS - (Date.now() - lastSent)) / 1000);
+      return res.status(429).json({ 
+        error: `Please wait ${remainingTime} seconds before requesting another code.` 
+      });
+    }
+    
     // Check if email already exists
     const { rows: existingUsers } = await pool.query(
       "SELECT id, email_verified FROM users WHERE email = $1", 
@@ -701,12 +776,14 @@ app.post("/api/register", async (req, res) => {
       } else {
         console.log("♻️  User exists but not verified, resending code...");
         const verificationCode = randomCode(6);
-        const codeExpiry = Date.now() + 24 * 60 * 60 * 1000;
+        const codeExpiry = Date.now() + 30 * 1000;
         
         await pool.query(
           "UPDATE users SET reset_code = $1, reset_code_expiry = $2 WHERE email = $3",
           [verificationCode, codeExpiry, email]
         );
+        
+        codeSendCooldown.set(email, Date.now());
 
         return res.status(200).json({ 
           ok: true, 
@@ -719,7 +796,7 @@ app.post("/api/register", async (req, res) => {
     // Create new user
     const hash = await bcrypt.hash(password, 10);
     const verificationCode = randomCode(6);
-    const codeExpiry = Date.now() + 24 * 60 * 60 * 1000;
+    const codeExpiry = Date.now() + 30 * 1000;
 
     await pool.query(
       `INSERT INTO users (email, password, "fullName", district, barangay, role, reset_code, reset_code_expiry, email_verified) 
@@ -729,6 +806,8 @@ app.post("/api/register", async (req, res) => {
 
     console.log("✅ User created in database");
     console.log("🔑 Verification code:", verificationCode);
+    
+    codeSendCooldown.set(email, Date.now());
 
     res.status(200).json({ 
       ok: true, 
@@ -854,10 +933,9 @@ app.post("/api/login/google", async (req, res) => {
       );
       userRecord = insertedRows[0];
     } else if (fullName && !existingUser.fullName) {
-      await pool.query("UPDATE users SET \"fullName\" = $1 WHERE email = $2", [fullName, email]);
-      userRecord = { ...existingUser, fullName };
+      await pool.query('UPDATE users SET "fullName" = $1, email_verified = TRUE WHERE email = $2', [fullName, email]);
+      userRecord = { ...existingUser, fullName, email_verified: true };
     } else if (existingUser && !existingUser.email_verified) {
-      // If user exists but is not verified (e.g., registered via form then tried google login)
       await pool.query("UPDATE users SET email_verified = TRUE WHERE email = $1", [email]);
       userRecord = { ...existingUser, email_verified: true };
     }
@@ -899,12 +977,16 @@ app.post("/api/forgot-password", async (req, res) => {
     if (!email) {
       return res.status(400).json({ error: "Email is required" });
     }
-
-    const pinCode = randomCode(6);
-    const expiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
+    
+    const lastSent = codeSendCooldown.get(email);
+    if (lastSent && (Date.now() - lastSent) < CODE_COOLDOWN_MS) {
+      const remainingTime = Math.ceil((CODE_COOLDOWN_MS - (Date.now() - lastSent)) / 1000);
+      return res.status(429).json({ 
+        error: `Please wait ${remainingTime} seconds before requesting another code.` 
+      });
+    }
 
     let userExists = false;
-    let userVerified = false;
     let fullName = "User";
     
     try {
@@ -913,30 +995,37 @@ app.post("/api/forgot-password", async (req, res) => {
         [email]
       );
       
-      if (rows.length > 0) {
-        userExists = true;
-        const user = rows[0];
-        fullName = user.fullName || "User";
-        userVerified = user.email_verified;
-        
-        if (!userVerified) {
-          return res.status(403).json({ 
-            error: "Please verify your email before resetting your password." 
-          });
-        }
-        
-        // Update database with reset code
-        await pool.query(
-          "UPDATE users SET reset_code = $1, reset_code_expiry = $2 WHERE email = $3",
-          [pinCode, expiresAt, email]
-        );
+      if (rows.length === 0) {
+        // Account doesn't exist
+        console.log("❌ Account not found for email:", email);
+        return res.status(404).json({ 
+          error: "Account not found. Please check your email or sign up for a new account." 
+        });
       }
+      
+      userExists = true;
+      const user = rows[0];
+      fullName = user.fullName || "User";
+      
     } catch (dbErr) {
       console.error("⚠️ Database error:", dbErr.message);
-      // Continue anyway - generate code for popup even if DB fails
+      return res.status(500).json({ 
+        error: "Unable to process request. Please try again later." 
+      });
     }
 
+    const pinCode = randomCode(6);
+    const expiresAt = Date.now() + 30 * 1000;
+
+    // Update database with reset code
+    await pool.query(
+      "UPDATE users SET reset_code = $1, reset_code_expiry = $2 WHERE email = $3",
+      [pinCode, expiresAt, email]
+    );
+
     console.log("🔑 Password reset code:", pinCode);
+    
+    codeSendCooldown.set(email, Date.now());
 
     // Try to send email
     let emailSent = false;
@@ -954,7 +1043,7 @@ app.post("/api/forgot-password", async (req, res) => {
               <h1 style="color: white; letter-spacing: 12px; font-size: 42px; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">${pinCode}</h1>
             </div>
             <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; border-radius: 4px; margin: 20px 0;">
-              <p style="color: #dc2626; margin: 0; font-weight: bold;">⏰ This code expires in 15 minutes</p>
+              <p style="color: #dc2626; margin: 0; font-weight: bold;">⏰ This code expires in 30 seconds</p>
             </div>
             <p style="color: #6b7280; font-size: 14px;">If you didn't request this, please ignore this email.</p>
           </div>
@@ -977,12 +1066,8 @@ app.post("/api/forgot-password", async (req, res) => {
     });
   } catch (err) {
     console.error("❌ Forgot password error:", err);
-    const pinCode = randomCode(6);
-    res.status(200).json({ 
-      ok: true,
-      code: pinCode,
-      emailSent: false,
-      message: "Reset code generated (service unavailable, using fallback)."
+    res.status(500).json({ 
+      error: "Unable to process password reset request. Please try again later."
     });
   }
 });
@@ -1379,13 +1464,14 @@ app.get("/api/admin/notifications", async (req, res) => {
     // Only fetch non-deleted notifications
     const { rows } = await pool.query(
       `SELECT * FROM notifications 
+       WHERE is_deleted = FALSE 
        ORDER BY created_at DESC 
        LIMIT $1 OFFSET $2`,
       [limit, offset]
     );
 
     const countResult = await pool.query(
-      `SELECT COUNT(*) as total FROM notifications`
+      `SELECT COUNT(*) as total FROM notifications WHERE is_deleted = FALSE`
     );
 
     res.json({
@@ -1616,6 +1702,19 @@ app.post("/api/auth/delete-account", async (req, res) => {
 
     console.log("[v0] Starting delete account for email:", email);
 
+    const userResult = await pool.query(
+      'SELECT "fullName", "isAdmin" FROM users WHERE email = $1',
+      [email]
+    );
+
+    if (userResult.rowCount === 0) {
+      console.log("[v0] User not found:", email);
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const userName = userResult.rows[0].fullName || "User";
+    const isAdmin = userResult.rows[0].isAdmin;
+
     // Delete survey responses associated with the user
     await pool.query("DELETE FROM survey_responses WHERE user_email = $1", [email]);
     console.log("[v0] Deleted survey responses for:", email);
@@ -1627,10 +1726,11 @@ app.post("/api/auth/delete-account", async (req, res) => {
     // Delete the user account from database
     const deleteResult = await pool.query("DELETE FROM users WHERE email = $1", [email]);
 
-    if (deleteResult.rowCount === 0) {
-      console.log("[v0] User not found:", email);
-      return res.status(404).json({ error: "User not found" });
-    }
+    const accountType = isAdmin ? "Admin" : "User";
+    await pool.query(
+      "INSERT INTO notifications (notification_type, message, user_email, user_name) VALUES ($1, $2, $3, $4)",
+      ["account_deleted", `${accountType} account deleted: ${userName} (${email})`, email, userName]
+    );
 
     console.log("[v0] Account successfully deleted for:", email);
     res.status(200).json({ ok: true, message: "Account deleted successfully" });
@@ -1729,7 +1829,7 @@ app.post("/api/send-verification-email", async (req, res) => {
               </div>
               
               <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; border-radius: 4px; margin: 20px 0;">
-                <p style="color: #dc2626; margin: 0; font-weight: bold;">⏰ Important: This code expires in 24 hours</p>
+                <p style="color: #dc2626; margin: 0; font-weight: bold;">⏰ This code expires in 24 hours</p>
               </div>
             </div>
           </div>
@@ -1744,6 +1844,110 @@ app.post("/api/send-verification-email", async (req, res) => {
   } catch (err) {
     console.error("Send verification email error:", err);
     res.status(200).json({ ok: true, message: "Email unavailable, code already shown" });
+  }
+});
+
+
+app.get("/api/admin/pending-admins", async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, email, "fullName", role, created_at 
+       FROM users 
+       WHERE "isAdmin" = FALSE AND email_verified = FALSE AND role != 'user'
+       ORDER BY created_at DESC`
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error("[v0] Pending admins fetch error:", err);
+    res.status(500).json({ error: "Failed to fetch pending admins" });
+  }
+});
+
+app.post("/api/admin/approve-pending-admin", async (req, res) => {
+  try {
+    const { adminEmail, approverEmail, approverRole } = req.body;
+    
+    // Only superadmins can approve
+    if (approverRole?.toLowerCase() !== "superadmin") {
+      return res.status(403).json({ error: "Only superadmins can approve pending accounts" });
+    }
+    
+    // Get pending admin details
+    const { rows: pendingAdmin } = await pool.query(
+      `SELECT "fullName", email, role FROM users WHERE email = $1 AND "isAdmin" = FALSE AND email_verified = FALSE`,
+      [adminEmail]
+    );
+    
+    if (pendingAdmin.length === 0) {
+      return res.status(404).json({ error: "Pending admin not found" });
+    }
+    
+    // Approve by setting both isAdmin and email_verified to true
+    await pool.query(
+      `UPDATE users SET "isAdmin" = TRUE, email_verified = TRUE WHERE email = $1`,
+      [adminEmail]
+    );
+    
+    // Get approver name for logging
+    const { rows: approverRows } = await pool.query(
+      `SELECT "fullName" FROM users WHERE email = $1`,
+      [approverEmail]
+    );
+    
+    await logAdminAction(
+      approverEmail,
+      approverRows[0]?.fullName || "Superadmin",
+      `Approved admin account for ${pendingAdmin[0].fullName} (${adminEmail}) with role: ${pendingAdmin[0].role}`
+    );
+    
+    res.json({ success: true, message: "Admin account approved successfully" });
+  } catch (err) {
+    console.error("[v0] Approve admin error:", err);
+    res.status(500).json({ error: "Failed to approve admin account" });
+  }
+});
+
+app.post("/api/admin/reject-pending-admin", async (req, res) => {
+  try {
+    const { adminEmail, approverEmail, approverRole } = req.body;
+    
+    // Only superadmins can reject
+    if (approverRole?.toLowerCase() !== "superadmin") {
+      return res.status(403).json({ error: "Only superadmins can reject pending accounts" });
+    }
+    
+    // Get pending admin details for logging
+    const { rows: pendingAdmin } = await pool.query(
+      `SELECT "fullName", email, role FROM users WHERE email = $1 AND "isAdmin" = FALSE AND email_verified = FALSE`,
+      [adminEmail]
+    );
+    
+    if (pendingAdmin.length === 0) {
+      return res.status(404).json({ error: "Pending admin not found" });
+    }
+    
+    // Delete the pending admin account
+    await pool.query(
+      `DELETE FROM users WHERE email = $1`,
+      [adminEmail]
+    );
+    
+    // Get approver name for logging
+    const { rows: approverRows } = await pool.query(
+      `SELECT "fullName" FROM users WHERE email = $1`,
+      [approverEmail]
+    );
+    
+    await logAdminAction(
+      approverEmail,
+      approverRows[0]?.fullName || "Superadmin",
+      `Rejected admin account for ${pendingAdmin[0].fullName} (${adminEmail}) with role: ${pendingAdmin[0].role}`
+    );
+
+    res.json({ success: true, message: "Admin account rejected and removed" });
+  } catch (err) {
+    console.error("[v0] Reject admin error:", err);
+    res.status(500).json({ error: "Failed to reject admin account" });
   }
 });
 

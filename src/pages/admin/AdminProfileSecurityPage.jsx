@@ -11,6 +11,7 @@ import CreateAdminModal from "../../components/admin/CreateAdminModal"
 import DeleteAdminModal from "../../components/admin/DeleteAdminModal"
 import AdminLogsTable from "../../components/admin/AdminLogsTable"
 import AdminsTable from "../../components/admin/AdminsTable"
+import PendingAdminsModal from "../../components/admin/PendingAdminsModal"
 
 export default function AdminProfileSecurityPage() {
   const { user: currentUser, authToken } = useAuth()
@@ -43,6 +44,9 @@ export default function AdminProfileSecurityPage() {
   const logsPerPage = 10
   const adminsPerPage = 10
 
+  const [pendingAdminsModalOpen, setPendingAdminsModalOpen] = useState(false)
+  const [pendingCount, setPendingCount] = useState(0)
+
   const fetchAdmins = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/admin/users`, {
@@ -72,11 +76,29 @@ export default function AdminProfileSecurityPage() {
     }
   }
 
+  const fetchPendingCount = async () => {
+    if (isSuperAdmin) {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/admin/pending-admins`, {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        })
+        const data = await res.json()
+        setPendingCount(data.length || 0)
+      } catch (err) {
+        console.error("Failed to fetch pending count:", err)
+      }
+    }
+  }
+
   useEffect(() => {
     setLoading(true)
     Promise.all([fetchAdmins(), reloadLogs()])
       .then(() => setLoading(false))
       .catch(() => setLoading(false))
+
+    fetchPendingCount()
 
     const handleReloadLogs = () => reloadLogs()
     window.addEventListener("reloadLogs", handleReloadLogs)
@@ -155,33 +177,50 @@ export default function AdminProfileSecurityPage() {
           email: formData.email,
           password: formData.password,
           role: formData.role,
+          createdBy: currentUser?.email,
+          createdByRole: currentUser?.role,
         }),
       })
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
       const data = await response.json()
 
+      if (!response.ok) {
+        if (response.status === 409) {
+          throw new Error(data.message || "Email already registered with an active account")
+        }
+        throw new Error(data.message || `HTTP error! status: ${response.status}`)
+      }
+
       if (data.success) {
-        setNotification({
-          message: "Admin account created successfully!",
-          type: "success",
-        })
+        if (data.requiresApproval) {
+          setNotification({
+            message: "Admin account created successfully! Waiting for superadmin approval.",
+            type: "success",
+          })
+        } else {
+          setNotification({
+            message: "Admin account created and activated successfully!",
+            type: "success",
+          })
+        }
+        setTimeout(() => setNotification({ message: "", type: "success" }), 3000)
         setCreateModalOpen(false)
         fetchAdmins()
+        fetchPendingCount()
+
+        return data // Return data for the modal to use
       } else {
-        setNotification({
-          message: data.message || "Failed to create admin account",
-          type: "error",
-        })
+        throw new Error(data.message || "Failed to create admin account")
       }
     } catch (error) {
-      setNotification({
-        message: error.message || "Failed to create admin account",
-        type: "error",
-      })
+      if (!error.message.includes("Email already registered")) {
+        setNotification({
+          message: error.message || "Failed to create admin account",
+          type: "error",
+        })
+        setTimeout(() => setNotification({ message: "", type: "success" }), 3000)
+      }
+      throw error // Re-throw so modal knows there was an error
     } finally {
       setLoading(false)
     }
@@ -250,12 +289,27 @@ export default function AdminProfileSecurityPage() {
       <main className="flex-1 p-10">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold mb-4">Admin Accounts & Security</h1>
-          <button
-            onClick={() => setCreateModalOpen(true)}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold transition"
-          >
-            + Create Admin Account
-          </button>
+          <div className="flex gap-3">
+            {isSuperAdmin && (
+              <button
+                onClick={() => setPendingAdminsModalOpen(true)}
+                className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded font-semibold transition relative"
+              >
+                Pending Approvals
+                {pendingCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                    {pendingCount}
+                  </span>
+                )}
+              </button>
+            )}
+            <button
+              onClick={() => setCreateModalOpen(true)}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold transition"
+            >
+              + Create Admin Account
+            </button>
+          </div>
         </div>
 
         <NotificationBar
@@ -337,6 +391,7 @@ export default function AdminProfileSecurityPage() {
           onClose={() => setCreateModalOpen(false)}
           onSave={handleCreateAdmin}
           loading={loading}
+          currentUser={currentUser}
         />
         <DeleteAdminModal
           open={deleteModalOpen}
@@ -348,6 +403,16 @@ export default function AdminProfileSecurityPage() {
           onConfirm={handleDeleteAdmin}
           loading={deleteLoading}
         />
+        {isSuperAdmin && (
+          <PendingAdminsModal
+            open={pendingAdminsModalOpen}
+            onClose={() => {
+              setPendingAdminsModalOpen(false)
+              fetchPendingCount()
+              fetchAdmins()
+            }}
+          />
+        )}
       </main>
     </div>
   )

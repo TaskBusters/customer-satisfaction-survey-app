@@ -12,7 +12,6 @@ export default function DeleteUserAccountModal({ open, onClose }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const cardRef = useRef()
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deletingAccount, setDeletingAccount] = useState(false)
 
   const handleDeleteAccount = async () => {
@@ -23,33 +22,38 @@ export default function DeleteUserAccountModal({ open, onClose }) {
 
     setDeletingAccount(true)
 
+    console.log("[v0] Attempting to delete account for:", user.email)
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/delete-account`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Accept: "application/json",
         },
         body: JSON.stringify({ email: user.email }),
-        credentials: "include",
       })
 
+      console.log("[v0] Response status:", response.status)
+      console.log("[v0] Response ok:", response.ok)
+
       let data
-      const contentType = response.headers.get("content-type")
-      if (contentType && contentType.includes("application/json")) {
-        data = await response.json()
-      } else {
+      try {
         const text = await response.text()
-        data = { message: text }
+        console.log("[v0] Response text:", text)
+        data = text ? JSON.parse(text) : {}
+      } catch (parseError) {
+        console.error("[v0] Failed to parse response:", parseError)
+        data = {}
       }
 
       if (!response.ok) {
+        console.error("[v0] Delete failed:", data)
         alert("Failed to delete account: " + (data.error || data.message || "Unknown error"))
         setDeletingAccount(false)
         return
       }
 
-      setShowDeleteConfirm(false)
+      console.log("[v0] Account deleted successfully")
       setDeletingAccount(false)
 
       alert("Account deleted successfully")
@@ -57,7 +61,7 @@ export default function DeleteUserAccountModal({ open, onClose }) {
       onClose()
       setTimeout(() => navigate("/login"), 100)
     } catch (error) {
-      setShowDeleteConfirm(false)
+      console.error("[v0] Delete account error:", error)
       setDeletingAccount(false)
       alert("Failed to delete account: " + error.message)
     }
@@ -113,7 +117,7 @@ export default function DeleteUserAccountModal({ open, onClose }) {
               Cancel
             </button>
             <button
-              onClick={() => setShowDeleteConfirm(true)}
+              onClick={handleDeleteAccount}
               disabled={deletingAccount}
               className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold disabled:opacity-50"
             >
@@ -121,32 +125,6 @@ export default function DeleteUserAccountModal({ open, onClose }) {
             </button>
           </div>
         </div>
-
-        {showDeleteConfirm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4 min-h-screen">
-            <div className="bg-white rounded-xl shadow-lg w-full max-w-sm p-6 my-auto">
-              <h2 className="text-2xl font-bold mb-4 text-red-700">Confirm Delete</h2>
-              <p className="text-gray-600 mb-2">Are you absolutely sure?</p>
-              <p className="text-gray-500 text-sm mb-6">This action cannot be undone.</p>
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={() => setShowDeleteConfirm(false)}
-                  disabled={deletingAccount}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-semibold disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDeleteAccount}
-                  disabled={deletingAccount}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold disabled:opacity-50"
-                >
-                  {deletingAccount ? "Deleting..." : "Delete Account"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       <style>{`

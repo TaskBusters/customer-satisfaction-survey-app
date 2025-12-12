@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext"
 import { useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import { API_BASE_URL } from "../../utils/api.js"
+import DeleteUserAccountModal from "./DeleteUserAccountModal"
 
 function AboutContent() {
   const [aboutText, setAboutText] = useState("")
@@ -46,8 +47,7 @@ export default function UserSettingsModal({ open, onClose }) {
   const [activeSub, setActiveSub] = useState(null)
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
   const [textSize, setTextSize] = useState("normal")
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [deletingAccount, setDeletingAccount] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -82,9 +82,8 @@ export default function UserSettingsModal({ open, onClose }) {
 
   useEffect(() => {
     if (!open) {
-      setShowDeleteConfirm(false)
+      setShowDeleteModal(false)
       setActiveSub(null)
-      setDeletingAccount(false)
       setShowLoginPrompt(false)
     }
   }, [open])
@@ -128,56 +127,6 @@ export default function UserSettingsModal({ open, onClose }) {
     }
   }
 
-  const handleDeleteAccount = async () => {
-    if (!user?.email) {
-      alert("Error: No email found for user")
-      return
-    }
-
-    setDeletingAccount(true)
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/delete-account`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ email: user.email }),
-        credentials: "include",
-      })
-
-      let data
-      const contentType = response.headers.get("content-type")
-      if (contentType && contentType.includes("application/json")) {
-        data = await response.json()
-      } else {
-        const text = await response.text()
-        data = { message: text }
-      }
-
-      if (!response.ok) {
-        alert("Failed to delete account: " + (data.error || data.message || "Unknown error"))
-        setDeletingAccount(false)
-        return
-      }
-
-      setShowDeleteConfirm(false)
-      setActiveSub(null)
-      setDeletingAccount(false)
-
-      alert("Account deleted successfully")
-      logout()
-      onClose()
-      setTimeout(() => navigate("/login"), 100)
-    } catch (error) {
-      setShowDeleteConfirm(false)
-      setActiveSub(null)
-      setDeletingAccount(false)
-      alert("Failed to delete account: " + error.message)
-    }
-  }
-
   return (
     <>
       <div
@@ -188,7 +137,7 @@ export default function UserSettingsModal({ open, onClose }) {
 
         <div
           ref={cardRef}
-          className="relative z-50 w-full max-w-md bg-white rounded-2xl shadow-2xl border-2 border-blue-600"
+          className="relative z-50 w-full max-w-md bg-white rounded-2xl shadow-2xl border-2 border-blue-600 my-auto"
           style={{
             animation: "popupIn .35s cubic-bezier(0.53, 1.87, 0.58, 1)",
           }}
@@ -303,7 +252,7 @@ export default function UserSettingsModal({ open, onClose }) {
                   </div>
                   <div className="flex gap-2 mt-4 flex-col">
                     <button
-                      onClick={() => setShowDeleteConfirm(true)}
+                      onClick={() => setShowDeleteModal(true)}
                       className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold"
                     >
                       Delete Account
@@ -341,38 +290,15 @@ export default function UserSettingsModal({ open, onClose }) {
             </div>
           </div>
         )}
-
-        {showDeleteConfirm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-lg w-full max-w-sm p-6">
-              <h2 className="text-2xl font-bold mb-4 text-red-700">Delete Account</h2>
-              <p className="text-gray-600 mb-2">Are you sure you want to delete your account?</p>
-              <p className="text-gray-500 text-sm mb-6">
-                This action cannot be undone. All your data will be permanently deleted.
-              </p>
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={() => {
-                    setShowDeleteConfirm(false)
-                    setActiveSub(null)
-                  }}
-                  disabled={deletingAccount}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-semibold disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDeleteAccount}
-                  disabled={deletingAccount}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold disabled:opacity-50"
-                >
-                  {deletingAccount ? "Deleting..." : "Delete Account"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
+      <DeleteUserAccountModal
+        open={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false)
+          onClose()
+        }}
+      />
 
       <style>{`
         @keyframes popupIn {

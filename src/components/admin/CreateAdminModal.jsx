@@ -4,7 +4,7 @@ import { useState } from "react"
 import { API_BASE_URL } from "../../utils/api.js"
 import { HiEye, HiEyeOff } from "react-icons/hi"
 
-export default function CreateAdminModal({ open, onClose, onSave, loading }) {
+export default function CreateAdminModal({ open, onClose, onSave, loading, currentUser }) {
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
     fullName: "",
@@ -19,8 +19,11 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
   const [errors, setErrors] = useState({})
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [showCodePopup, setShowCodePopup] = useState(false)
   const [showSuccessPopup, setShowSuccessPopup] = useState(false)
   const [popupMessage, setPopupMessage] = useState("")
+  const [canSendCode, setCanSendCode] = useState(true)
+  const [cooldownTime, setCooldownTime] = useState(0)
 
   const validateForm = () => {
     const newErrors = {}
@@ -60,6 +63,11 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
   }
 
   const handleSendVerificationCode = async () => {
+    if (!canSendCode) {
+      setErrors({ general: `Please wait ${cooldownTime} seconds before sending another code.` })
+      return
+    }
+
     const newErrors = {}
 
     if (!formData.fullName.trim()) {
@@ -95,35 +103,88 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
     setErrors(newErrors)
     if (Object.keys(newErrors).length > 0) return
 
-    // Generate code first
+    try {
+      const checkResponse = await fetch(`${API_BASE_URL}/api/auth/admin/create-account`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: formData.fullName,
+          email: formData.email,
+          password: formData.password,
+          role: formData.role,
+          createdBy: currentUser?.email,
+          createdByRole: currentUser?.role,
+        }),
+      })
+
+      const checkData = await checkResponse.json()
+
+      if (checkResponse.status === 409) {
+        // Email already registered with active account
+        setErrors({ email: checkData.message || "Email already registered with an active account" })
+        return
+      }
+
+      if (!checkResponse.ok) {
+        setErrors({ general: checkData.message || "Failed to validate account. Please try again." })
+        return
+      }
+    } catch (err) {
+      console.error("Validation error:", err)
+      setErrors({ general: "Failed to validate account. Please try again." })
+      return
+    }
+
     const generatedCode = Math.floor(100000 + Math.random() * 900000).toString()
     setSentCode(generatedCode)
-    setPopupMessage(`Verification Code: ${generatedCode}\n\nSend to email or proceed with code`)
-    setShowSuccessPopup(true)
+    setShowCodePopup(true)
 
-    // Attempt to send email in background
+    setCanSendCode(false)
+    setCooldownTime(30)
+
+    const cooldownInterval = setInterval(() => {
+      setCooldownTime((prev) => {
+        if (prev <= 1) {
+          clearInterval(cooldownInterval)
+          setCanSendCode(true)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+  }
+
+  const handleSendCodeToEmail = async () => {
     try {
-      const emailRes = await fetch(`${API_BASE_URL}/api/auth/send-verification-code`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/send-verification-code`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: formData.email,
           fullName: formData.fullName,
-          code: generatedCode,
+          code: sentCode,
         }),
       })
 
-      if (emailRes.ok) {
-        setPopupMessage(
-          `Verification code sent to ${formData.email}!\n\nCheck your email or use the code below: ${generatedCode}`,
-        )
+      const data = await response.json()
+
+      if (!response.ok) {
+        setErrors({ email: data.error || "Failed to send verification code" })
+        return
       }
+
+      // Show success and proceed to code input
+      setShowCodePopup(false)
+      setStep(2)
     } catch (err) {
       console.error("Email send error:", err)
+      setErrors({ general: "Failed to send verification code. Please try again." })
     }
+  }
 
+  const handleProceedWithCode = () => {
+    setShowCodePopup(false)
     setStep(2)
-    setTimeout(() => setShowSuccessPopup(false), 4000)
   }
 
   const handleVerifyEmail = () => {
@@ -137,7 +198,31 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
 
   const handleFinalSubmit = async () => {
     if (!validateForm()) return
-    await onSave(formData)
+
+    const adminData = {
+      ...formData,
+      createdBy: currentUser?.email,
+      createdByRole: currentUser?.role,
+      verificationCode: sentCode,
+    }
+
+    try {
+      const result = await onSave(adminData)
+
+      if (result?.requiresApproval) {
+        setPopupMessage("Account created successfully! Waiting for superadmin approval to activate the account.")
+      } else {
+        setPopupMessage("Admin account created and activated successfully!")
+      }
+
+      setShowSuccessPopup(true)
+      setTimeout(() => {
+        setShowSuccessPopup(false)
+        onClose()
+      }, 4000)
+    } catch (error) {
+      setErrors({ general: error.message || "Failed to create admin account" })
+    }
 
     setFormData({
       fullName: "",
@@ -165,6 +250,8 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
     setStep(1)
     setVerificationCode("")
     setSentCode("")
+    setShowCodePopup(false)
+    setShowSuccessPopup(false)
     onClose()
   }
 
@@ -172,52 +259,58 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
 
   return (
     <div className="fixed z-50 inset-0 bg-black/30 flex items-center justify-center p-4">
-      {showSuccessPopup && step === 2 && (
+      {showCodePopup && sentCode && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-lg p-8 shadow-2xl max-w-sm mx-4">
-            <h3 className="text-lg font-bold text-gray-800 mb-2 text-center">Your Verification Code</h3>
-            <p className="text-sm text-gray-600 text-center mb-4">Email verification required. Here's your code:</p>
-            <div className="bg-gray-100 rounded-lg p-6 mb-6 text-center">
-              <p className="text-4xl font-bold tracking-widest text-blue-600">{sentCode}</p>
+          <div className="bg-white rounded-lg p-8 shadow-2xl max-w-md mx-4">
+            <h3 className="text-xl font-bold text-gray-800 mb-2 text-center">Your Verification Code</h3>
+            <p className="text-sm text-gray-600 text-center mb-6">Email verification required. Here's your code:</p>
+
+            {/* Large code display */}
+            <div className="bg-gray-100 rounded-lg p-6 mb-4">
+              <div className="text-5xl font-bold text-blue-600 text-center tracking-wider">{sentCode}</div>
             </div>
-            <p className="text-xs text-gray-500 text-center mb-6">Code expires in 24 hours</p>
+
+            <p className="text-sm text-gray-500 text-center mb-6">Code expires in 30 seconds</p>
 
             <div className="space-y-3">
               <button
-                onClick={async () => {
-                  try {
-                    const emailRes = await fetch(`${API_BASE_URL}/api/auth/send-verification-code`, {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        email: formData.email,
-                        fullName: formData.fullName,
-                        code: sentCode,
-                      }),
-                    })
-
-                    if (emailRes.ok) {
-                      setPopupMessage("Verification code sent to " + formData.email)
-                    } else {
-                      setPopupMessage("Could not send email, but you can still use the code")
-                    }
-                    setShowSuccessPopup(false)
-                  } catch (err) {
-                    setPopupMessage("Email unavailable, use the code shown above")
-                    setShowSuccessPopup(false)
-                  }
-                }}
-                className="w-full bg-blue-700 hover:bg-blue-800 text-white font-medium py-2 rounded-lg transition"
+                onClick={handleSendCodeToEmail}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition"
               >
                 Send Code to Email
               </button>
               <button
-                onClick={() => setShowSuccessPopup(false)}
-                className="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 rounded-lg transition"
+                onClick={handleProceedWithCode}
+                className="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-3 rounded-lg transition"
               >
                 Proceed with Code
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showSuccessPopup && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-lg p-8 shadow-2xl max-w-sm mx-4">
+            <div className="text-center mb-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">Success!</h3>
+              <p className="text-sm text-gray-600 leading-relaxed">{popupMessage}</p>
+            </div>
+            <button
+              onClick={() => {
+                setShowSuccessPopup(false)
+                handleClose()
+              }}
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
@@ -342,9 +435,9 @@ export default function CreateAdminModal({ open, onClose, onSave, loading }) {
               <button
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold disabled:opacity-50"
                 onClick={handleSendVerificationCode}
-                disabled={loading}
+                disabled={loading || !canSendCode}
               >
-                Send Verification Code
+                {!canSendCode ? `Wait ${cooldownTime}s` : "Send Verification Code"}
               </button>
             </div>
           </>

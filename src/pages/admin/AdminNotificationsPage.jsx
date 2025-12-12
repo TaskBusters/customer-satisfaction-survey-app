@@ -35,18 +35,23 @@ export default function AdminNotificationsPage() {
     setLoading(true)
     try {
       const url = `${API_BASE_URL}/api/admin/notifications?page=${page}&limit=${NOTIFICATIONS_PER_PAGE}`
+      console.log("[v0] Fetching notifications from:", url)
+
       const notifRes = await fetch(url, {
         headers: {
-          // Add Authorization for admin endpoints
           Authorization: `Bearer ${authToken}`,
         },
       })
 
       if (!notifRes.ok) {
-        throw new Error("Failed to fetch notifications.")
+        const errorText = await notifRes.text()
+        console.error("[v0] Notifications fetch failed:", notifRes.status, errorText)
+        throw new Error(`Failed to fetch notifications (${notifRes.status})`)
       }
 
       const response = await notifRes.json()
+      console.log("[v0] Notifications response:", response)
+
       const notificationsData = response.data || response
 
       let totalItems = response.total || null
@@ -65,7 +70,6 @@ export default function AdminNotificationsPage() {
             totalItems = notificationsData.length
           }
         } catch (e) {
-          // fallback to current page length
           totalItems = notificationsData.length
         }
       }
@@ -74,8 +78,13 @@ export default function AdminNotificationsPage() {
       setTotalCount(totalItems)
       setTotalPages(Math.ceil(totalItems / NOTIFICATIONS_PER_PAGE))
       setCurrentPage(page)
+
+      if (msgType === "error") {
+        setMessage("")
+        setMsgType("success")
+      }
     } catch (err) {
-      console.error("Error fetching notifications:", err)
+      console.error("[v0] Error fetching notifications:", err)
       setMessage("Failed to load notifications. Please check server logs.")
       setMsgType("error")
     } finally {
