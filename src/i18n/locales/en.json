@@ -27,8 +27,8 @@
     "citizensCharterAwareness": "Citizen's Charter Awareness",
     "serviceQuality": "Service Quality Dimensions",
     "feedbackSection": "Feedback & Suggestions",
-    "instructionsQA": "Please indicate your awareness and understanding of the Citizen's Charter by placing a check mark in the appropriate boxes.",
-    "instructionsSQD": "Please put a check mark (✓) in the column that best corresponds to your answer.",
+    "instructionsQA": "Please indicate your awareness and understanding of the Citizen's Charter by selecting the appropriate option.",
+    "instructionsSQD": "For SQD 0-8, please select the one option that best describes your level of satisfaction.",
     "citizenType": "Client Type",
     "citizen": "Citizen",
     "business": "Business",
@@ -93,8 +93,7 @@
     "termsAndConditions": "Terms and Conditions",
     "acceptTerms": "Accept",
     "declineTerms": "Decline",
-    "helpAndFAQ": "Help & FAQ",
-    "ccVisibilityLabel": "If aware of CC, would you say the CC is easy to see?"
+    "helpAndFAQ": "Help & FAQ"
   },
   "aboutSurvey": {
     "content": "This system is a centralized survey management platform designed to support a single, fully editable survey. It provides administrators with an integrated environment for configuring survey content, managing responses, generating analytics, and reviewing user feedback. Built with role-based access control, the system ensures secure, structured, and efficient handling of survey data.\n\nThe platform aims to streamline the end-to-end survey workflow—from creation and response collection to reporting and analysis—while maintaining data integrity and compliance with privacy standards. Its modular design supports key administrative functions such as profile management, analytics generation, feedback review, and system configuration.\n\nThis system is built to help organizations and academic institutions collect meaningful insights, ensure respondent confidentiality, and advance responsible digital data practices."

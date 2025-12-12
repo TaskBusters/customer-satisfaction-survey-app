@@ -2,7 +2,7 @@
   "common": {
     "language": "Wika",
     "textSize": "Laki ng Teksto",
-    "profile": "Propil",
+    "profile": "Propayl",
     "about": "Tungkol",
     "settings": "Mga Setting",
     "home": "Tahanan",
@@ -28,13 +28,13 @@
     "region": "Rehiyon",
     "satisfaction": "Kasiyahan",
     "feedback": "Komento",
-    "pleaseSpecify": "Pakilagay ang detalye",
+    "pleaseSpecify": "Pakidetalye",
     "suggestionsLabel": "Mga mungkahi para sa pagpapabuti ng sarbey (opsyonal)",
     "suggestionsPlaceholder": "Mga mungkahi",
     "emailAddressLabel": "Email address (opsyonal)",
     "emailPlaceholder": "Email",
     "clearSurveyConfirm": "Burahin ang Sagot?",
-    "clearMessage": "Ito ay buburahin ang lahat ng kasalukuyang mga tugon sa sarbey",
+    "clearMessage": "Ito ay buburahin ang lahat ng kasalukuyang mga tugon sa sarbey.",
     "clearWarning": "Sigurado ka ba na gusto mong burahin ang sarbey?",
     "clearConfirm": "Oo, burahin",
     "editSurvey": "Baguhin ang Ipinasang Sarbey",
@@ -50,8 +50,8 @@
     "acceptTerms": "Tanggapin",
     "declineTerms": "Tanggihan",
     "instructions": "MGA TAGUBILIN",
-    "instructionsQA": "Mangyaring ipahiwatig ang inyong kamalayan at pag-unawa ng Citizen's Charter sa pamamagitan ng paglalagay ng check mark sa mga tamang kahon.",
-    "instructionsSQD": "Para sa SQD 0-8, mangyaring maglagay ng check mark (✓) sa kolum na pinakaangkop sa inyong sagot.",
+    "instructionsQA": "Mangyaring ipahiwatig ang inyong kamalayan at pag-unawa sa Citizen's Charter sa pamamagitan ng pagpili ng tamang sagot.",
+    "instructionsSQD": "Para sa SQD 0-8, mangyaring pumili ng isa sa mga pagpipilian na pinakaangkop sa inyong sagot.",
     "personalInfo": "Personal na Impormasyon",
     "citizensCharterAwareness": "Kamalayan sa Citizen's Charter",
     "serviceQuality": "Kalidad ng Serbisyo",
@@ -94,8 +94,8 @@
     "cc2Option4": "Hindi nakikita",
     "cc2Option5": "Hindi naaangkop",
     "cc3Question": "Kung alam mo ang CC, gaano ito nakatulong sa iyong transaksyon?",
-    "cc3Option1": "Tumulong nang malaki",
-    "cc3Option2": "Malaki ang naitulong",
+    "cc3Option1": "Malaki ang naitulong",
+    "cc3Option2": "Medyo malaki ang naitulong",
     "cc3Option3": "Hindi nakatulong",
     "cc3Option4": "Hindi naaangkop",
     "stronglyDisagree": "Lubos na Hindi Sumasang-ayon",
@@ -116,7 +116,7 @@
     "serviceRatings": "Pagsusuri ng Aming Serbisyo"
   },
   "aboutSurvey": {
-    "content": "Ang sistemang ito ay isang centralized survey management platform na idinisenyo upang suportahan ang isang pangunahing at lubos na naaangkop na sarbey. Nagbibigay ito sa mga administrator ng isang integrated na kapaligiran para sa pag-configure ng survey content, pag-manage ng responses, paglikha ng analytics, at pag-review ng user feedback. Gamit ang role-based access control, tinitiyak ng sistema ang secure, maayos, at episyenteng paghawak ng survey data.\n\nLayunin ng platform na gawing simple ang buong survey workflow—mula sa paglikha at pangangalap ng responses hanggang sa reporting at analysis—habang pinapanatili ang data integrity at pagsunod sa privacy standards. Ang modular design nito ay sumusuporta sa mahahalagang administrative functions tulad ng profile management, analytics generation, feedback review, at system configuration.\n\nAng sistemang ito ay ginawa upang tulungan ang mga organisasyon at academic institutions na makakuha ng makabuluhang insights, masiguro ang pagiging kumpidensyal ng mga respondent, at itaguyod ang responsableng paggamit ng digital data."
+  "content": "Ang sistemang ito ay isang sentralisadong platform ng pamamahala ng sarbey na mahusay na idinisenyo upang suportahan ang isang pangunahing sarbey na may kakayahang lubos na i-edit. Nagbibigay ito sa mga administrador ng isang integrado at komprehensibong kapaligiran para sa maayos na pag-configure ng nilalaman ng sarbey, propesyonal na pamamahala ng mga tugon (responses), pagbuo ng analytics (pagsusuri ng datos), at masusing pagsusuri sa puna (feedback) ng gumagamit. Sa paggamit ng kontrol sa access batay sa tungkulin (role-based access control - RBAC), tinitiyak ng sistema ang isang ligtas, structured, at mahusay na paghawak sa lahat ng sensitibong datos ng sarbey.\n\nAng platform na ito ay naglalayong gawing mas streamlined ang kabuuan ng workflow ng sarbey—simula sa paglikha at pangongolekta ng datos hanggang sa reporting at detalyadong pagsusuri—habang mahigpit na pinapanatili ang integridad ng datos at pagsunod sa mga pamantayan ng pagkapribado. Bukod pa rito, sinusuportahan ng modular na arkitektura nito ang mga pangunahing tungkulin ng pangangasiwa, kabilang ang profile management, analytics generation, feedback review, at pangkalahatang system configuration.\n\nAng sistemang ito ay binuo upang tulungan ang mga organisasyon at institusyong pang-akademiko na makakuha ng makabuluhang mga insights, masiguro ang kompidensyalidad ng mga tumutugon, at isulong ang responsable at etikal na digital data practices."
   },
   "privacyPolicy": {
     "section1Title": "1. Panimula",

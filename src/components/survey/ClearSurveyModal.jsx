@@ -11,16 +11,16 @@ export default function ClearSurveyModal({ open, onConfirm, onCancel }) {
           {t("survey.clearSurveyConfirm")}
         </h2>
         <div className="mb-5 text-gray-700 text-center">
-          This will erase all current survey answers.
+          {t("survey.clearMessage")}  
           <br />
-          Are you sure you want to clear the survey?
+          {t("survey.clearWarning")}
         </div>
         <div className="flex gap-4 justify-center mt-4">
           <button
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
             onClick={onConfirm}
           >
-            Yes, clear
+            {t("survey.clearConfirm")}
           </button>
           <button
             className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition"

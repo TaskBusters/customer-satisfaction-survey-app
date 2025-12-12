@@ -37,7 +37,7 @@ This system was built to help organizations and academic institutions collect me
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg px-8 py-2 text-lg"
             onClick={onClose}
           >
-            {t("common.cancel")}
+            {t("common.back")}
           </button>
         </div>
       </div>
