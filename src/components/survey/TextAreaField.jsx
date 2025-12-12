@@ -1,6 +1,7 @@
-"use client"
+"use client";
 
-import { useState } from "react"
+import { useState } from "react";
+import { isEmailValid } from "../../survey/surveyUtils";
 
 export default function TextAreaField({
   label,
@@ -15,13 +16,22 @@ export default function TextAreaField({
   error = null,
   maxLength = 500,
 }) {
-  const [touched, setTouched] = useState(false)
-  const charCount = (value || "").length
+  const [touched, setTouched] = useState(false);
+  const charCount = (value || "").length;
+
+  // Email field inline validation
+  const isEmailField = name === "email";
+  const hasInlineEmailError =
+    isEmailField && touched && value && !isEmailValid(value);
+  const hasFieldError = !!error || hasInlineEmailError;
 
   return (
     <div className="mb-6">
       {label && (
-        <label htmlFor={name} className="block mb-2 text-sm font-medium text-gray-900">
+        <label
+          htmlFor={name}
+          className="block mb-2 text-sm font-medium text-gray-900"
+        >
           {label}
           {showRequired && <span className="text-red-600 ml-1">*</span>}
         </label>
@@ -34,23 +44,31 @@ export default function TextAreaField({
         disabled={disabled}
         className={`block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 
         focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 placeholder-opacity-100 dark:bg-gray-50 dark:focus:ring-blue-500 dark:focus:border-blue-500
-        ${error ? "border-red-500" : ""}`}
+        ${hasFieldError ? "border-red-500" : ""}`}
         value={value || ""}
         onChange={(e) => {
-          setTouched(true)
-          onChange(e.target.value)
+          setTouched(true);
+          onChange(e.target.value);
         }}
         onBlur={() => setTouched(true)}
         placeholder={placeholder}
         autoComplete="off"
         maxLength={maxLength}
       />
-      {error && <span className="text-xs text-red-500 mt-1 block">{error}</span>}
+      {error && (
+        <span className="text-xs text-red-500 mt-1 block">{error}</span>
+      )}
+      {!error && hasInlineEmailError && (
+        <span className="text-xs text-red-500 mt-1 block">
+          Please enter a valid email address (no numbers-only, no whitespace,
+          valid domain required).
+        </span>
+      )}
       <div className="flex justify-between items-center mt-2">
         <span className="text-xs text-gray-500">
           {charCount}/{maxLength} characters
         </span>
       </div>
     </div>
-  )
+  );
 }

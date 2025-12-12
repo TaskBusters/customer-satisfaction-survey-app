@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { isAgeValid } from "../../survey/surveyUtils"
+import { useState } from "react";
+import { isAgeValid } from "../../survey/surveyUtils";
 
 export default function TextField({
   label,
@@ -15,27 +15,37 @@ export default function TextField({
   error = null,
   maxLength = 255,
 }) {
-  const [touched, setTouched] = useState(false)
-  const hasError = (required && touched && !value) || !!error
+  const [touched, setTouched] = useState(false);
+  const hasError = (required && touched && !value) || !!error;
 
   // Add age-specific validation
-  const isAgeField = name === "age"
-  const isNumericField = isAgeField
+  const isAgeField = name === "age";
+  const isNumericField = isAgeField;
+
+  // Letters-only validation for service field
+  const isServiceField = name === "service";
 
   // For age field, enforce numeric input only
+  // For service field, enforce letters only
   const handleChange = (e) => {
-    let inputValue = e.target.value
+    let inputValue = e.target.value;
     if (isNumericField) {
-      inputValue = inputValue.replace(/[^0-9]/g, "")
+      inputValue = inputValue.replace(/[^0-9]/g, "");
+    } else if (isServiceField) {
+      // Allow only letters (a-z, A-Z) and spaces
+      inputValue = inputValue.replace(/[^a-zA-Z\s]/g, "");
     }
-    setTouched(true)
-    onChange(inputValue)
-  }
+    setTouched(true);
+    onChange(inputValue);
+  };
 
   return (
     <div className="mb-6">
       {label && (
-        <label htmlFor={name} className="block mb-2 text-sm font-semibold text-black">
+        <label
+          htmlFor={name}
+          className="block mb-2 text-sm font-semibold text-black"
+        >
           {label}
           {showRequired && <span className="text-red-600 ml-1">*</span>}
         </label>
@@ -56,9 +66,13 @@ export default function TextField({
         maxLength={maxLength}
         disabled={disabled}
       />
-      {error && <span className="text-xs text-red-500 mt-1 block">{error}</span>}
+      {error && (
+        <span className="text-xs text-red-500 mt-1 block">{error}</span>
+      )}
       {!error && isAgeField && touched && value && !isAgeValid(value) && (
-        <span className="text-xs text-red-500 mt-1 block">Please enter a valid age.</span>
+        <span className="text-xs text-red-500 mt-1 block">
+          Please enter a valid age.
+        </span>
       )}
       {isNumericField && maxLength && value && (
         <span className="text-xs text-gray-500 mt-1 block">
@@ -66,5 +80,5 @@ export default function TextField({
         </span>
       )}
     </div>
-  )
+  );
 }

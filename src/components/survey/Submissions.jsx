@@ -1,9 +1,9 @@
 // "use client" - Directive for Next.js App Router (ignored in standard React apps)
 
-import { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { useAuth } from "../../context/AuthContext"
-import { API_BASE_URL } from "../../utils/api.js"
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { API_BASE_URL } from "../../utils/api.js";
 
 // --- Configuration for Status Badge Colors ---
 const statusColors = {
@@ -12,21 +12,21 @@ const statusColors = {
   Rejected: "bg-red-100 text-red-700",
   Completed: "bg-blue-100 text-blue-700",
   default: "bg-gray-100 text-gray-700",
-}
+};
 
 export default function Submissions() {
   // --- Hooks and State Initialization ---
-  const { user, isGuest } = useAuth() // Authentication context
-  const navigate = useNavigate() // Navigation hook
+  const { user, isGuest } = useAuth(); // Authentication context
+  const navigate = useNavigate(); // Navigation hook
 
   // Data states
-  const [submissions, setSubmissions] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [selectedSubmission, setSelectedSubmission] = useState(null) // Used for the "View Details" modal
+  const [submissions, setSubmissions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedSubmission, setSelectedSubmission] = useState(null); // Used for the "View Details" modal
 
   // Feedback/Message states
-  const [msg, setMsg] = useState("")
-  const [msgType, setMsgType] = useState("success")
+  const [msg, setMsg] = useState("");
+  const [msgType, setMsgType] = useState("success");
 
   // --- Side Effects (useEffect) ---
 
@@ -34,14 +34,14 @@ export default function Submissions() {
   useEffect(() => {
     // Redirect unauthenticated guests
     if (isGuest) {
-      navigate("/login", { replace: true })
-      return
+      navigate("/login", { replace: true });
+      return;
     }
     // Fetch data when the user object changes (i.e., after login)
     if (user && user.email) {
-      fetchSubmissions()
+      fetchSubmissions();
     }
-  }, [user, isGuest, navigate])
+  }, [user, isGuest, navigate]);
 
   // --- API Functions ---
 
@@ -49,25 +49,25 @@ export default function Submissions() {
    * Fetches the user's survey submissions from the API.
    */
   function fetchSubmissions() {
-    if (!user || !user.email) return // Guard against missing user info
+    if (!user || !user.email) return; // Guard against missing user info
 
-    setLoading(true)
+    setLoading(true);
     fetch(`${API_BASE_URL}/api/submissions/${user.email}`)
       .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch submissions")
-        return res.json()
+        if (!res.ok) throw new Error("Failed to fetch submissions");
+        return res.json();
       })
       .then((data) => {
-        setSubmissions(data)
+        setSubmissions(data);
       })
       .catch((err) => {
-        console.error("Fetch Submissions Error:", err)
-        setSubmissions([])
+        console.error("Fetch Submissions Error:", err);
+        setSubmissions([]);
         // Optionally show an error message
       })
       .finally(() => {
-        setLoading(false)
-      })
+        setLoading(false);
+      });
   }
 
   // --- Event Handlers ---
@@ -77,7 +77,8 @@ export default function Submissions() {
    * @param {string | number} id - The ID of the submission to delete.
    */
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this submission?")) return
+    if (!window.confirm("Are you sure you want to delete this submission?"))
+      return;
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/submissions/${id}`, {
@@ -85,19 +86,19 @@ export default function Submissions() {
         headers: { "Content-Type": "application/json" },
         // Ensure the backend verifies the user.email for ownership
         body: JSON.stringify({ user_email: user.email }),
-      })
+      });
 
       if (res.ok) {
-        showFeedback("Submission deleted successfully", "success")
-        fetchSubmissions() // Refresh the list
+        showFeedback("Submission deleted successfully", "success");
+        fetchSubmissions(); // Refresh the list
       } else {
-        throw new Error("API delete failed")
+        throw new Error("API delete failed");
       }
     } catch (err) {
-      console.error("Delete Error:", err)
-      showFeedback("Failed to delete submission", "error")
+      console.error("Delete Error:", err);
+      showFeedback("Failed to delete submission", "error");
     }
-  }
+  };
 
   /**
    * Navigates to the survey form for editing the selected submission.
@@ -105,19 +106,19 @@ export default function Submissions() {
    */
   const handleEdit = async (id) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/submissions/detail/${id}`)
+      const res = await fetch(`${API_BASE_URL}/api/submissions/detail/${id}`);
       if (res.ok) {
-        const submission = await res.json()
+        const submission = await res.json();
         // Navigate to the survey/edit route, passing data via state for pre-filling
-        navigate(`/survey/edit/${id}`, { state: { submission } })
+        navigate(`/survey/edit/${id}`, { state: { submission } });
       } else {
-        showFeedback("Failed to load submission for editing", "error")
+        showFeedback("Failed to load submission for editing", "error");
       }
     } catch (err) {
-      console.error("Edit Load Error:", err)
-      showFeedback("Failed to load submission for editing", "error")
+      console.error("Edit Load Error:", err);
+      showFeedback("Failed to load submission for editing", "error");
     }
-  }
+  };
 
   /**
    * Loads the full details for a submission and opens the modal.
@@ -125,18 +126,18 @@ export default function Submissions() {
    */
   const handleViewDetails = async (id) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/submissions/detail/${id}`)
+      const res = await fetch(`${API_BASE_URL}/api/submissions/detail/${id}`);
       if (res.ok) {
-        const submission = await res.json()
-        setSelectedSubmission(submission) // Opens the modal
+        const submission = await res.json();
+        setSelectedSubmission(submission); // Opens the modal
       } else {
-        showFeedback("Failed to load submission details", "error")
+        showFeedback("Failed to load submission details", "error");
       }
     } catch (err) {
-      console.error("View Details Error:", err)
-      showFeedback("Failed to load submission details", "error")
+      console.error("View Details Error:", err);
+      showFeedback("Failed to load submission details", "error");
     }
-  }
+  };
 
   /**
    * Helper function to set and clear messages.
@@ -144,15 +145,15 @@ export default function Submissions() {
    * @param {"success" | "error"} type - The type of message.
    */
   function showFeedback(message, type) {
-    setMsg(message)
-    setMsgType(type)
-    setTimeout(() => setMsg(""), 3000)
+    setMsg(message);
+    setMsgType(type);
+    setTimeout(() => setMsg(""), 3000);
   }
 
   // --- Render Logic ---
 
   // Do not render if the user is a guest (redirection handled in useEffect)
-  if (isGuest || !user) return null
+  if (isGuest || !user) return null;
 
   return (
     <div className="min-h-screen w-full bg-white flex flex-col items-center pt-10 md:pt-20 pb-10">
@@ -160,7 +161,7 @@ export default function Submissions() {
         {/* Back Button */}
         <div
           className="flex items-center gap-2 mb-6 px-4 py-2 rounded-lg bg-blue-50 border border-blue-100 text-blue-700 font-semibold shadow cursor-pointer hover:bg-blue-100 transition w-fit"
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/aftersurvey")}
         >
           <span className="w-5 h-5">←</span>Back
         </div>
@@ -181,16 +182,23 @@ export default function Submissions() {
         {/* Submissions List Container */}
         <div className="rounded-2xl shadow-lg bg-white border border-gray-200">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 sm:px-8 pt-6 pb-2">
-            <h2 className="font-bold text-2xl sm:text-3xl text-blue-800 mb-2 sm:mb-0">My Survey Submissions</h2>
+            <h2 className="font-bold text-2xl sm:text-3xl text-blue-800 mb-2 sm:mb-0">
+              My Survey Submissions
+            </h2>
             <span className="text-gray-500 text-sm">
-              {submissions.length > 0 && `${submissions.length} submission${submissions.length !== 1 ? "s" : ""}`}
+              {submissions.length > 0 &&
+                `${submissions.length} submission${
+                  submissions.length !== 1 ? "s" : ""
+                }`}
             </span>
           </div>
 
           <div className="px-4 sm:px-8 pt-4 pb-8">
             {loading ? (
               // Loading State
-              <div className="text-center py-8 text-blue-700 font-semibold">Loading...</div>
+              <div className="text-center py-8 text-blue-700 font-semibold">
+                Loading...
+              </div>
             ) : submissions.length === 0 ? (
               // Empty State
               <div className="text-center text-gray-400 py-12 font-semibold">
@@ -201,18 +209,25 @@ export default function Submissions() {
               // Submissions List
               <div className="space-y-4">
                 {submissions.map((submission) => (
-                  <div key={submission.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                  <div
+                    key={submission.id}
+                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
+                  >
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3">
                       <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900">Submission #{submission.id}</h3>
+                        <h3 className="font-semibold text-gray-900">
+                          Submission #{submission.id}
+                        </h3>
                         <p className="text-sm text-gray-600 mt-1">
-                          Submitted: {new Date(submission.submitted_at).toLocaleString()}
+                          Submitted:{" "}
+                          {new Date(submission.submitted_at).toLocaleString()}
                         </p>
                       </div>
                       {/* Status Badge */}
                       <span
                         className={`inline-block px-3 py-1 rounded-full text-xs font-bold mt-2 sm:mt-0 ${
-                          statusColors[submission.status] || statusColors.default
+                          statusColors[submission.status] ||
+                          statusColors.default
                         }`}
                       >
                         {submission.status}
@@ -222,14 +237,25 @@ export default function Submissions() {
                     {/* Quick Info Grid */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 text-sm">
                       {/* Using optional chaining for robustness */}
-                      <SubmissionDetail label="Client Type" value={submission.client_type} />
-                      <SubmissionDetail label="Gender" value={submission.gender} />
-                      <SubmissionDetail label="Region" value={submission.region} />
+                      <SubmissionDetail
+                        label="Client Type"
+                        value={submission.client_type}
+                      />
+                      <SubmissionDetail
+                        label="Gender"
+                        value={submission.gender}
+                      />
+                      <SubmissionDetail
+                        label="Region"
+                        value={submission.region}
+                      />
                       <SubmissionDetail
                         label="Satisfaction"
                         value={
                           submission.average_satisfaction
-                            ? Number.parseFloat(submission.average_satisfaction).toFixed(1)
+                            ? Number.parseFloat(
+                                submission.average_satisfaction
+                              ).toFixed(1)
                             : null
                         }
                       />
@@ -262,18 +288,22 @@ export default function Submissions() {
             )}
 
             <p className="text-xs text-gray-400 mt-6">
-              You can edit or delete your submissions. Login required. Guest submissions cannot be edited.
+              You can edit or delete your submissions. Login required. Guest
+              submissions cannot be edited.
             </p>
           </div>
         </div>
 
         {/* View Details Modal */}
         {selectedSubmission && (
-          <DetailsModal submission={selectedSubmission} onClose={() => setSelectedSubmission(null)} />
+          <DetailsModal
+            submission={selectedSubmission}
+            onClose={() => setSelectedSubmission(null)}
+          />
         )}
       </div>
     </div>
-  )
+  );
 }
 
 // --- Helper Component for Detail Items ---
@@ -282,18 +312,21 @@ const SubmissionDetail = ({ label, value }) => (
     <span className="text-gray-500">{label}:</span>
     <p className="font-medium text-gray-900">{value || "—"}</p>
   </div>
-)
+);
 
 // --- Dedicated Modal Component ---
 const DetailsModal = ({ submission, onClose }) => {
-  if (!submission) return null
+  if (!submission) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-bold">Submission Details</h3>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl">
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 text-2xl"
+          >
             ×
           </button>
         </div>
@@ -308,10 +341,15 @@ const DetailsModal = ({ submission, onClose }) => {
           <DetailRow
             label="Average Satisfaction"
             value={
-              submission.average_satisfaction ? Number.parseFloat(submission.average_satisfaction).toFixed(2) : "—"
+              submission.average_satisfaction
+                ? Number.parseFloat(submission.average_satisfaction).toFixed(2)
+                : "—"
             }
           />
-          <DetailRow label="Submitted" value={new Date(submission.submitted_at).toLocaleString()} />
+          <DetailRow
+            label="Submitted"
+            value={new Date(submission.submitted_at).toLocaleString()}
+          />
 
           {submission.response_data && (
             <div className="mt-4">
@@ -324,21 +362,22 @@ const DetailsModal = ({ submission, onClose }) => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 const DetailRow = ({ label, value }) => (
   <div>
     <strong>{label}:</strong> {value || "—"}
   </div>
-)
+);
 
 // Recursive viewer for response data to display label-value rows
 const ResponseDataViewer = ({ data }) => {
-  if (data === null || data === undefined) return <div className="text-sm text-gray-500">—</div>
+  if (data === null || data === undefined)
+    return <div className="text-sm text-gray-500">—</div>;
 
   if (typeof data !== "object") {
-    return <div className="text-sm text-gray-900">{String(data)}</div>
+    return <div className="text-sm text-gray-900">{String(data)}</div>;
   }
 
   if (Array.isArray(data)) {
@@ -346,20 +385,25 @@ const ResponseDataViewer = ({ data }) => {
       <div className="space-y-2">
         {data.map((item, idx) => (
           <div key={idx} className="pl-3">
-            <div className="text-xs text-gray-500 font-medium">Item {idx + 1}</div>
+            <div className="text-xs text-gray-500 font-medium">
+              Item {idx + 1}
+            </div>
             <div className="pl-2">
               <ResponseDataViewer data={item} />
             </div>
           </div>
         ))}
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-2">
       {Object.entries(data).map(([key, value]) => (
-        <div key={key} className="flex flex-col sm:flex-row sm:items-start gap-1">
+        <div
+          key={key}
+          className="flex flex-col sm:flex-row sm:items-start gap-1"
+        >
           <div className="w-full sm:w-1/3 text-gray-500 text-sm">{key}:</div>
           <div className="flex-1 text-sm text-gray-900">
             {value === null || value === undefined ? (
@@ -375,5 +419,5 @@ const ResponseDataViewer = ({ data }) => {
         </div>
       ))}
     </div>
-  )
-}
+  );
+};
