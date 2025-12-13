@@ -3,8 +3,6 @@ import { Footer } from "flowbite-react";
 import { BsFacebook, BsTwitter, BsGithub } from "react-icons/bs"; // Example icons
 
 export default function SurveyFooter() {
-  // Use a dark blue background to match your header's aesthetic
-  // Use the light gray background for the overall app (the default of your body)
 
   const currentYear = new Date().getFullYear();
 

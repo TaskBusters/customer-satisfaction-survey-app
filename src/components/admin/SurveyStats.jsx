@@ -1,5 +1,3 @@
-// src/components/admin/SurveyStats.jsx
-
 import React from "react";
 import DashboardCard from "./DashboardCard";
 import InfoRow from "./InfoRow";

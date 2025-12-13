@@ -1,4 +1,3 @@
-"use client";
 import Pagination from "../common/Pagination";
 
 const getActionFilterLabel = (actionString) => {

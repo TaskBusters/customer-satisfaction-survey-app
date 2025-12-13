@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 
 // Define the full list of roles with categories for filtering

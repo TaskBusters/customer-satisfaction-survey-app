@@ -51,7 +51,7 @@ const transporter = nodemailer.createTransport({
   secure: false,
   auth: {
     user: process.env.EMAIL_USER, // EMAIL_USER in Render env
-    pass: process.env.EMAIL_PASS, // EMAIL_PASS (app password)
+    pass: process.env.EMAIL_PASS, // (app password)
   },
   tls: {
     rejectUnauthorized: true,
@@ -281,7 +281,6 @@ async function ensureSeedUsers() {
   };
 
   for (const u of [...admins, surveyUser]) {
-    // Use PostgreSQL query/results!
     const { rows } = await pool.query(
       `SELECT id, password, role, "isAdmin", "fullName", email_verified FROM users WHERE email = $1`,
       [u.email]
@@ -604,7 +603,7 @@ app.put("/api/submissions/:id", async (req, res) => {
         updated_at = NOW()
        WHERE id = $14`,
       [
-        clientTypeToStore, // Use the actual typed value instead of "others"
+        clientTypeToStore,
         responses.gender,
         responses.age,
         responses.region,
@@ -1156,8 +1155,6 @@ app.post("/api/admin/update-role", async (req, res) => {
 
   // Prevent changing role of unverified users if necessary (optional, depending on requirements)
   if (!targetUser.email_verified && requesterRoleLower === "superadmin") {
-    // Example: Superadmin can still change role, but other admins might not be able to.
-    // Add specific logic here if needed.
   }
 
   // Update the role in the database

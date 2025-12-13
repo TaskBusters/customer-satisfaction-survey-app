@@ -1,5 +1,3 @@
-"use client"
-
 export default function NotificationBar({ message, onClear, msgType = "success" }) {
   if (!message) return null
 

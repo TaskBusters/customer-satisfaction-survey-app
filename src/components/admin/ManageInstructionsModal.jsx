@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 
 const CATEGORIES = ["Personal Info", "Citizen's Charter Awareness", "Service Satisfaction", "Feedback"]

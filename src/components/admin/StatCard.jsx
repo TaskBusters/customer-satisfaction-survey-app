@@ -1,4 +1,3 @@
-// src/components/admin/StatCard.jsx
 import React from "react";
 
 export default function StatCard({ label, value, color = "bg-gray-200" }) {

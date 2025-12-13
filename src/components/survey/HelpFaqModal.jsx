@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import Modal from "./UserModal"
 import { API_BASE_URL } from "../../utils/api.js"

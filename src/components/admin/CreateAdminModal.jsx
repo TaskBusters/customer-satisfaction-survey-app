@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { API_BASE_URL } from "../../utils/api.js"
 import { HiEye, HiEyeOff } from "react-icons/hi"

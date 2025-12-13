@@ -1,6 +1,3 @@
-"use client"
-
-// SurveyRenderer.js
 import React from "react"
 import RadioField from "./RadioField"
 import TextField from "./TextField"

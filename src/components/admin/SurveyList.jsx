@@ -1,4 +1,3 @@
-// src/components/admin/SurveyList.jsx
 import React from "react";
 
 export default function SurveyList({ surveys, onEdit, onDelete }) {

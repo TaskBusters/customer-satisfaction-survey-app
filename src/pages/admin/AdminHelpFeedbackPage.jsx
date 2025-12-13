@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import AdminSidebar from "../../components/admin/AdminSidebar"
 import NotificationBar from "../../components/admin/NotificationBar"

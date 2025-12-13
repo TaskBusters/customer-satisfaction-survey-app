@@ -1,4 +1,3 @@
-"use client"
 import { isFieldRequired } from "../../survey/surveyUtils"
 
 export default function MatrixField({

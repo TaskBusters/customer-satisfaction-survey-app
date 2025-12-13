@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import AdminSidebar from "../../components/admin/AdminSidebar"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts"
@@ -7,7 +5,6 @@ import { API_BASE_URL } from "../../utils/api.js"
 import { useAuth } from "../../context/AuthContext"
 import { logAdminAction } from "../../utils/adminLogger"
 import { jsPDF } from "jspdf"
-// import "jspdf-autotable" // Import jsPDF autoTable - removed as manual table generation is used
 
 export default function AdminReportsPage() {
   const { user } = useAuth()

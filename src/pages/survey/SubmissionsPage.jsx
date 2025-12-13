@@ -1,5 +1,3 @@
-"use client"
-
 import Submissions from "../../components/survey/Submissions.jsx"
 import Navbar from "../../components/survey/UserNavbar.jsx"
 import { useNavigate } from "react-router-dom"

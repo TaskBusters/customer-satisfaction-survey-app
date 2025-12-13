@@ -1,5 +1,3 @@
-"use client"
-
 import { useRef, useState } from "react"
 import { HiX } from "react-icons/hi"
 import { useAuth } from "../../context/AuthContext"
