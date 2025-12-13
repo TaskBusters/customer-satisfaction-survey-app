@@ -16,12 +16,12 @@ export default function AfterSurvey() {
     }
   }, [user, navigate])
 
-  // --- Non-scroll and Consistent Height Setup ---
+  // Non-scroll and Consistent Height Setup
   useEffect(() => {
     // 1a. Disable scrolling on the body
     document.body.style.overflow = "hidden"
 
-    // 1b. Set the actual viewport height (vh) as a CSS variable for consistency
+    // Set the actual viewport height (vh) as a CSS variable for consistency
     const setVh = () => {
       const vh = window.innerHeight * 0.01
       document.documentElement.style.setProperty("--vh", `${vh}px`)
@@ -37,7 +37,6 @@ export default function AfterSurvey() {
       window.removeEventListener("resize", setVh)
     }
   }, [])
-  // ---------------------------------------------------
 
   const btnClass = `
     text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-black focus:ring-blue-300
@@ -50,7 +49,7 @@ export default function AfterSurvey() {
   return (
     <div className={commonContainerClasses} style={commonHeightStyle}>
       <div className="flex flex-col flex-1 items-center justify-center px-4 -mt-10">
-        {/* ✅ Animated + Responsive Logo */}
+        {/* Animated + Responsive Logo */}
         <Logo
           className="
             animate-logoPop

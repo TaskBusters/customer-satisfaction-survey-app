@@ -21,7 +21,6 @@ export default function UserDetailsModal({
   const isAdd = mode === "add";
   const shouldDisableFields = !isEditing && !isAdd;
 
-  // Input classes: consistent color, outline, bg
   const inputClass =
     "border border-gray-400 bg-white rounded px-3 py-2 w-full focus:outline-none focus:border-blue-500 transition";
 

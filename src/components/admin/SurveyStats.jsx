@@ -2,10 +2,6 @@ import React from "react";
 import DashboardCard from "./DashboardCard";
 import InfoRow from "./InfoRow";
 
-/**
- * SurveyStats component
- * @param {object} stats - Stats object from backend: { surveys: {active, drafts, closed} }
- */
 function SurveyStats({ stats }) {
   if (!stats || !stats.surveys) return null;
 

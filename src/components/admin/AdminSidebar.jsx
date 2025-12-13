@@ -16,7 +16,7 @@ import {
   MdNotifications,
 } from "react-icons/md"
 
-// --- Custom Hook to Persist State ---
+// Custom Hook to Persist State
 const useStickyCollapse = (key, defaultValue) => {
   const [state, setState] = useState(() => {
     try {
@@ -200,7 +200,7 @@ function AdminSidebar() {
           ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
         `}
       >
-        {/* --- Top Header/Toggle Area --- */}
+        {/* Top Header/Toggle Area */}
         <div
           className={`flex items-center py-5 border-b border-blue-800 transition-all duration-300 ${
             isDesktopCollapsed ? "justify-center px-0" : "px-4 pr-6"
@@ -286,7 +286,7 @@ function AdminSidebar() {
         <div className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-30" onClick={() => setMobileMenuOpen(false)} />
       )}
 
-      {/* --- LOGOUT CONFIRMATION MODAL --- */}
+      {/* LOGOUT CONFIRMATION MODAL */}
       {showLogoutModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-sm overflow-hidden">

@@ -22,8 +22,6 @@ export function getMissingFields(answers) {
         : !answers[field.name] || answers[field.name].toString().trim() === "")
   );
 
-  // --- ADD THIS CUSTOM CHECK AFTER YOUR BASE LOGIC ---
-  // If clientType is "others", clientType_other must be filled out
   if (
     answers.clientType === "others" &&
     (!answers.clientType_other || answers.clientType_other.trim() === "")
