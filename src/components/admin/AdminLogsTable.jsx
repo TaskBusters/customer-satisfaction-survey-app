@@ -112,18 +112,17 @@ export default function AdminLogsTable({
                 ) : (
                   currentLogs.map((log) => (
                     <tr key={log.id} className="border-b hover:bg-gray-50">
-                      {/* Note: All <td>s no longer need whitespace-nowrap. Text will wrap. */}
                       <td className="px-6 py-3 text-gray-700 text-xs">
                         {new Date(log.log_time).toLocaleString()}
                       </td>
                       <td className="px-6 py-3 font-medium text-gray-900">
                         {log.admin_name || "—"}
                       </td>
-                      {/* ✅ FIX 3: Keep break-all for long email strings to prevent overflow */}
+                      {/* Keep break-all for long email strings to prevent overflow */}
                       <td className="px-6 py-3 text-gray-700 text-xs break-all">
                         {log.admin_email || "—"}
                       </td>
-                      {/* ✅ FIX 3: Keep break-all for long action strings */}
+                      {/* Keep break-all for long action strings */}
                       <td className="px-6 py-3 text-gray-700 text-sm break-all">
                         {log.action || "—"}
                       </td>

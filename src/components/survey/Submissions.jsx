@@ -13,7 +13,7 @@ const statusColors = {
 }
 
 export default function Submissions() {
-  // --- Hooks and State Initialization ---
+  // Hooks and State Initialization ---
   const { user, isGuest } = useAuth() // Authentication context
   const navigate = useNavigate() // Navigation hook
 
@@ -70,10 +70,6 @@ export default function Submissions() {
 
   // --- Event Handlers ---
 
-  /**
-   * Deletes a submission after confirmation.
-   * @param {string | number} id - The ID of the submission to delete.
-   */
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this submission?")) return
 
@@ -97,10 +93,6 @@ export default function Submissions() {
     }
   }
 
-  /**
-   * Navigates to the survey form for editing the selected submission.
-   * @param {string | number} id - The ID of the submission to edit.
-   */
   const handleEdit = async (id) => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/submissions/detail/${id}`)
@@ -117,10 +109,6 @@ export default function Submissions() {
     }
   }
 
-  /**
-   * Loads the full details for a submission and opens the modal.
-   * @param {string | number} id - The ID of the submission.
-   */
   const handleViewDetails = async (id) => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/submissions/detail/${id}`)
@@ -136,11 +124,7 @@ export default function Submissions() {
     }
   }
 
-  /**
-   * Helper function to set and clear messages.
-   * @param {string} message - The message to display.
-   * @param {"success" | "error"} type - The type of message.
-   */
+
   function showFeedback(message, type) {
     setMsg(message)
     setMsgType(type)

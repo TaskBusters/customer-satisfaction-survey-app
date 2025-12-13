@@ -1,36 +1,36 @@
-import { useState, useEffect } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import { Button, Toast } from "flowbite-react"
-import Logo from "./Logo"
-import "flowbite"
-import { HiEye, HiEyeOff } from "react-icons/hi"
-import { API_BASE_URL } from "../../utils/api.js" // import API_BASE_URL
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Button, Toast } from "flowbite-react";
+import Logo from "./Logo";
+import "flowbite";
+import { HiEye, HiEyeOff } from "react-icons/hi";
+import { API_BASE_URL } from "../../utils/api.js"; // import API_BASE_URL
 
 export default function ForgotPassForm() {
-  const [email, setEmail] = useState("")
-  const [resetCode, setResetCode] = useState("")
-  const [newPassword, setNewPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [step, setStep] = useState("email") // "email", "code", "password"
-  const [error, setError] = useState("")
-  const [showToast, setShowToast] = useState(false)
-  const [toastMessage, setToastMessage] = useState("")
-  const [toastColor, setToastColor] = useState("bg-green-500/90 text-white")
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [showCodePopup, setShowCodePopup] = useState(false)
-  const [popupCode, setPopupCode] = useState("")
-  const [isSendingEmail, setIsSendingEmail] = useState(false)
-  const navigate = useNavigate()
+  const [email, setEmail] = useState("");
+  const [resetCode, setResetCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [step, setStep] = useState("email");
+  const [error, setError] = useState("");
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastColor, setToastColor] = useState("bg-green-500/90 text-white");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showCodePopup, setShowCodePopup] = useState(false);
+  const [popupCode, setPopupCode] = useState("");
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const navigate = useNavigate();
 
   const checkPasswordStrength = (password) => {
-    if (password.length < 8) return "too short"
-    if (!/[a-z]/.test(password)) return "no lowercase"
-    if (!/[A-Z]/.test(password)) return "no uppercase"
-    if (!/[0-9]/.test(password)) return "no number"
-    if (!/[^A-Za-z0-9]/.test(password)) return "no symbol"
-    return "strong"
-  }
+    if (password.length < 8) return "too short";
+    if (!/[a-z]/.test(password)) return "no lowercase";
+    if (!/[A-Z]/.test(password)) return "no uppercase";
+    if (!/[0-9]/.test(password)) return "no number";
+    if (!/[^A-Za-z0-9]/.test(password)) return "no symbol";
+    return "strong";
+  };
 
   const getStrengthColor = (strength) => {
     switch (strength) {
@@ -39,162 +39,164 @@ export default function ForgotPassForm() {
       case "no uppercase":
       case "no number":
       case "no symbol":
-        return "text-red-600"
+        return "text-red-600";
       case "strong":
-        return "text-green-600"
+        return "text-green-600";
       default:
-        return ""
+        return "";
     }
-  }
+  };
 
   const getStrengthLabel = (strength) => {
     switch (strength) {
       case "too short":
-        return "Password must be at least 8 characters"
+        return "Password must be at least 8 characters";
       case "no lowercase":
-        return "Add a lowercase letter"
+        return "Add a lowercase letter";
       case "no uppercase":
-        return "Add an uppercase letter"
+        return "Add an uppercase letter";
       case "no number":
-        return "Add a number"
+        return "Add a number";
       case "no symbol":
-        return "Add a symbol"
+        return "Add a symbol";
       case "strong":
-        return "Strong password"
+        return "Strong password";
       default:
-        return ""
+        return "";
     }
-  }
+  };
 
   useEffect(() => {
     if (step === "email") {
-      setError("")
+      setError("");
     }
-  }, [email, step])
+  }, [email, step]);
 
   const handleRequestReset = async (e) => {
-    e.preventDefault()
-    const emailValidation = validateEmail(email)
+    e.preventDefault();
+    const emailValidation = validateEmail(email);
     if (!emailValidation.valid) {
-      setError(emailValidation.message)
-      return
+      setError(emailValidation.message);
+      return;
     }
-    setError("")
+    setError("");
     try {
       const res = await fetch(`${API_BASE_URL}/api/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
-      })
-      const data = await res.json()
+      });
+      const data = await res.json();
 
       if (res.ok) {
-        setPopupCode(data.code)
-        setShowCodePopup(true)
-        setStep("code")
+        setPopupCode(data.code);
+        setShowCodePopup(true);
+        setStep("code");
       } else {
-        setError(data?.error || "Something went wrong. Try again.")
+        setError(data?.error || "Something went wrong. Try again.");
       }
     } catch {
-      setError("Network error. Please try again.")
+      setError("Network error. Please try again.");
     }
-  }
+  };
 
   const handleVerifyCode = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!resetCode) {
-      setError("Please enter your reset code.")
-      return
+      setError("Please enter your reset code.");
+      return;
     }
-    setError("")
+    setError("");
     try {
       const res = await fetch(`${API_BASE_URL}/api/verify-reset-code`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, code: resetCode }),
-      })
+      });
       if (res.ok) {
-        setStep("password")
-        setToastMessage("Code verified! Now set your new password.")
-        setToastColor("bg-green-500/90 text-white")
-        setShowToast(true)
-        setTimeout(() => setShowToast(false), 2000)
+        setStep("password");
+        setToastMessage("Code verified! Now set your new password.");
+        setToastColor("bg-green-500/90 text-white");
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 2000);
       } else {
-        const data = await res.json()
-        setError(data?.error || "Invalid or expired code.")
+        const data = await res.json();
+        setError(data?.error || "Invalid or expired code.");
       }
     } catch {
-      setError("Network error. Please try again.")
+      setError("Network error. Please try again.");
     }
-  }
+  };
 
   const handleResetPassword = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!newPassword || !confirmPassword) {
-      setError("Please fill in both password fields.")
-      return
+      setError("Please fill in both password fields.");
+      return;
     }
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match.")
-      return
+      setError("Passwords do not match.");
+      return;
     }
-    const passStrength = checkPasswordStrength(newPassword)
+    const passStrength = checkPasswordStrength(newPassword);
     if (passStrength !== "strong") {
-      setError("Password is not strong: " + getStrengthLabel(passStrength))
-      return
+      setError("Password is not strong: " + getStrengthLabel(passStrength));
+      return;
     }
-    setError("")
+    setError("");
     try {
       const res = await fetch(`${API_BASE_URL}/api/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, code: resetCode, newPassword }),
-      })
+      });
       if (res.ok) {
-        setToastMessage("Password reset successful!")
-        setToastColor("bg-green-500/90 text-white")
-        setShowToast(true)
+        setToastMessage("Password reset successful!");
+        setToastColor("bg-green-500/90 text-white");
+        setShowToast(true);
         setTimeout(() => {
-          setShowToast(false)
-          navigate("/login")
-        }, 2000)
+          setShowToast(false);
+          navigate("/login");
+        }, 2000);
       } else {
-        const data = await res.json()
-        setError(data?.error || "Failed to reset password.")
+        const data = await res.json();
+        setError(data?.error || "Failed to reset password.");
       }
     } catch {
-      setError("Network error. Please try again.")
+      setError("Network error. Please try again.");
     }
-  }
+  };
 
   const handleSendEmailConfirm = async () => {
-    setIsSendingEmail(true)
+    setIsSendingEmail(true);
     try {
       const res = await fetch(`${API_BASE_URL}/api/send-reset-email`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, code: popupCode }),
-      })
-      const data = await res.json()
+      });
+      const data = await res.json();
 
       if (res.ok) {
-        setToastMessage("Reset code sent to your email!")
-        setToastColor("bg-green-500/90 text-white")
+        setToastMessage("Reset code sent to your email!");
+        setToastColor("bg-green-500/90 text-white");
       } else {
-        setToastMessage("Email sending unavailable, but you can still use the code above")
-        setToastColor("bg-yellow-500/90 text-white")
+        setToastMessage(
+          "Email sending unavailable, but you can still use the code above"
+        );
+        setToastColor("bg-yellow-500/90 text-white");
       }
-      setShowToast(true)
-      setTimeout(() => setShowToast(false), 3000)
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
     } catch (err) {
-      setToastMessage("Email unavailable, use the code shown")
-      setToastColor("bg-yellow-500/90 text-white")
-      setShowToast(true)
-      setTimeout(() => setShowToast(false), 3000)
+      setToastMessage("Email unavailable, use the code shown");
+      setToastColor("bg-yellow-500/90 text-white");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
     } finally {
-      setIsSendingEmail(false)
+      setIsSendingEmail(false);
     }
-  }
+  };
 
   const allowedProviders = [
     "@yahoo.com.ph",
@@ -213,33 +215,46 @@ export default function ForgotPassForm() {
     "@gmx.com",
     "@tutanota.com",
     "@fastmail.com",
-  ]
+  ];
 
-  const allowedDomains = [".com", ".net", ".org", ".gov", ".gov.ph", ".mil", ".int"]
+  const allowedDomains = [
+    ".com",
+    ".net",
+    ".org",
+    ".gov",
+    ".gov.ph",
+    ".mil",
+    ".int",
+  ];
 
   const validateEmail = (emailInput) => {
-    if (!emailInput) return { valid: false, message: "Please enter your email" }
+    if (!emailInput)
+      return { valid: false, message: "Please enter your email" };
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(emailInput)) {
-      return { valid: false, message: "Invalid email format" }
+      return { valid: false, message: "Invalid email format" };
     }
 
-    const hasValidProvider = allowedProviders.some((provider) => emailInput.toLowerCase().endsWith(provider))
+    const hasValidProvider = allowedProviders.some((provider) =>
+      emailInput.toLowerCase().endsWith(provider)
+    );
     if (hasValidProvider) {
-      return { valid: true, message: "" }
+      return { valid: true, message: "" };
     }
 
-    const hasValidDomain = allowedDomains.some((domain) => emailInput.toLowerCase().includes(domain))
+    const hasValidDomain = allowedDomains.some((domain) =>
+      emailInput.toLowerCase().includes(domain)
+    );
     if (!hasValidDomain) {
-      return { valid: false, message: "Email domain not allowed" }
+      return { valid: false, message: "Email domain not allowed" };
     }
 
-    return { valid: true, message: "" }
-  }
+    return { valid: true, message: "" };
+  };
 
-  const emailValidation = validateEmail(email)
-  const passwordStrength = checkPasswordStrength(newPassword)
+  const emailValidation = validateEmail(email);
+  const passwordStrength = checkPasswordStrength(newPassword);
 
   return (
     <div
@@ -259,14 +274,20 @@ export default function ForgotPassForm() {
       {showCodePopup && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 shadow-2xl max-w-sm mx-4">
-            <h3 className="text-lg font-bold text-gray-800 mb-2 text-center">Your Reset Code</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-2 text-center">
+              Your Reset Code
+            </h3>
             <p className="text-sm text-gray-600 text-center mb-4">
               We found your account. Use this code to reset your password:
             </p>
             <div className="bg-gray-100 rounded-lg p-6 mb-6 text-center">
-              <p className="text-4xl font-bold tracking-widest text-blue-600">{popupCode}</p>
+              <p className="text-4xl font-bold tracking-widest text-blue-600">
+                {popupCode}
+              </p>
             </div>
-            <p className="text-xs text-gray-500 text-center mb-6">Code expires in 30 seconds</p>
+            <p className="text-xs text-gray-500 text-center mb-6">
+              Code expires in 30 seconds
+            </p>
 
             <div className="space-y-3">
               <button
@@ -291,7 +312,9 @@ export default function ForgotPassForm() {
 
       {step === "email" && (
         <>
-          <h2 className="text-xl text-center font-bold text-gray-800 mb-6 mt-2">Forgot Password</h2>
+          <h2 className="text-xl text-center font-bold text-gray-800 mb-6 mt-2">
+            Forgot Password
+          </h2>
           <form
             className="w-full 
               max-w-md 
@@ -302,7 +325,10 @@ export default function ForgotPassForm() {
             onSubmit={handleRequestReset}
           >
             <div className="mb-5">
-              <label htmlFor="email" className="block mb-2 text-sm font-medium text-black">
+              <label
+                htmlFor="email"
+                className="block mb-2 text-sm font-medium text-black"
+              >
                 Email
               </label>
               <input
@@ -313,16 +339,24 @@ export default function ForgotPassForm() {
                 placeholder="name@example.com"
                 required
                 className={`bg-gray-50 border ${
-                  email && !emailValidation.valid ? "border-red-500" : "border-gray-300"
+                  email && !emailValidation.valid
+                    ? "border-red-500"
+                    : "border-gray-300"
                 } text-gray-900 text-sm rounded-lg 
                   focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 
                   placeholder-gray-400`}
               />
               {email && !emailValidation.valid && (
-                <span className="text-xs text-red-500 mt-1 block">{emailValidation.message}</span>
+                <span className="text-xs text-red-500 mt-1 block">
+                  {emailValidation.message}
+                </span>
               )}
             </div>
-            {error && <div className="mb-5 text-red-600 text-center font-medium">{error}</div>}
+            {error && (
+              <div className="mb-5 text-red-600 text-center font-medium">
+                {error}
+              </div>
+            )}
             <Button
               type="submit"
               className="text-white bg-blue-700 hover:bg-blue-800 
@@ -334,12 +368,18 @@ export default function ForgotPassForm() {
             </Button>
             <div className="flex items-center justify-between">
               <div className="flex justify-center mt-8">
-                <Link to="/login" className="text-sm text-blue-600 hover:underline">
+                <Link
+                  to="/login"
+                  className="text-sm text-blue-600 hover:underline"
+                >
                   Back to Login
                 </Link>
               </div>
               <div className="flex justify-center mt-8">
-                <Link to="/register" className="text-sm text-blue-600 hover:underline">
+                <Link
+                  to="/register"
+                  className="text-sm text-blue-600 hover:underline"
+                >
                   Register Here
                 </Link>
               </div>
@@ -350,7 +390,9 @@ export default function ForgotPassForm() {
 
       {step === "code" && (
         <>
-          <h2 className="text-xl text-center font-bold text-gray-800 mb-2 mt-2">Enter Reset Code</h2>
+          <h2 className="text-xl text-center font-bold text-gray-800 mb-2 mt-2">
+            Enter Reset Code
+          </h2>
           <p className="text-center text-sm text-gray-600 mb-6">
             We sent a 6-digit code to <strong>{email}</strong>
           </p>
@@ -364,7 +406,10 @@ export default function ForgotPassForm() {
             onSubmit={handleVerifyCode}
           >
             <div className="mb-5">
-              <label htmlFor="code" className="block mb-2 text-sm font-medium text-black">
+              <label
+                htmlFor="code"
+                className="block mb-2 text-sm font-medium text-black"
+              >
                 Reset Code
               </label>
               <input
@@ -384,7 +429,11 @@ export default function ForgotPassForm() {
                   placeholder-gray-400 text-center text-2xl tracking-widest"
               />
             </div>
-            {error && <div className="mb-5 text-red-600 text-center font-medium">{error}</div>}
+            {error && (
+              <div className="mb-5 text-red-600 text-center font-medium">
+                {error}
+              </div>
+            )}
             <Button
               type="submit"
               className="text-white bg-blue-700 hover:bg-blue-800 
@@ -395,7 +444,11 @@ export default function ForgotPassForm() {
               Verify Code
             </Button>
             <div className="flex justify-center mt-8">
-              <button type="button" onClick={() => setStep("email")} className="text-sm text-blue-600 hover:underline">
+              <button
+                type="button"
+                onClick={() => setStep("email")}
+                className="text-sm text-blue-600 hover:underline"
+              >
                 Back to Email
               </button>
             </div>
@@ -405,8 +458,12 @@ export default function ForgotPassForm() {
 
       {step === "password" && (
         <>
-          <h2 className="text-xl text-center font-bold text-gray-800 mb-2 mt-2">Set New Password</h2>
-          <p className="text-center text-sm text-gray-600 mb-6">Enter a strong password to reset your account</p>
+          <h2 className="text-xl text-center font-bold text-gray-800 mb-2 mt-2">
+            Set New Password
+          </h2>
+          <p className="text-center text-sm text-gray-600 mb-6">
+            Enter a strong password to reset your account
+          </p>
           <form
             className="w-full 
               max-w-md 
@@ -417,7 +474,10 @@ export default function ForgotPassForm() {
             onSubmit={handleResetPassword}
           >
             <div className="mb-1 relative">
-              <label htmlFor="newPassword" className="block mb-2 text-sm font-medium text-black">
+              <label
+                htmlFor="newPassword"
+                className="block mb-2 text-sm font-medium text-black"
+              >
                 New Password
               </label>
               <input
@@ -440,12 +500,19 @@ export default function ForgotPassForm() {
               </button>
             </div>
             <div className="mb-4">
-              <span className={`block text-xs mt-1 ${getStrengthColor(passwordStrength)}`}>
+              <span
+                className={`block text-xs mt-1 ${getStrengthColor(
+                  passwordStrength
+                )}`}
+              >
                 {newPassword ? getStrengthLabel(passwordStrength) : ""}
               </span>
             </div>
             <div className="mb-5 relative">
-              <label htmlFor="confirmPassword" className="block mb-2 text-sm font-medium text-black">
+              <label
+                htmlFor="confirmPassword"
+                className="block mb-2 text-sm font-medium text-black"
+              >
                 Confirm Password
               </label>
               <input
@@ -464,17 +531,33 @@ export default function ForgotPassForm() {
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute right-0 bottom-3 pr-3 flex items-center text-gray-500"
               >
-                {showConfirmPassword ? <HiEye size={20} /> : <HiEyeOff size={20} />}
+                {showConfirmPassword ? (
+                  <HiEye size={20} />
+                ) : (
+                  <HiEyeOff size={20} />
+                )}
               </button>
             </div>
             {confirmPassword && (
               <div className="mb-5">
-                <span className={`text-xs ${newPassword === confirmPassword ? "text-green-600" : "text-red-600"}`}>
-                  {newPassword === confirmPassword ? "Passwords match" : "Passwords do not match"}
+                <span
+                  className={`text-xs ${
+                    newPassword === confirmPassword
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {newPassword === confirmPassword
+                    ? "Passwords match"
+                    : "Passwords do not match"}
                 </span>
               </div>
             )}
-            {error && <div className="mb-5 text-red-600 text-center font-medium text-xs">{error}</div>}
+            {error && (
+              <div className="mb-5 text-red-600 text-center font-medium text-xs">
+                {error}
+              </div>
+            )}
             <Button
               type="submit"
               className="text-white bg-blue-700 hover:bg-blue-800 
@@ -488,12 +571,12 @@ export default function ForgotPassForm() {
               <button
                 type="button"
                 onClick={() => {
-                  setStep("email")
-                  setEmail("")
-                  setResetCode("")
-                  setNewPassword("")
-                  setConfirmPassword("")
-                  setError("")
+                  setStep("email");
+                  setEmail("");
+                  setResetCode("");
+                  setNewPassword("");
+                  setConfirmPassword("");
+                  setError("");
                 }}
                 className="text-sm text-blue-600 hover:underline"
               >
@@ -504,5 +587,5 @@ export default function ForgotPassForm() {
         </>
       )}
     </div>
-  )
+  );
 }

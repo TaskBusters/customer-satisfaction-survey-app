@@ -181,7 +181,7 @@ export default function EditSurveyQuestionModal({ open, field, onSave, onCancel,
             </select>
           </div>
 
-          {/* Options for radio/dropdown - Only shown for non-matrix questions */}
+          {/* Options for radio/dropdown only shown for non-matrix questions */}
           {!isMatrixQuestion && (field.type === "radio" || field.type === "dropdown") && (
             <div>
               <label className="block text-sm font-semibold text-gray-900 mb-4">

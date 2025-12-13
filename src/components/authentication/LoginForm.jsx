@@ -1,52 +1,55 @@
-import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import { HiEye, HiEyeOff } from "react-icons/hi"
-import Logo from "./Logo"
-import { useAuth } from "../../context/AuthContext"
-import { Toast } from "flowbite-react"
-import { GoogleLogin } from "@react-oauth/google"
-import { useLocation } from "react-router-dom"
-import { API_BASE_URL } from "../../utils/api.js" // import API_BASE_URL
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { HiEye, HiEyeOff } from "react-icons/hi";
+import Logo from "./Logo";
+import { useAuth } from "../../context/AuthContext";
+import { Toast } from "flowbite-react";
+import { GoogleLogin } from "@react-oauth/google";
+import { useLocation } from "react-router-dom";
+import { API_BASE_URL } from "../../utils/api.js";
 
 export default function LoginForm() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [showToast, setShowToast] = useState(false)
-  const [toastMessage, setToastMessage] = useState("")
-  const [toastColor, setToastColor] = useState("bg-green-500/90 text-white")
-  const [googleSigningIn, setGoogleSigningIn] = useState(false)
+  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastColor, setToastColor] = useState("bg-green-500/90 text-white");
+  const [googleSigningIn, setGoogleSigningIn] = useState(false);
 
-  const { login } = useAuth()
-  const navigate = useNavigate()
-  const { search } = useLocation()
-  const params = new URLSearchParams(search)
-  const next = params.get("next")
-  const messageParam = params.get("message")
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  const next = params.get("next");
+  const messageParam = params.get("message");
   const [redirectMessage, setRedirectMessage] = useState(() => {
-    if (!messageParam) return ""
+    if (!messageParam) return "";
     try {
-      return decodeURIComponent(messageParam)
+      return decodeURIComponent(messageParam);
     } catch (e) {
-      return messageParam
+      return messageParam;
     }
-  })
+  });
 
   const showToastWithDelay = (message, color, callback) => {
-    setToastMessage(message)
-    setToastColor(color)
-    setShowToast(true)
+    setToastMessage(message);
+    setToastColor(color);
+    setShowToast(true);
     setTimeout(() => {
-      setShowToast(false)
-      if (callback) callback()
-    }, 2000)
-  }
+      setShowToast(false);
+      if (callback) callback();
+    }, 2000);
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!email || !password) {
-      showToastWithDelay("Please enter both email and password", "bg-red-600/90 text-white")
-      return
+      showToastWithDelay(
+        "Please enter both email and password",
+        "bg-red-600/90 text-white"
+      );
+      return;
     }
 
     try {
@@ -54,83 +57,106 @@ export default function LoginForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
-      })
+      });
 
       if (res.ok) {
-        const user = await res.json()
-        login(user)
+        const user = await res.json();
+        login(user);
 
-        showToastWithDelay("Login successful!", "bg-green-500/90 text-white", () => {
-          // If there is an intended 'next' path (from ProtectedRoute), honor it.
-          if (next) {
-            try {
-              const decoded = decodeURIComponent(next)
-              navigate(decoded, { replace: true })
-              return
-            } catch (e) {
-              // fall back if invalid
+        showToastWithDelay(
+          "Login successful!",
+          "bg-green-500/90 text-white",
+          () => {
+            // If there is an intended 'next' path (from ProtectedRoute), honor it.
+            if (next) {
+              try {
+                const decoded = decodeURIComponent(next);
+                navigate(decoded, { replace: true });
+                return;
+              } catch (e) {
+                // fall back if invalid
+              }
+            }
+
+            if (user.isAdmin) {
+              navigate("/admin/overview", { replace: true });
+            } else {
+              navigate("/", { replace: true });
             }
           }
-
-          if (user.isAdmin) {
-            navigate("/admin/overview", { replace: true })
-          } else {
-            navigate("/", { replace: true })
-          }
-        })
+        );
       } else {
-        const err = await res.json()
-        showToastWithDelay(err?.error || "Login failed!", "bg-red-600/90 text-white")
+        const err = await res.json();
+        showToastWithDelay(
+          err?.error || "Login failed!",
+          "bg-red-600/90 text-white"
+        );
       }
     } catch (error) {
-      showToastWithDelay("Network error. Please try again.", "bg-red-600/90 text-white")
+      showToastWithDelay(
+        "Network error. Please try again.",
+        "bg-red-600/90 text-white"
+      );
     }
-  }
+  };
 
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
       if (!credentialResponse?.credential) {
-        showToastWithDelay("Google login failed. Missing credential.", "bg-red-600/90 text-white")
-        return
+        showToastWithDelay(
+          "Google login failed. Missing credential.",
+          "bg-red-600/90 text-white"
+        );
+        return;
       }
 
-      setGoogleSigningIn(true)
+      setGoogleSigningIn(true);
 
       const res = await fetch(`${API_BASE_URL}/api/login/google`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ credential: credentialResponse.credential }),
-      })
+      });
 
       if (res.ok) {
-        const user = await res.json()
-        login(user)
+        const user = await res.json();
+        login(user);
 
-        showToastWithDelay("Signed in with Google!", "bg-green-500/90 text-white", () => {
-          if (next) {
-            try {
-              const decoded = decodeURIComponent(next)
-              navigate(decoded, { replace: true })
-              return
-            } catch (e) {}
-          }
+        showToastWithDelay(
+          "Signed in with Google!",
+          "bg-green-500/90 text-white",
+          () => {
+            if (next) {
+              try {
+                const decoded = decodeURIComponent(next);
+                navigate(decoded, { replace: true });
+                return;
+              } catch (e) {}
+            }
 
-          if (user.isAdmin) {
-            navigate("/admin/overview", { replace: true })
-          } else {
-            navigate("/", { replace: true })
+            if (user.isAdmin) {
+              navigate("/admin/overview", { replace: true });
+            } else {
+              navigate("/", { replace: true });
+            }
           }
-        })
+        );
       } else {
-        const err = await res.json()
-        showToastWithDelay(err?.error || "Google login failed", "bg-red-600/90 text-white")
+        const err = await res.json();
+        showToastWithDelay(
+          err?.error || "Google login failed",
+          "bg-red-600/90 text-white"
+        );
       }
     } catch (error) {
-      showToastWithDelay("Google login failed. Please try again.", "bg-red-600/90 text-white")
+      showToastWithDelay(
+        "Google login failed. Please try again.",
+        "bg-red-600/90 text-white"
+      );
     } finally {
-      setGoogleSigningIn(false)
+      setGoogleSigningIn(false);
     }
-  }
+  };
 
   const allowedProviders = [
     "@yahoo.com.ph",
@@ -149,32 +175,44 @@ export default function LoginForm() {
     "@gmx.com",
     "@tutanota.com",
     "@fastmail.com",
-  ]
+  ];
 
-  const allowedDomains = [".com", ".net", ".org", ".gov", ".gov.ph", ".mil", ".int"]
+  const allowedDomains = [
+    ".com",
+    ".net",
+    ".org",
+    ".gov",
+    ".gov.ph",
+    ".mil",
+    ".int",
+  ];
 
   const validateEmail = (email) => {
-    if (!email) return { valid: false, message: "Please enter your email" }
+    if (!email) return { valid: false, message: "Please enter your email" };
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return { valid: false, message: "Invalid email format" }
+      return { valid: false, message: "Invalid email format" };
     }
 
-    const hasValidProvider = allowedProviders.some((provider) => email.toLowerCase().endsWith(provider))
+    const hasValidProvider = allowedProviders.some((provider) =>
+      email.toLowerCase().endsWith(provider)
+    );
     if (hasValidProvider) {
-      return { valid: true, message: "" }
+      return { valid: true, message: "" };
     }
 
-    const hasValidDomain = allowedDomains.some((domain) => email.toLowerCase().includes(domain))
+    const hasValidDomain = allowedDomains.some((domain) =>
+      email.toLowerCase().includes(domain)
+    );
     if (!hasValidDomain) {
-      return { valid: false, message: "Email domain not allowed" }
+      return { valid: false, message: "Email domain not allowed" };
     }
 
-    return { valid: true, message: "" }
-  }
+    return { valid: true, message: "" };
+  };
 
-  const emailValidation = validateEmail(email)
+  const emailValidation = validateEmail(email);
 
   return (
     <div className="bg-[#F4F4F4] rounded-lg shadow-2xl w-80 sm:w-96 md:w-[28rem] lg:w-[32rem] xl:w-[36rem] p-8 sm:p-8 md:p-10 text-sm md:text-base border-3 border-gray-200">
@@ -206,12 +244,20 @@ export default function LoginForm() {
         </div>
       )}
 
-      <h2 className="text-xl text-center font-bold text-gray-800">Welcome, User!</h2>
+      <h2 className="text-xl text-center font-bold text-gray-800">
+        Welcome, User!
+      </h2>
 
-      <form className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto" onSubmit={handleSubmit}>
+      <form
+        className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto"
+        onSubmit={handleSubmit}
+      >
         {/* Email */}
         <div className="mb-5">
-          <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-900">
+          <label
+            htmlFor="email"
+            className="block mb-2 text-sm font-medium text-gray-900"
+          >
             Email
           </label>
           <input
@@ -222,17 +268,24 @@ export default function LoginForm() {
             placeholder="name@example.com"
             required
             className={`bg-gray-50 border ${
-              email && !emailValidation.valid ? "border-red-500" : "border-gray-300"
+              email && !emailValidation.valid
+                ? "border-red-500"
+                : "border-gray-300"
             } text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 placeholder-gray-400`}
           />
           {email && !emailValidation.valid && (
-            <span className="text-xs text-red-500 mt-1 block">{emailValidation.message}</span>
+            <span className="text-xs text-red-500 mt-1 block">
+              {emailValidation.message}
+            </span>
           )}
         </div>
 
         {/* Password */}
         <div className="mb-5 relative">
-          <label htmlFor="password" className="block mb-2 text-sm font-medium text-gray-900">
+          <label
+            htmlFor="password"
+            className="block mb-2 text-sm font-medium text-gray-900"
+          >
             Password
           </label>
           <input
@@ -255,11 +308,17 @@ export default function LoginForm() {
 
         {/* Register + Forgot */}
         <div className="flex items-center justify-between mb-5">
-          <Link to="/register" className="text-sm text-blue-700 hover:underline">
+          <Link
+            to="/register"
+            className="text-sm text-blue-700 hover:underline"
+          >
             Register now!
           </Link>
 
-          <Link to="/forgot-password" className="text-sm text-blue-700 hover:underline">
+          <Link
+            to="/forgot-password"
+            className="text-sm text-blue-700 hover:underline"
+          >
             Forgot password?
           </Link>
         </div>
@@ -283,7 +342,12 @@ export default function LoginForm() {
           <div className="flex justify-center mt-4">
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
-              onError={() => showToastWithDelay("Google login failed. Please try again.", "bg-red-600/90 text-white")}
+              onError={() =>
+                showToastWithDelay(
+                  "Google login failed. Please try again.",
+                  "bg-red-600/90 text-white"
+                )
+              }
               text="continue_with"
               shape="pill"
               size="large"
@@ -294,7 +358,11 @@ export default function LoginForm() {
             />
           </div>
 
-          {googleSigningIn && <p className="text-xs text-center text-gray-500 mt-2">Connecting to Google…</p>}
+          {googleSigningIn && (
+            <p className="text-xs text-center text-gray-500 mt-2">
+              Connecting to Google…
+            </p>
+          )}
         </div>
 
         <p className="text-sm text-center mt-4">
@@ -304,5 +372,5 @@ export default function LoginForm() {
         </p>
       </form>
     </div>
-  )
+  );
 }

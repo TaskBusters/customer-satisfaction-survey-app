@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import "flowbite"; // Import Flowbite JS
+import "flowbite";
 import BackgroundContainer from "../../components/authentication/BackgroundContainer.jsx";
 import ForgotPassForm from "../../components/authentication/ForgotPassForm.jsx";
 
