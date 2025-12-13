@@ -4,7 +4,7 @@ import Navbar from "../../components/survey/UserNavbar.jsx"
 export default function AfterSurveyPage() {
   return (
     <>
-      <Navbar />
+      <Navbar onClickHome={() => (window.location.pathname = "/aftersurvey")} />
       <AfterSurvey />
     </>
   )

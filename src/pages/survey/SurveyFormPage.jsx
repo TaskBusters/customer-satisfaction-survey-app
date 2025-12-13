@@ -255,10 +255,15 @@ export default function SurveyFormPage() {
             newFieldErrors[rowKey] = t("survey.selectOption")
           }
         })
-      }
-      // Validate all other field types
-      else if (!answers[field.name] || answers[field.name].toString().trim() === "") {
-        newFieldErrors[field.name] = t("survey.selectOption")
+      } else if (!answers[field.name] || answers[field.name].toString().trim() === "") {
+        // For radio, select, and matrix fields, use "selectOption" message
+        if (field.type === "radio" || field.type === "select") {
+          newFieldErrors[field.name] = t("survey.selectOption")
+        }
+        // For text and textarea fields, use "fillRequired" message
+        else {
+          newFieldErrors[field.name] = t("survey.fillRequired")
+        }
       }
     })
 
@@ -355,7 +360,7 @@ export default function SurveyFormPage() {
         {toastMsg}
       </ToastNotif>
       <ArrowButtonGroup />
-      <Navbar />
+      <Navbar homeOverride={!isGuest ? "/aftersurvey" : "/"} />
       <UserInfoModal open={showUserInfoModal} onSubmit={handleUserInfoSubmit} onCancel={() => navigate(-1)} />
       <form onSubmit={handleSubmit} className="max-w-3xl mx-auto p-8 shadow rounded-xl bg-white mt-10">
         <h2 className="text-3xl text-blue-700 font-bold text-center mb-6">

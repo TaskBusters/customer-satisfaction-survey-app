@@ -157,10 +157,9 @@ export default function Submissions() {
   return (
     <div className="min-h-screen w-full bg-white flex flex-col items-center pt-10 md:pt-20 pb-10">
       <div className="w-full max-w-6xl px-4 sm:px-6 lg:px-8">
-        {/* Back Button */}
         <div
           className="flex items-center gap-2 mb-6 px-4 py-2 rounded-lg bg-blue-50 border border-blue-100 text-blue-700 font-semibold shadow cursor-pointer hover:bg-blue-100 transition w-fit"
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/aftersurvey")}
         >
           <span className="w-5 h-5">←</span>Back
         </div>

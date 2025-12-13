@@ -75,9 +75,9 @@ export default function LoginForm() {
           }
 
           if (user.isAdmin) {
-            navigate("/admin/overview")
+            navigate("/admin/overview", { replace: true })
           } else {
-            navigate("/")
+            navigate("/", { replace: true })
           }
         })
       } else {
@@ -118,9 +118,9 @@ export default function LoginForm() {
           }
 
           if (user.isAdmin) {
-            navigate("/admin/overview")
+            navigate("/admin/overview", { replace: true })
           } else {
-            navigate("/")
+            navigate("/", { replace: true })
           }
         })
       } else {

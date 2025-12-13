@@ -7,7 +7,7 @@ import UserSettingsModal from "./UserSettingsModal"
 import { useAuth } from "../../context/AuthContext"
 import GoVoiceLogo from "../../assets/GoVoiceFaviconLight.png"
 
-const Navbar = ({ onClickHome, onClickLogin, onClickRegister }) => {
+const Navbar = ({ onClickHome, onClickLogin, onClickRegister, homeOverride }) => {
   const { user, logout } = useAuth()
 
   const [dropdownOpen, setDropdownOpen] = useState(false)
@@ -22,6 +22,7 @@ const Navbar = ({ onClickHome, onClickLogin, onClickRegister }) => {
 
   const isSurveyHomePage = location.pathname === "/"
   const hideLogo = location.pathname.startsWith("/surveyform") || location.pathname === "/aftersurvey"
+  const isAfterSurveyPage = location.pathname === "/aftersurvey"
 
   useEffect(() => {
     setMounted(true)
@@ -46,6 +47,18 @@ const Navbar = ({ onClickHome, onClickLogin, onClickRegister }) => {
     setShowLogoutConfirm(false)
     logout()
     navigate("/login")
+  }
+
+  const handleHomeClick = () => {
+    if (onClickHome) {
+      onClickHome()
+    } else if (homeOverride) {
+      navigate(homeOverride)
+    } else if (isAfterSurveyPage && user) {
+      navigate("/aftersurvey")
+    } else {
+      navigate("/")
+    }
   }
 
   return (
@@ -89,7 +102,7 @@ const Navbar = ({ onClickHome, onClickLogin, onClickRegister }) => {
             ${isSurveyHomePage ? "invisible" : ""}
           `}
           style={{ minWidth: 0 }}
-          onClick={onClickHome ? onClickHome : () => navigate("/")}
+          onClick={handleHomeClick}
           disabled={isSurveyHomePage}
           title="Home"
         >
