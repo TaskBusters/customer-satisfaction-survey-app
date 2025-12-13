@@ -359,8 +359,8 @@ export default function AdminNotificationsPage() {
                             e.stopPropagation()
                             deleteNotification(notif.id)
                           }}
-                          disabled={deletingId === notif.id || confirmDeleteAll !== null}
-                          className="inline-flex items-center justify-center p-1 rounded hover:bg-red-50 disabled:opacity-50"
+                          disabled={deletingId === notif.id || confirmDeleteAll}
+                          className="inline-flex items-center justify-center p-1 rounded hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
                           aria-label={`Dismiss notification ${notif.id}`}
                           title="Dismiss notification"
                         >

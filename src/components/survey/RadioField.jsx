@@ -1,6 +1,4 @@
 "use client"
-
-import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
 export default function RadioField({
@@ -15,10 +13,11 @@ export default function RadioField({
   onOtherChange,
   disabled = false,
   error = null,
+  otherError = null,
 }) {
-  const [touched, setTouched] = useState(false)
   const { t } = useTranslation()
-  const hasError = (required && touched && (value === undefined || value === "")) || !!error
+
+  const hasError = !!error
 
   return (
     <div className="mb-6 w-full">
@@ -39,23 +38,21 @@ export default function RadioField({
               className={`form-radio text-blue-700 w-4 h-4 border-2 border-gray-300 transition-all focus:ring-2 focus:ring-blue-500 ${
                 hasError ? "border-red-600" : ""
               }`}
-              required={required && i === 0}
               name={name}
               value={opt.value}
               checked={String(value) === String(opt.value)}
-              onBlur={() => setTouched(true)}
               onChange={() => {
-                setTouched(true)
                 onChange(opt.value)
               }}
               disabled={disabled}
             />
             <span className="text-base text-gray-700">{opt.label}</span>
-            {/* Inline text input for "Others" - Translate placeholder to Tagalog */}
             {opt.value === "others" && value === "others" && (
               <input
                 type="text"
-                className="ml-2 border rounded px-2 py-1 w-[160px] focus:ring focus:ring-blue-200"
+                className={`ml-2 border rounded px-2 py-1 w-[160px] focus:ring focus:ring-blue-200 ${
+                  otherError ? "border-red-600" : ""
+                }`}
                 placeholder={t("survey.pleaseSpecify")}
                 value={otherValue}
                 onChange={(e) => onOtherChange(e.target.value)}
@@ -67,6 +64,7 @@ export default function RadioField({
         ))}
       </div>
       {error && <span className="text-xs text-red-500 mt-1 block">{error}</span>}
+      {otherError && <span className="text-xs text-red-500 mt-1 block">{otherError}</span>}
     </div>
   )
 }

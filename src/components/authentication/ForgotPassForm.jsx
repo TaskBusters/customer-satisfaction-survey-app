@@ -76,8 +76,9 @@ export default function ForgotPassForm() {
 
   const handleRequestReset = async (e) => {
     e.preventDefault()
-    if (!email) {
-      setError("Please enter your email address.")
+    const emailValidation = validateEmail(email)
+    if (!emailValidation.valid) {
+      setError(emailValidation.message)
       return
     }
     setError("")
@@ -197,6 +198,49 @@ export default function ForgotPassForm() {
     }
   }
 
+  const allowedProviders = [
+    "@yahoo.com.ph",
+    "@ymail.com",
+    "@gmail.com",
+    "@yahoo.com",
+    "@outlook.com",
+    "@hotmail.com",
+    "@live.com",
+    "@icloud.com",
+    "@protonmail.com",
+    "@aol.com",
+    "@mail.com",
+    "@zoho.com",
+    "@yandex.com",
+    "@gmx.com",
+    "@tutanota.com",
+    "@fastmail.com",
+  ]
+
+  const allowedDomains = [".com", ".net", ".org", ".gov", ".gov.ph", ".mil", ".int"]
+
+  const validateEmail = (emailInput) => {
+    if (!emailInput) return { valid: false, message: "Please enter your email" }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(emailInput)) {
+      return { valid: false, message: "Invalid email format" }
+    }
+
+    const hasValidProvider = allowedProviders.some((provider) => emailInput.toLowerCase().endsWith(provider))
+    if (hasValidProvider) {
+      return { valid: true, message: "" }
+    }
+
+    const hasValidDomain = allowedDomains.some((domain) => emailInput.toLowerCase().includes(domain))
+    if (!hasValidDomain) {
+      return { valid: false, message: "Email domain not allowed" }
+    }
+
+    return { valid: true, message: "" }
+  }
+
+  const emailValidation = validateEmail(email)
   const passwordStrength = checkPasswordStrength(newPassword)
 
   return (
@@ -270,10 +314,15 @@ export default function ForgotPassForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
                 required
-                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
+                className={`bg-gray-50 border ${
+                  email && !emailValidation.valid ? "border-red-500" : "border-gray-300"
+                } text-gray-900 text-sm rounded-lg 
                   focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 
-                  placeholder-gray-400"
+                  placeholder-gray-400`}
               />
+              {email && !emailValidation.valid && (
+                <span className="text-xs text-red-500 mt-1 block">{emailValidation.message}</span>
+              )}
             </div>
             {error && <div className="mb-5 text-red-600 text-center font-medium">{error}</div>}
             <Button

@@ -134,6 +134,50 @@ export default function LoginForm() {
     }
   }
 
+  const allowedProviders = [
+    "@yahoo.com.ph",
+    "@ymail.com",
+    "@gmail.com",
+    "@yahoo.com",
+    "@outlook.com",
+    "@hotmail.com",
+    "@live.com",
+    "@icloud.com",
+    "@protonmail.com",
+    "@aol.com",
+    "@mail.com",
+    "@zoho.com",
+    "@yandex.com",
+    "@gmx.com",
+    "@tutanota.com",
+    "@fastmail.com",
+  ]
+
+  const allowedDomains = [".com", ".net", ".org", ".gov", ".gov.ph", ".mil", ".int"]
+
+  const validateEmail = (email) => {
+    if (!email) return { valid: false, message: "Please enter your email" }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return { valid: false, message: "Invalid email format" }
+    }
+
+    const hasValidProvider = allowedProviders.some((provider) => email.toLowerCase().endsWith(provider))
+    if (hasValidProvider) {
+      return { valid: true, message: "" }
+    }
+
+    const hasValidDomain = allowedDomains.some((domain) => email.toLowerCase().includes(domain))
+    if (!hasValidDomain) {
+      return { valid: false, message: "Email domain not allowed" }
+    }
+
+    return { valid: true, message: "" }
+  }
+
+  const emailValidation = validateEmail(email)
+
   return (
     <div className="bg-[#F4F4F4] rounded-lg shadow-2xl w-80 sm:w-96 md:w-[28rem] lg:w-[32rem] xl:w-[36rem] p-8 sm:p-8 md:p-10 text-sm md:text-base border-3 border-gray-200">
       {showToast && (
@@ -179,8 +223,13 @@ export default function LoginForm() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="name@example.com"
             required
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 placeholder-gray-400"
+            className={`bg-gray-50 border ${
+              email && !emailValidation.valid ? "border-red-500" : "border-gray-300"
+            } text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 placeholder-gray-400`}
           />
+          {email && !emailValidation.valid && (
+            <span className="text-xs text-red-500 mt-1 block">{emailValidation.message}</span>
+          )}
         </div>
 
         {/* Password */}

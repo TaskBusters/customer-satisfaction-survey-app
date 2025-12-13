@@ -142,6 +142,7 @@ export default function SurveyRenderer({ fields, answers, setAnswers, disabled, 
                   onOtherChange={(val) => setAnswers((a) => ({ ...a, clientType_other: val }))}
                   disabled={disabled}
                   error={fieldErrors[field.name]}
+                  otherError={fieldErrors["clientType_other"]} // Pass otherError prop
                 />,
               )
             } else {

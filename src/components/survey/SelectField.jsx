@@ -1,7 +1,5 @@
 "use client"
 
-import { useState } from "react"
-
 export default function SelectField({
   label,
   options,
@@ -13,8 +11,7 @@ export default function SelectField({
   disabled = false,
   error = null,
 }) {
-  const [touched, setTouched] = useState(false)
-  const hasError = (required && touched && (!value || value === "")) || !!error
+  const hasError = !!error
 
   return (
     <div className="mb-6">
@@ -27,15 +24,12 @@ export default function SelectField({
       <select
         id={name}
         name={name}
-        required={required}
         disabled={disabled}
         className={`bg-gray-50 border border-gray-300 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 ${
           hasError ? "border-red-500" : ""
         }`}
         value={value || ""}
-        onBlur={() => setTouched(true)}
         onChange={(e) => {
-          setTouched(true)
           onChange(e.target.value)
         }}
       >
@@ -49,7 +43,6 @@ export default function SelectField({
         ))}
       </select>
       {error && <span className="text-xs text-red-500 mt-1 block">{error}</span>}
-      {!error && hasError && <span className="text-xs text-red-500 mt-1 block">Please select an option.</span>}
     </div>
   )
 }

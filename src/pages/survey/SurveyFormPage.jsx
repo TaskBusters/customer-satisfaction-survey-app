@@ -234,6 +234,7 @@ export default function SurveyFormPage() {
 
     const newFieldErrors = {}
 
+    // Validate all fields and collect all errors
     surveyFields.forEach((field) => {
       // Skip if field is not required
       if (!field.required) return
@@ -246,35 +247,38 @@ export default function SurveyFormPage() {
         return
       }
 
-      let fieldError = null
+      // Validate matrix fields
       if (field.type === "matrix") {
-        const missingRows = field.rows.filter((row) => !answers[field.name] || !answers[field.name][row.name])
-        if (missingRows.length > 0) {
-          fieldError = "Please select an option"
-        }
-      } else if (!answers[field.name] || answers[field.name].toString().trim() === "") {
-        fieldError = "Please select an option"
+        field.rows.forEach((row) => {
+          const rowKey = `${field.name}.${row.name}`
+          if (!answers[field.name] || !answers[field.name][row.name]) {
+            newFieldErrors[rowKey] = t("survey.selectOption")
+          }
+        })
       }
-
-      if (fieldError) {
-        newFieldErrors[field.name] = fieldError
+      // Validate all other field types
+      else if (!answers[field.name] || answers[field.name].toString().trim() === "") {
+        newFieldErrors[field.name] = t("survey.selectOption")
       }
     })
 
-    // Check clientType_other if clientType is "others"
+    // Validate clientType_other when "others" is selected
     if (answers.clientType === "others" && (!answers.clientType_other || answers.clientType_other.trim() === "")) {
-      newFieldErrors["clientType_other"] = "Please specify"
+      newFieldErrors["clientType_other"] = t("survey.fillRequired")
     }
 
-    // Check age validity
-    if (!newFieldErrors.age && answers.age && !isAgeValid(answers.age)) {
-      newFieldErrors.age = "Please enter a valid age"
+    // Validate age format
+    if (answers.age && !isAgeValid(answers.age)) {
+      newFieldErrors.age = t("survey.ageInvalid")
     }
 
+    console.log("[v0] All validation errors collected:", newFieldErrors)
+
+    // Set all errors at once for simultaneous display
     setFieldErrors(newFieldErrors)
 
     if (Object.keys(newFieldErrors).length > 0) {
-      setToastMsg(t("survey.submissionFailed"))
+      setToastMsg(t("survey.incompleteForm"))
       setToastColor("bg-red-600/90 text-white")
       setShowToast(true)
       setTimeout(() => setShowToast(false), 1800)

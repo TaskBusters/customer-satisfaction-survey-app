@@ -582,6 +582,10 @@ app.put("/api/submissions/:id", async (req, res) => {
       }
     }
 
+    const clientTypeToStore = responses.clientType === "others" && responses.clientType_other 
+      ? responses.clientType_other 
+      : responses.clientType;
+
     await pool.query(
       `UPDATE survey_responses SET
         client_type = $1,
@@ -600,7 +604,7 @@ app.put("/api/submissions/:id", async (req, res) => {
         updated_at = NOW()
        WHERE id = $14`,
       [
-        responses.clientType,
+        clientTypeToStore, // Use the actual typed value instead of "others"
         responses.gender,
         responses.age,
         responses.region,
@@ -1554,6 +1558,10 @@ app.post("/api/survey/submit", async (req, res) => {
       }
     }
 
+    const clientTypeToStore = responses.clientType === "others" && responses.clientType_other 
+      ? responses.clientType_other 
+      : responses.clientType;
+
     await pool.query(
       `INSERT INTO survey_responses (
         user_email, user_name, client_type, gender, age, region, service,
@@ -1563,7 +1571,7 @@ app.post("/api/survey/submit", async (req, res) => {
       [
         user_email || null,
         user_name || null,
-        responses.clientType || null,
+        clientTypeToStore || null, // Use the actual typed value instead of "others"
         responses.gender || null,
         responses.age || null,
         responses.region || null,

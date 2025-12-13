@@ -25,6 +25,48 @@ export default function CreateAdminModal({ open, onClose, onSave, loading, curre
   const [canSendCode, setCanSendCode] = useState(true)
   const [cooldownTime, setCooldownTime] = useState(0)
 
+  const allowedProviders = [
+    "@yahoo.com.ph",
+    "@ymail.com",
+    "@gmail.com",
+    "@yahoo.com",
+    "@outlook.com",
+    "@hotmail.com",
+    "@live.com",
+    "@icloud.com",
+    "@protonmail.com",
+    "@aol.com",
+    "@mail.com",
+    "@zoho.com",
+    "@yandex.com",
+    "@gmx.com",
+    "@tutanota.com",
+    "@fastmail.com",
+  ]
+
+  const allowedDomains = [".com", ".net", ".org", ".gov", ".gov.ph", ".mil", ".int"]
+
+  const validateEmail = (email) => {
+    if (!email) return { valid: false, message: "Email is required" }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return { valid: false, message: "Invalid email format" }
+    }
+
+    const hasValidProvider = allowedProviders.some((provider) => email.toLowerCase().endsWith(provider))
+    if (hasValidProvider) {
+      return { valid: true, message: "" }
+    }
+
+    const hasValidDomain = allowedDomains.some((domain) => email.toLowerCase().includes(domain))
+    if (!hasValidDomain) {
+      return { valid: false, message: "Email domain not allowed" }
+    }
+
+    return { valid: true, message: "" }
+  }
+
   const validateForm = () => {
     const newErrors = {}
 
@@ -34,10 +76,9 @@ export default function CreateAdminModal({ open, onClose, onSave, loading, curre
       newErrors.fullName = "Full name must be at least 2 characters"
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required"
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address"
+    const emailValidation = validateEmail(formData.email)
+    if (!emailValidation.valid) {
+      newErrors.email = emailValidation.message
     }
 
     if (!formData.password) {
@@ -76,10 +117,9 @@ export default function CreateAdminModal({ open, onClose, onSave, loading, curre
       newErrors.fullName = "Full name must be at least 2 characters"
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required"
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address"
+    const emailValidation = validateEmail(formData.email)
+    if (!emailValidation.valid) {
+      newErrors.email = emailValidation.message
     }
 
     if (!formData.password) {
@@ -257,6 +297,8 @@ export default function CreateAdminModal({ open, onClose, onSave, loading, curre
 
   if (!open) return null
 
+  const emailValidationResult = validateEmail(formData.email)
+
   return (
     <div className="fixed z-50 inset-0 bg-black/30 flex items-center justify-center p-4">
       {showCodePopup && sentCode && (
@@ -343,13 +385,20 @@ export default function CreateAdminModal({ open, onClose, onSave, loading, curre
                 <label className="block text-sm font-semibold mb-1">Email</label>
                 <input
                   type="email"
-                  className={`w-full border rounded px-3 py-2 ${errors.email ? "border-red-500" : "border-gray-300"}`}
+                  className={`w-full border rounded px-3 py-2 ${
+                    errors.email || (formData.email && !emailValidationResult.valid)
+                      ? "border-red-500"
+                      : "border-gray-300"
+                  }`}
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="Enter email"
                   disabled={loading}
                 />
                 {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
+                {!errors.email && formData.email && !emailValidationResult.valid && (
+                  <p className="text-xs text-red-600 mt-1">{emailValidationResult.message}</p>
+                )}
               </div>
 
               {/* Password */}
